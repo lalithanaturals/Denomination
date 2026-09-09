@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lalitha Naturals - Business Intelligence & Cloud Audit Register</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap)" rel="stylesheet">
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js)"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -447,7 +447,7 @@
         <p>Your Web App URL is automatically configured for Google Sheet cloud synchronization.</p>
         <div style="display:flex; flex-direction:column; gap:6px;">
             <label style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">Web App URL:</label>
-            <input type="text" id="gsheetUrlInput" value="https://script.google.com/macros/s/AKfycbxhFtQ4OKtqmIUhR08OnWuWMdXWlSBXSHuCUrFtsh6piQIWVnNudn29RehgISboD7gH/exec" style="text-align:left; font-size:12px; height:36px;" readonly>
+            <input type="text" id="gsheetUrlInput" value="[https://script.google.com/macros/s/AKfycbxhFtQ4OKtqmIUhR08OnWuWMdXWlSBXSHuCUrFtsh6piQIWVnNudn29RehgISboD7gH/exec](https://script.google.com/macros/s/AKfycbxhFtQ4OKtqmIUhR08OnWuWMdXWlSBXSHuCUrFtsh6piQIWVnNudn29RehgISboD7gH/exec)" style="text-align:left; font-size:12px; height:36px;" readonly>
         </div>
         <div class="modal-buttons">
             <button class="btn-modal-cancel" onclick="document.getElementById('gsheetConfigModal').style.display='none'">Close</button>
@@ -681,7 +681,7 @@
 <script>
     document.getElementById('regDate').valueAsDate = new Date();
     let currentSelectedArchiveRecord = null;
-    const GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxhFtQ4OKtqmIUhR08OnWuWMdXWlSBXSHuCUrFtsh6piQIWVnNudn29RehgISboD7gH/exec";
+    const GOOGLE_WEB_APP_URL = "[https://script.google.com/macros/s/AKfycbxhFtQ4OKtqmIUhR08OnWuWMdXWlSBXSHuCUrFtsh6piQIWVnNudn29RehgISboD7gH/exec](https://script.google.com/macros/s/AKfycbxhFtQ4OKtqmIUhR08OnWuWMdXWlSBXSHuCUrFtsh6piQIWVnNudn29RehgISboD7gH/exec)";
 
     // Auto-capitalize first letter of all text inputs and textareas
     document.addEventListener('input', function(e) {
@@ -1082,7 +1082,7 @@
                   `📝 *Notes/Remarks:* ${notes}\n` +
                   `✅ *Status: Verified & Committed*`;
 
-        let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+        let url = `[https://api.whatsapp.com/send?text=$](https://api.whatsapp.com/send?text=$){encodeURIComponent(msg)}`;
         window.open(url, '_blank');
         document.getElementById('whatsappModal').style.display = 'none';
         currentSelectedArchiveRecord = null;
@@ -1620,7 +1620,7 @@
                       `----------------------------------\n` +
                       `✅ *Status: Verified Analytics Report*`;
 
-            let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            let url = `[https://api.whatsapp.com/send?text=$](https://api.whatsapp.com/send?text=$){encodeURIComponent(msg)}`;
             window.open(url, '_blank');
         }
     }
