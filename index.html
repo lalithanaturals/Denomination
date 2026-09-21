@@ -290,6 +290,11 @@
             .cb-preview { width: 100% !important; flex-basis: auto !important; order: -1; }
             .header-fields.shifts-disabled { column-gap: 0; }
             .cb-topbar { grid-template-columns: 1fr !important; }
+            .cb-topbar-new { flex-direction: column; align-items: stretch; }
+            .cb-topbar-new > div { flex: 1 1 auto !important; }
+            /* The table itself scrolls horizontally on narrow screens
+               instead of squeezing its columns or breaking the modal. */
+            .cb-table-wrap-new { overflow-x: auto; }
         }
         @media (max-width: 480px) {
             .cb-manual-grid-3, .cb-manual-grid-3b { grid-template-columns: 1fr 1fr !important; }
@@ -305,6 +310,8 @@
         .cb-scan-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(21,128,61,0.22); }
         .cb-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
         .cb-card-title { font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 10px; }
+        .cb-advanced-toggle { all: unset; cursor: pointer; font-size: 11.5px; font-weight: 700; color: var(--accent); padding: 2px 0; }
+        .cb-advanced-toggle:hover { text-decoration: underline; }
         .cb-more { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; }
         .cb-more summary { cursor: pointer; padding: 9px 14px; font-size: 12.5px; font-weight: 700; color: #334155; background: #f1f5f9; list-style: none; user-select: none; }
         .cb-more summary::-webkit-details-marker { display: none; }
@@ -323,6 +330,43 @@
         .cb-add-btn { min-height: 40px; padding: 0 16px; font-weight: 700; }
         .cb-preview { box-shadow: 0 2px 12px rgba(15,23,42,0.08); position: relative; }
         .cb-preview::before { content: 'Live Preview'; position: absolute; top: -9px; left: 12px; background: #fff; padding: 0 6px; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+
+        /* ---- CASH BILL — TOP BAR (scan + salesman + payment mode) ---- */
+        .cb-topbar-new { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+        .cb-scan-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 2px solid #15803d; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; background: #f0fdf4; }
+        .cb-scan-input:focus { outline: none; border-color: #15803d; box-shadow: 0 0 0 3px rgba(21,128,61,0.18); background: #fff; }
+
+        /* ---- CASH BILL — ITEM TABLE (primary entry surface) ---- */
+        .cb-table-wrap-new { flex: 1 1 auto; min-height: 0; overflow: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+        .cb-table-new { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 12.5px; }
+        .cb-table-new thead th { position: sticky; top: 0; z-index: 1; text-align: left; padding: 9px 10px; background: var(--header-bg); font-weight: 700; border-bottom: 1px solid var(--border); }
+        .cb-table-new tbody td { padding: 6px 8px; border-top: 1px solid var(--border); vertical-align: middle; }
+        .cb-table-new tbody tr:hover { background: #f8fafc; }
+        .cb-cell-num { color: var(--muted); text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+        .cb-cell-name { font-weight: 600; }
+
+        /* Inline number boxes embedded in a cell, not styled like a bordered
+           form field — a flat, minimal box that only shows its border on
+           focus/hover so the table reads as data, not a form. */
+        .cb-cell-input { box-sizing: border-box; border: 1px solid transparent; background: transparent; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; padding: 4px 5px; text-align: right; }
+        .cb-cell-input:hover { border-color: var(--border); background: #f8fafc; }
+        .cb-cell-input:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        .cb-num-input { width: 64px; }
+        .cb-qty-input { width: 34px; text-align: center; padding: 4px 2px; }
+        .cb-name-input { width: 100%; text-align: left; font-family: inherit; font-size: 13px; }
+
+        /* Qty stepper: small square − / + buttons flanking the qty box */
+        .cb-qty-stepper { display: inline-flex; align-items: center; gap: 3px; }
+        .cb-step-btn { width: 24px; height: 24px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: #334155; font-weight: 700; font-size: 14px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+        .cb-step-btn:hover { background: var(--header-bg); border-color: var(--accent); color: var(--accent); }
+
+        /* Discount cell: small %/₹ toggle chip + inline number box */
+        .cb-discount-cell { display: inline-flex; align-items: center; gap: 4px; }
+        .cb-disc-toggle { flex-shrink: 0; width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 6px; background: #f1f5f9; font-weight: 800; font-size: 11px; color: #334155; cursor: pointer; padding: 0; }
+        .cb-disc-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+        .cb-row-remove { width: 22px; height: 22px; border: 1px solid #fecaca; border-radius: 6px; background: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        .cb-row-remove:hover { background: #fee2e2; }
         .field-group.shift-field-group[hidden] { display: none !important; }
 
         /* PRINT SAFETY NET — all real printing goes through the export
@@ -387,11 +431,14 @@
 
             <div class="header-actions">
                 <button class="btn-mini" onclick="toggleArchive()" id="archiveToggleBtn" style="height:34px; padding:0 14px; background:#1e293b; color:#fff; border-color:#0f172a;">Show Records</button>
-                <button class="btn-mini" onclick="openCashBillModal()" id="cashBillBtn" style="height:34px; padding:0 14px; background:#15803d; color:#fff; border-color:#14532d;">🧾 Cash Bill</button>
-                <div id="cashBillDraftBanner" style="display:none; align-items:center; gap:6px; background:#fffbeb; border:1px solid #fcd34d; color:#92400e; font-size:11.5px; font-weight:700; padding:4px 8px; border-radius:6px;">
-                    <span>You have an unsaved cash bill draft</span>
-                    <button type="button" class="btn-mini" style="padding:1px 8px; height:22px;" onclick="resumeCashBillDraft()">Resume</button>
-                    <button type="button" class="btn-mini" style="padding:1px 8px; height:22px;" onclick="discardCashBillDraft()">Discard</button>
+                <div id="cashBillBtnWrap" style="position:relative; display:inline-block;">
+                    <button class="btn-mini" onclick="handleCashBillBtnClick()" id="cashBillBtn" style="height:34px; padding:0 14px; background:#15803d; color:#fff; border-color:#14532d;">🧾 Cash Bill</button>
+                    <span id="cashBillDraftBadge" title="You have an unsaved cash bill draft" style="display:none; position:absolute; top:-4px; right:-4px; width:10px; height:10px; border-radius:50%; background:#ef4444; border:1.5px solid #fff; box-shadow:0 0 0 1px #b91c1c;"></span>
+                    <div id="cashBillDraftPopover" style="display:none; position:absolute; top:40px; right:0; z-index:50; background:#fff; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.15); padding:6px; min-width:190px;">
+                        <div style="font-size:11px; font-weight:700; color:#334155; padding:4px 6px 6px;">Unsaved cash bill draft</div>
+                        <button type="button" class="btn-mini" style="display:block; width:100%; margin-bottom:4px; text-align:left;" onclick="resumeCashBillDraft()">Resume Draft</button>
+                        <button type="button" class="btn-mini" style="display:block; width:100%; text-align:left;" onclick="discardCashBillDraft()">Start New (discard draft)</button>
+                    </div>
                 </div>
                 <div class="dropdown-wrap">
                     <button class="btn-mini" onclick="toggleMoreMenu()" id="moreMenuBtn" style="height:34px; padding:0 12px; background:#334155; color:#fff; border-color:#0f172a;">⋯ More</button>
@@ -931,9 +978,11 @@
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <button type="button" class="btn-mini" onclick="testCloudSyncConnection()">🔌 Test Connection</button>
                         <button type="button" class="btn-mini" onclick="syncNowFlushPending()">☁️ Sync Now</button>
+                        <button type="button" class="btn-mini" id="syncCatalogNowBtn" onclick="syncCatalogNow()">☁️ Sync Catalog Now</button>
                     </div>
                     <p id="cloudSyncPendingInfo" style="font-size:11.5px; color:#475569; font-weight:600; margin:0;"></p>
                     <p id="cloudSyncTestResult" style="font-size:11.5px; margin:0;"></p>
+                    <p id="catalogSyncResult" style="font-size:11.5px; margin:0;"></p>
                     <div style="margin-top:10px; padding-top:12px; border-top:1px solid var(--border); font-size:11.5px; color:#94a3b8;">
                         <p style="margin:0 0 6px;"><b>One-time setup (free):</b> this needs a small "Google Apps Script" web app tied to a Google Sheet you own — ask for the "Cloud Sync Setup Instructions" that came with this app, or search "Google Apps Script web app" for how to create and deploy one, then paste its URL above.</p>
                         <p style="margin:0;">The app works fully offline either way — nothing here is required for daily use. Cloud Sync just also mirrors saved shifts to your Sheet in the background; if it fails (no internet, wrong URL) the shift is still saved locally and queued to retry, never lost.</p>
@@ -973,19 +1022,25 @@
 
 <!-- CASH BILL (MINI POS) MODAL -->
 <div class="modal-overlay" id="cashBillModal">
-    <div class="modal-box" style="width:940px; max-width:97vw; max-height:92vh;">
-        <h3>🧾 Cash Bill</h3>
-        <p style="margin-top:-8px;">Scan or type a barcode to bill an item. If it's been billed before, its details fill in automatically — just check the quantity and add.</p>
+    <div class="modal-box" style="width:95vw; max-width:1500px; height:92vh; overflow:hidden;">
+        <h3 style="flex-shrink:0;">🧾 Cash Bill</h3>
+        <p style="margin-top:-8px; flex-shrink:0;">Scan or type a barcode to bill an item — it's added straight into the table below. If it's been billed before, its details fill in automatically.</p>
 
-        <div class="cb-body" style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
-        <div class="cb-main" style="flex:1 1 480px; min-width:320px; display:flex; flex-direction:column; gap:12px;">
+        <div class="cb-body" style="display:flex; gap:16px; align-items:stretch; flex:1 1 auto; min-height:0;">
+        <div class="cb-main" style="flex:1 1 480px; min-width:320px; display:flex; flex-direction:column; gap:10px; min-height:0; overflow:hidden;">
 
-        <div class="cb-topbar">
-            <div>
-                <label class="cb-label">Salesman Name</label>
-                <input type="text" class="cb-input" id="cbSalesmanName" placeholder="Name" oninput="renderCashBillPreview()">
+        <!-- TOP BAR: scan input (wide) + compact salesman / payment mode -->
+        <div class="cb-topbar-new" style="flex-shrink:0;">
+            <div style="flex:1 1 auto; min-width:200px;">
+                <label class="cb-label">Scan Barcode / Product</label>
+                <input type="text" class="cb-scan-input" id="cbBarcodeInput" placeholder="Scan or type barcode, then Enter" onkeydown="handleBarcodeKey(event)">
             </div>
-            <div>
+            <div style="flex:0 0 170px;">
+                <label class="cb-label">Salesman Name</label>
+                <input type="text" class="cb-input" id="cbSalesmanName" placeholder="Name" required oninput="renderCashBillPreview(); clearCbSalesmanError()">
+                <div id="cbSalesmanNameError" style="display:none; color:#dc2626; font-size:10.5px; font-weight:600; margin-top:2px;">Salesman Name is required.</div>
+            </div>
+            <div style="flex:0 0 130px;">
                 <label class="cb-label">Payment Mode</label>
                 <select class="cb-select" id="cbPaymentMode" onchange="renderCashBillPreview()">
                     <option value="Cash">Cash</option>
@@ -995,110 +1050,64 @@
             </div>
         </div>
 
-        <div class="cb-scan-card">
-            <div style="flex-grow:1;">
-                <label class="cb-label">Scan Barcode</label>
-                <input type="text" class="cb-scan-input" id="cbBarcodeInput" placeholder="Scan or type barcode, then Enter" onkeydown="handleBarcodeKey(event)">
-            </div>
-        </div>
-
-        <div id="cbManualEntry" class="cb-manual-entry cb-card" style="display:none; flex-direction:column; gap:10px;">
-            <div id="cbEntryHeading" class="cb-card-title">New item — fill in once, remembered for next time</div>
-            <div class="cb-field-row cb-manual-grid-3" style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px;">
-                <div class="cb-field">
-                    <label class="cb-label">Item Name</label>
-                    <input type="text" class="cb-input" id="cbItemName" placeholder="Item name">
-                </div>
-                <div class="cb-field">
-                    <label class="cb-label">MRP (₹)</label>
-                    <input type="number" class="cb-input" id="cbMrp" placeholder="0" oninput="onCbMrpInput()" style="font-family:'JetBrains Mono';">
-                </div>
-                <div class="cb-field">
-                    <label class="cb-label">Selling Price (₹)</label>
-                    <input type="number" class="cb-input" id="cbSellingPrice" placeholder="0" onfocus="this.select()" oninput="this.dataset.autoFilled='false'" style="font-family:'JetBrains Mono';">
-                </div>
-            </div>
-            <div class="cb-field-row cb-manual-grid-3b" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end;">
-                <div class="cb-field">
-                    <label class="cb-label">Discount</label>
-                    <div style="display:flex; gap:4px;">
-                        <input type="number" class="cb-input" id="cbDiscount" placeholder="0" style="font-family:'JetBrains Mono';">
-                        <button type="button" id="cbDiscountModeBtn" title="Switch between ₹ and % discount" onclick="toggleCbDiscountMode()" style="flex-shrink:0; width:38px; border:1px solid var(--border); border-radius:8px; background:#fff; font-weight:700; cursor:pointer;">₹</button>
-                    </div>
-                </div>
-                <div class="cb-field">
-                    <label class="cb-label">Qty</label>
-                    <input type="number" class="cb-input" id="cbQty" value="1" min="1" style="font-family:'JetBrains Mono';" onkeydown="if(event.key==='Enter'){event.preventDefault(); addCashBillItem();}">
-                </div>
-                <button class="btn-mini cb-add-btn" style="background:#15803d; color:#fff; border-color:#14532d;" onclick="addCashBillItem()">+ Add Item</button>
-            </div>
-        </div>
-
-        <details class="cb-more" id="cbMoreOptions">
-            <summary>More options — customer &amp; software bill</summary>
-            <div class="cb-more-inner">
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button type="button" class="btn-mini" id="cbCustomerToggleBtn" onclick="toggleCbCustomerFields()" style="height:34px; padding:0 10px;">+ Customer</button>
-                    <span style="font-size:11.5px; color:var(--muted);">Add a customer name / number to this bill (optional)</span>
-                </div>
-                <div id="cbCustomerFields" style="display:none; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div>
-                        <label class="cb-label">Customer Name</label>
-                        <input type="text" class="cb-input" id="cbCustomerName" placeholder="Optional" oninput="renderCashBillPreview()">
-                    </div>
-                    <div>
-                        <label class="cb-label">Customer Number</label>
-                        <input type="text" class="cb-input" id="cbCustomerNumber" placeholder="Optional" oninput="renderCashBillPreview()">
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div>
-                        <label class="cb-label">Software Bill No.</label>
-                        <input type="text" class="cb-input" id="cbSoftwareBillNo" placeholder="Optional" oninput="renderCashBillPreview()">
-                    </div>
-                    <div>
-                        <label class="cb-label">Software Bill Amount (₹)</label>
-                        <input type="number" class="cb-input" id="cbSoftwareBillAmount" placeholder="0" oninput="renderCashBillCart()" style="font-family:'JetBrains Mono';">
-                    </div>
-                </div>
-                <div id="cbSoftwareRefLine" style="display:none; font-size:11.5px; font-weight:700; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 10px;"></div>
-                <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#475569;">
-                    <input type="checkbox" id="cbIncludeSoftwareOnReceipt" onchange="renderCashBillPreview()"> Include software bill on receipt
-                </label>
-            </div>
-        </details>
-
-        <div class="cb-table-wrap">
-            <table class="cb-table">
+        <!-- MAIN CONTENT: item table is the primary entry surface -->
+        <div class="cb-table-wrap-new">
+            <table class="cb-table-new">
                 <thead>
                     <tr>
-                        <th>Item</th>
-                        <th style="text-align:center;">Qty</th>
-                        <th style="text-align:right;">Price</th>
-                        <th style="text-align:right;">Disc</th>
-                        <th style="text-align:right;">Total</th>
-                        <th style="width:24px;"></th>
+                        <th style="width:32px;">#</th>
+                        <th>Item Name</th>
+                        <th style="width:120px; text-align:center;">Qty</th>
+                        <th style="width:90px; text-align:right;">MRP</th>
+                        <th style="width:100px; text-align:right;">Selling Price</th>
+                        <th style="width:130px; text-align:right;">Discount</th>
+                        <th style="width:100px; text-align:right;">Net Amount</th>
+                        <th style="width:32px;"></th>
                     </tr>
                 </thead>
                 <tbody id="cbCartBody">
-                    <tr id="cbCartEmptyRow"><td colspan="6" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>
+                    <tr id="cbCartEmptyRow"><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="cb-total-bar">
+        <!-- Compact auxiliary options: customer & software bill, always visible, sit right above Grand Total -->
+        <div class="cb-more" id="cbMoreOptions" style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding:6px 8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                <button type="button" class="btn-mini" id="cbCustomerToggleBtn" onclick="toggleCbCustomerFields()" style="height:22px; padding:0 8px; font-size:10.5px;">+ Customer</button>
+                <span style="font-size:10px; color:var(--muted);">Software Bill No.</span>
+                <input type="text" class="cb-input" id="cbSoftwareBillNo" placeholder="Optional" oninput="renderCashBillPreview()" style="height:22px; width:90px; font-size:10.5px; padding:0 6px;">
+                <span style="font-size:10px; color:var(--muted);">Amount</span>
+                <input type="number" class="cb-input" id="cbSoftwareBillAmount" placeholder="0" oninput="renderCashBillCart()" style="height:22px; width:70px; font-size:10.5px; padding:0 6px; font-family:'JetBrains Mono';">
+                <label style="display:flex; align-items:center; gap:4px; font-size:10px; color:#475569;">
+                    <input type="checkbox" id="cbIncludeSoftwareOnReceipt" onchange="renderCashBillPreview()" style="width:12px; height:12px;"> Include on receipt
+                </label>
+            </div>
+            <div id="cbCustomerFields" style="display:none; grid-template-columns:1fr 1fr; gap:8px;">
+                <div>
+                    <label class="cb-label">Customer Name</label>
+                    <input type="text" class="cb-input" id="cbCustomerName" placeholder="Optional" oninput="renderCashBillPreview()">
+                </div>
+                <div>
+                    <label class="cb-label">Customer Number</label>
+                    <input type="text" class="cb-input" id="cbCustomerNumber" placeholder="Optional" oninput="renderCashBillPreview()">
+                </div>
+            </div>
+            <div id="cbSoftwareRefLine" style="display:none; font-size:10.5px; font-weight:700; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:4px 8px;"></div>
+        </div>
+
+        <div class="cb-total-bar" style="flex-shrink:0;">
             <span>Grand Total</span>
             <span id="cbGrandTotal" style="font-family:'JetBrains Mono'; color:var(--accent);">₹0</span>
         </div>
 
-        <div class="modal-buttons">
+        <div class="modal-buttons" style="flex-shrink:0;">
             <button class="btn-modal-cancel cb-btn-secondary" onclick="closeCashBillModal()">Cancel</button>
             <button class="submit-btn cb-btn-primary" style="background:#15803d;" onclick="submitCashBill()">Submit &amp; Print Bill</button>
         </div>
         </div>
 
-        <div class="cb-preview" style="flex:0 0 240px; width:240px; max-width:100%; border-radius:10px; padding:14px 12px; font-family:'JetBrains Mono', monospace; font-size:11px; margin-top:8px;">
+        <div class="cb-preview" style="flex:0 0 280px; width:280px; max-width:100%; border-radius:10px; padding:14px 12px; font-family:'JetBrains Mono', monospace; font-size:11px; margin-top:8px; overflow-y:auto; overscroll-behavior:contain; min-height:0;">
             <div id="cbPreviewBody"></div>
         </div>
         </div>
@@ -1568,6 +1577,133 @@
             if (remaining.length > 0) savePendingSyncQueue(remaining);
             alert('Sync Now: attempted ' + queue.length + ' queued record(s)' +
                 (remaining.length ? ', ' + remaining.length + ' still failed and remain queued.' : ', all sent.'));
+        });
+    }
+
+    // ---- ITEM CATALOG CLOUD SYNC -------------------------------------------
+    // Mirrors lalitha_pos_catalog (barcode -> item) to the same Apps Script
+    // Web App, so items added/edited on one device/branch show up on another.
+    // Same fire-and-forget + local retry-queue pattern as shift sync above.
+    const PENDING_CATALOG_SYNC_KEY = 'lalitha_pending_catalog_sync';
+    let catalogPulledThisSession = false;
+
+    function getPendingCatalogSyncQueue() {
+        try { return JSON.parse(localStorage.getItem(PENDING_CATALOG_SYNC_KEY) || '[]'); } catch (e) { return []; }
+    }
+    function savePendingCatalogSyncQueue(list) {
+        try { localStorage.setItem(PENDING_CATALOG_SYNC_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+    function queuePendingCatalogSync(payload) {
+        let q = getPendingCatalogSyncQueue();
+        q.push(payload);
+        savePendingCatalogSyncQueue(q);
+    }
+
+    function catalogItemToPayload(item) {
+        return {
+            type: 'catalog_item',
+            barcode: item.barcode,
+            name: item.name,
+            mrp: item.mrp,
+            sellingPrice: item.sellingPrice,
+            discount: item.discount,
+            discountMode: item.discountMode,
+            updatedAt: Date.now()
+        };
+    }
+
+    function syncCatalogItemToCloud(item) {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return;
+        let payload = catalogItemToPayload(item);
+        try {
+            postRecordToCloud(payload).then(() => {
+                console.log('Catalog item synced to Google Sheet.');
+            }).catch(err => {
+                console.error('Catalog Sync Error:', err);
+                queuePendingCatalogSync(payload);
+            });
+        } catch (e) {
+            console.error('Catalog Sync Error:', e);
+            queuePendingCatalogSync(payload);
+        }
+    }
+
+    function flushPendingCatalogSync() {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return Promise.resolve();
+        let queue = getPendingCatalogSyncQueue();
+        if (queue.length === 0) return Promise.resolve();
+        savePendingCatalogSyncQueue([]);
+        let remaining = [];
+        let attempts = queue.map(payload =>
+            postRecordToCloud(payload).catch(() => { remaining.push(payload); })
+        );
+        return Promise.all(attempts).then(() => {
+            if (remaining.length > 0) savePendingCatalogSyncQueue(remaining);
+        });
+    }
+
+    // Pulls the latest catalog from the cloud and merges it into the local
+    // catalog: for each barcode, whichever record has the more recent
+    // updatedAt wins (last-write-wins). Never blocks/throws on failure —
+    // same offline-tolerant behavior as the rest of cloud sync.
+    function pullCatalogFromCloud() {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return Promise.resolve();
+        let url = appSettings.cloudSyncUrl + (appSettings.cloudSyncUrl.indexOf('?') > -1 ? '&' : '?') + 'type=catalog';
+        return fetch(url, { method: 'GET' })
+            .then(res => res.json())
+            .then(data => {
+                let records = (data && data.records) || [];
+                mergeCatalogRecords(records);
+            })
+            .catch(err => {
+                console.error('Catalog Pull Error:', err);
+            });
+    }
+
+    function mergeCatalogRecords(records) {
+        if (!Array.isArray(records) || records.length === 0) return;
+        let catalog = getPosCatalog();
+        records.forEach(rec => {
+            if (!rec || !rec.barcode) return;
+            let existing = catalog[rec.barcode];
+            let incomingUpdatedAt = Number(rec.updatedAt) || 0;
+            let existingUpdatedAt = existing ? (Number(existing.updatedAt) || 0) : -1;
+            if (!existing || incomingUpdatedAt >= existingUpdatedAt) {
+                catalog[rec.barcode] = {
+                    barcode: rec.barcode,
+                    name: rec.name,
+                    mrp: rec.mrp,
+                    sellingPrice: rec.sellingPrice,
+                    discount: rec.discount,
+                    discountMode: rec.discountMode,
+                    updatedAt: incomingUpdatedAt
+                };
+            }
+        });
+        savePosCatalog(catalog);
+    }
+
+    // Runs at most once per app session (first Cash Bill open), to avoid
+    // excess network calls — see syncCatalogNow() for the manual trigger.
+    function maybePullCatalogOnce() {
+        if (catalogPulledThisSession) return;
+        catalogPulledThisSession = true;
+        pullCatalogFromCloud();
+    }
+
+    // "☁️ Sync Catalog Now" in Settings: flushes any queued catalog-item
+    // pushes, then pulls+merges the latest catalog from the cloud.
+    function syncCatalogNow() {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) {
+            alert('Turn on Cloud Sync and enter a Web App URL first.');
+            return;
+        }
+        let resultEl = document.getElementById('catalogSyncResult');
+        if (resultEl) { resultEl.style.color = '#475569'; resultEl.textContent = 'Syncing catalog…'; }
+        flushPendingCatalogSync().then(() => pullCatalogFromCloud()).then(() => {
+            if (resultEl) { resultEl.style.color = '#16a34a'; resultEl.textContent = 'Catalog synced.'; }
+        }).catch(() => {
+            if (resultEl) { resultEl.style.color = '#dc2626'; resultEl.textContent = 'Catalog sync had errors — will retry later.'; }
         });
     }
 
@@ -2133,9 +2269,9 @@
     }
 
     function openCashBillModal() {
+        maybePullCatalogOnce();
         cashBillPendingBarcode = '';
         document.getElementById('cbBarcodeInput').value = '';
-        document.getElementById('cbManualEntry').style.display = 'none';
         cbDiscountMode = localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹';
         updateDiscountModeBtn();
 
@@ -2170,6 +2306,7 @@
         }
         renderCashBillCart();
         document.getElementById('cashBillModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
         setTimeout(() => document.getElementById('cbBarcodeInput').focus(), 50);
     }
 
@@ -2208,16 +2345,58 @@
     }
 
     function updateCashBillDraftBanner() {
-        let banner = document.getElementById('cashBillDraftBanner');
-        if (!banner) return;
-        banner.style.display = loadCashBillDraft() ? 'flex' : 'none';
+        let badge = document.getElementById('cashBillDraftBadge');
+        if (!badge) return;
+        badge.style.display = loadCashBillDraft() ? 'block' : 'none';
+        if (!loadCashBillDraft()) hideCashBillDraftPopover();
+    }
+
+    // Clicking the Cash Bill button: if a draft exists, offer a small
+    // popover to Resume or Start New instead of silently opening either —
+    // otherwise (no draft) behave exactly as before and open a fresh bill.
+    function handleCashBillBtnClick() {
+        if (loadCashBillDraft()) {
+            toggleCashBillDraftPopover();
+        } else {
+            openCashBillModal();
+        }
+    }
+
+    function toggleCashBillDraftPopover() {
+        let pop = document.getElementById('cashBillDraftPopover');
+        if (!pop) return;
+        if (pop.style.display === 'none' || !pop.style.display) {
+            pop.style.display = 'block';
+            document.addEventListener('click', cbDraftPopoverOutsideClick, true);
+            document.addEventListener('keydown', cbDraftPopoverEscape, true);
+        } else {
+            hideCashBillDraftPopover();
+        }
+    }
+
+    function hideCashBillDraftPopover() {
+        let pop = document.getElementById('cashBillDraftPopover');
+        if (pop) pop.style.display = 'none';
+        document.removeEventListener('click', cbDraftPopoverOutsideClick, true);
+        document.removeEventListener('keydown', cbDraftPopoverEscape, true);
+    }
+
+    function cbDraftPopoverOutsideClick(e) {
+        let wrap = document.getElementById('cashBillBtnWrap');
+        if (wrap && !wrap.contains(e.target)) hideCashBillDraftPopover();
+    }
+
+    function cbDraftPopoverEscape(e) {
+        if (e.key === 'Escape') hideCashBillDraftPopover();
     }
 
     function resumeCashBillDraft() {
+        hideCashBillDraftPopover();
         openCashBillModal();
     }
 
     function discardCashBillDraft() {
+        hideCashBillDraftPopover();
         clearCashBillDraft();
         updateCashBillDraftBanner();
     }
@@ -2230,21 +2409,6 @@
         let showing = box.style.display === 'grid';
         box.style.display = showing ? 'none' : 'grid';
         btn.textContent = showing ? '+ Customer' : '− Customer';
-    }
-
-    // MRP -> Selling Price auto-copy: as soon as the cashier types an MRP,
-    // the Selling Price is pre-filled with the same number (ready to be
-    // overwritten with the actual selling price) — but only while Selling
-    // Price is still empty or still holding a value WE auto-filled; once the
-    // cashier edits Selling Price by hand (see the oninput on that field),
-    // further MRP changes stop clobbering it.
-    function onCbMrpInput() {
-        let mrpEl = document.getElementById('cbMrp');
-        let spEl = document.getElementById('cbSellingPrice');
-        if (!spEl.value || spEl.dataset.autoFilled === 'true') {
-            spEl.value = mrpEl.value;
-            spEl.dataset.autoFilled = 'true';
-        }
     }
 
     // % <-> ₹ toggle for the Discount field, remembered on this device so
@@ -2263,6 +2427,7 @@
     function closeCashBillModal() {
         saveCashBillDraft();
         document.getElementById('cashBillModal').style.display = 'none';
+        document.body.style.overflow = '';
     }
 
     function clearCashBillDraft() {
@@ -2272,19 +2437,23 @@
 
     // Enter in the barcode field is what a hardware barcode scanner sends
     // right after the code itself, so this is the normal "scan" path — no
-    // clicking required. Either way (known or new barcode) the item's
-    // details are shown in the fields below so the cashier can check the
-    // quantity (and, for a brand-new item, fill it in) before adding it.
+    // clicking required. A known barcode/name is pushed straight into the
+    // cart with its remembered values and the barcode input is refocused
+    // immediately. A brand-new item is pushed with qty 1 / discount 0 /
+    // sellingPrice = mrp (0 initially) and, after render, focus moves to
+    // that new row's Item Name cell so the cashier can type the name in
+    // right away — the barcode input is only refocused once that name is
+    // committed (see cbCommitNewItemName below).
     function handleBarcodeKey(event) {
         if (event.key !== 'Enter') return;
         event.preventDefault();
-        let code = document.getElementById('cbBarcodeInput').value.trim();
+        let barcodeEl = document.getElementById('cbBarcodeInput');
+        let code = barcodeEl.value.trim();
         if (!code) return;
 
-        cashBillPendingBarcode = code;
         let catalog = getPosCatalog();
         let known = catalog[code];
-        let matchedByName = false;
+        let lookupKey = code;
 
         // If it's not a known barcode key, the cashier may have typed an
         // item NAME instead of scanning a barcode — check the catalog's
@@ -2293,65 +2462,102 @@
             let nameMatchKey = Object.keys(catalog).find(k => (catalog[k].name || '').toLowerCase() === code.toLowerCase());
             if (nameMatchKey) {
                 known = catalog[nameMatchKey];
-                matchedByName = true;
-                cashBillPendingBarcode = nameMatchKey; // keep the real barcode as the lookup/remember key
+                lookupKey = nameMatchKey; // keep the real barcode as the lookup/remember key
             }
         }
 
-        document.getElementById('cbEntryHeading').textContent = known
-            ? 'Billed before — details filled in automatically. Check qty and add.'
-            : 'New item — fill in once, remembered for next time';
-        document.getElementById('cbItemName').value = known ? known.name : code;
-        document.getElementById('cbMrp').value = known ? known.mrp : '';
-        document.getElementById('cbSellingPrice').value = known ? known.sellingPrice : '';
-        document.getElementById('cbSellingPrice').dataset.autoFilled = 'false';
-        document.getElementById('cbDiscount').value = known ? (known.discount || 0) : '';
-        cbDiscountMode = known ? (known.discountMode || '₹') : (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹');
-        updateDiscountModeBtn();
-        document.getElementById('cbQty').value = 1;
-        document.getElementById('cbManualEntry').style.display = 'flex';
+        let item = known
+            ? { barcode: lookupKey, name: known.name, mrp: known.mrp, sellingPrice: known.sellingPrice, discount: known.discount || 0, discountMode: known.discountMode || '₹', qty: 1 }
+            : { barcode: code, name: code, mrp: 0, sellingPrice: 0, discount: 0, discountMode: (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹'), qty: 1, isNew: true };
+
+        cashBillCart.push(item);
+        let newIndex = cashBillCart.length - 1;
+        renderCashBillCart();
 
         if (known) {
-            // Known item — details are already filled in, so jump straight
-            // to Qty for a quick check before adding.
-            document.getElementById('cbQty').focus();
-            document.getElementById('cbQty').select();
+            barcodeEl.value = '';
+            barcodeEl.focus();
         } else {
-            document.getElementById('cbItemName').focus();
+            barcodeEl.value = '';
+            let nameInput = document.querySelector('#cbCartBody tr[data-cart-index="' + newIndex + '"] .cb-name-input');
+            if (nameInput) { nameInput.focus(); nameInput.select(); }
         }
     }
 
-    function addCashBillItem() {
-        let name = document.getElementById('cbItemName').value.trim();
-        let mrp = Number(document.getElementById('cbMrp').value) || 0;
-        let sellingPrice = Number(document.getElementById('cbSellingPrice').value) || 0;
-        let discount = Number(document.getElementById('cbDiscount').value) || 0;
-        let qty = Number(document.getElementById('cbQty').value) || 1;
-
-        if (!name) { alert('Enter an item name.'); return; }
-        if (sellingPrice <= 0) { alert('Enter a Selling Price greater than 0.'); return; }
-
-        let barcode = cashBillPendingBarcode || '';
-        // Remember it (or update what's remembered) so the next scan of this
-        // same barcode fills in every field automatically — only barcoded
-        // items are worth remembering, since there's no lookup key otherwise.
-        if (barcode) {
+    // Pressing Enter in a brand-new row's Item Name cell commits the name:
+    // updates cashBillCart, remembers it in the catalog under this barcode
+    // (matching the existing remember-for-next-time behavior), clears the
+    // "isNew" flag, and returns focus to the barcode input for the next scan.
+    function cbCommitNewItemName(event, index) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        let item = cashBillCart[index];
+        if (!item) return;
+        let name = (event.target.value || '').trim();
+        item.name = name;
+        if (item.barcode && name) {
             let catalog = getPosCatalog();
-            catalog[barcode] = { barcode, name, mrp, sellingPrice, discount, discountMode: cbDiscountMode };
+            catalog[item.barcode] = { barcode: item.barcode, name: item.name, mrp: item.mrp, sellingPrice: item.sellingPrice, discount: item.discount, discountMode: item.discountMode };
             savePosCatalog(catalog);
         }
-
-        addToCashBillCart({ barcode, name, mrp, sellingPrice, discount, discountMode: cbDiscountMode, qty });
-
-        cashBillPendingBarcode = '';
-        document.getElementById('cbManualEntry').style.display = 'none';
-        document.getElementById('cbBarcodeInput').value = '';
-        document.getElementById('cbSellingPrice').dataset.autoFilled = 'false';
-        document.getElementById('cbBarcodeInput').focus();
+        delete item.isNew;
+        renderCashBillCart();
+        let barcodeEl = document.getElementById('cbBarcodeInput');
+        if (barcodeEl) barcodeEl.focus();
     }
 
-    function addToCashBillCart(item) {
-        cashBillCart.push(item);
+    // Re-saves a barcoded row's current values into the catalog, same as
+    // the old form's "remember for next time" behavior — called after every
+    // inline edit to a row that has a barcode, so a later scan of that same
+    // barcode picks up whatever was last corrected here, not just what was
+    // true at the moment the name was first typed in.
+    function cbRememberItem(item) {
+        if (!item || !item.barcode || item.isNew) return;
+        let catalog = getPosCatalog();
+        let entry = { barcode: item.barcode, name: item.name, mrp: item.mrp, sellingPrice: item.sellingPrice, discount: item.discount, discountMode: item.discountMode, updatedAt: Date.now() };
+        catalog[item.barcode] = entry;
+        savePosCatalog(catalog);
+        syncCatalogItemToCloud(entry);
+    }
+
+    function cbUpdateItemField(index, field, value) {
+        let item = cashBillCart[index];
+        if (!item) return;
+        item[field] = value;
+        cbRememberItem(item);
+        renderCashBillCart();
+    }
+
+    // MRP -> Selling Price resync: editing MRP re-syncs Selling Price to the
+    // same value. Simpler than tracking a per-row "manually diverged" flag
+    // (the old single-form auto-fill semantics used a dataset flag that
+    // doesn't map cleanly onto N independent table rows), and matches the
+    // common case — MRP correction should usually carry Selling Price with
+    // it unless the cashier then edits Selling Price separately afterward.
+    function cbUpdateMrp(index, value) {
+        let item = cashBillCart[index];
+        if (!item) return;
+        let mrp = Number(value) || 0;
+        let wasSynced = Number(item.sellingPrice || 0) === Number(item.mrp || 0);
+        item.mrp = mrp;
+        if (wasSynced) item.sellingPrice = mrp;
+        cbRememberItem(item);
+        renderCashBillCart();
+    }
+
+    function cbChangeQty(index, delta) {
+        let item = cashBillCart[index];
+        if (!item) return;
+        let newQty = (Number(item.qty) || 1) + delta;
+        item.qty = Math.max(1, newQty);
+        renderCashBillCart();
+    }
+
+    function cbToggleRowDiscountMode(index) {
+        let item = cashBillCart[index];
+        if (!item) return;
+        item.discountMode = (item.discountMode === '%') ? '₹' : '%';
+        cbRememberItem(item);
         renderCashBillCart();
     }
 
@@ -2379,19 +2585,66 @@
         return (item.discountMode || '₹') === '%' ? item.discount + '%' : '₹' + item.discount;
     }
 
+    // ---- THERMAL RECEIPT / PREVIEW COLUMN TABLE -----------------------------
+    // Fixed-width, monospace column layout (ITEM / QTY / MRP / DISC / TOTAL)
+    // sized for an 80mm thermal printer (~32-34 usable characters at this
+    // font size). Used by both the on-screen live preview and the printed
+    // receipt so what the cashier sees while entering matches what prints.
+    function cbPadR(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length); }
+    function cbPadL(s, n) { s = String(s); return s.length >= n ? s.slice(-n) : ' '.repeat(n - s.length) + s; }
+
+    // Per-line discount amount for the receipt's DISC column — reuses the
+    // same per-unit discount helper as the cart table so the receipt always
+    // matches what's shown while entering the bill. "—" for no discount,
+    // consistent with the on-screen cart table.
+    function cashBillReceiptDiscCell(item) {
+        return item.discount ? cashBillDiscountLabel(item) : '—';
+    }
+
+    function cashBillItemsTableLines(items, draftLine) {
+        let lines = [];
+        lines.push(cbPadR('ITEM', 12) + cbPadL('QTY', 4) + cbPadL('MRP', 6) + cbPadL('DISC', 6) + cbPadL('TOTAL', 7));
+        lines.push('-'.repeat(35));
+        if (items.length === 0 && !draftLine) {
+            lines.push('No items yet');
+            return lines;
+        }
+        items.forEach(item => {
+            lines.push(cbPadR(item.name, 12) + cbPadL(item.qty, 4) + cbPadL(item.mrp, 6) + cbPadL(cashBillReceiptDiscCell(item), 6) + cbPadL(cashBillLineTotal(item), 7));
+        });
+        if (draftLine) lines.push(draftLine);
+        return lines;
+    }
+
     function renderCashBillCart() {
         let tbody = document.getElementById('cbCartBody');
         if (cashBillCart.length === 0) {
-            tbody.innerHTML = '<tr id="cbCartEmptyRow"><td colspan="6" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>';
+            tbody.innerHTML = '<tr id="cbCartEmptyRow"><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>';
         } else {
             tbody.innerHTML = cashBillCart.map((item, i) => `
-                <tr>
-                    <td style="padding:6px 8px;">${item.name}</td>
-                    <td style="text-align:center; padding:6px 8px;">${item.qty}</td>
-                    <td style="text-align:right; padding:6px 8px; font-family:'JetBrains Mono';">₹${item.sellingPrice}</td>
-                    <td style="text-align:right; padding:6px 8px; font-family:'JetBrains Mono';">${cashBillDiscountLabel(item)}</td>
-                    <td style="text-align:right; padding:6px 8px; font-family:'JetBrains Mono'; font-weight:700;">₹${cashBillLineTotal(item)}</td>
-                    <td style="text-align:center;"><button class="btn-del" style="width:20px; height:20px; font-size:10px;" onclick="removeCashBillItem(${i})">✕</button></td>
+                <tr data-cart-index="${i}">
+                    <td class="cb-cell-num">${i + 1}</td>
+                    <td class="cb-cell-name">${item.isNew
+                        ? `<input type="text" class="cb-cell-input cb-name-input" data-role="name" data-cart-index="${i}" value="${(item.name || '').replace(/"/g, '&quot;')}" placeholder="Item name..." onkeydown="cbCommitNewItemName(event, ${i})" onchange="cbUpdateItemField(${i}, 'name', this.value)">`
+                        : `<input type="text" class="cb-cell-input cb-name-input" data-role="name" data-cart-index="${i}" value="${(item.name || '').replace(/"/g, '&quot;')}" onchange="cbUpdateItemField(${i}, 'name', this.value)">`}
+                    </td>
+                    <td>
+                        <div class="cb-qty-stepper">
+                            <button type="button" class="cb-step-btn" data-role="qty-dec" data-cart-index="${i}" onclick="cbChangeQty(${i}, -1)">−</button>
+                            <input type="number" class="cb-cell-input cb-qty-input" data-role="qty" data-cart-index="${i}" min="1" value="${item.qty || 1}" onchange="cbUpdateItemField(${i}, 'qty', Math.max(1, Number(this.value)||1))">
+                            <button type="button" class="cb-step-btn" data-role="qty-inc" data-cart-index="${i}" onclick="cbChangeQty(${i}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td style="text-align:right;"><input type="number" class="cb-cell-input cb-num-input" data-role="mrp" data-cart-index="${i}" value="${item.mrp || 0}" onchange="cbUpdateMrp(${i}, this.value)"></td>
+                    <td style="text-align:right;"><input type="number" class="cb-cell-input cb-num-input" data-role="sellingPrice" data-cart-index="${i}" value="${item.sellingPrice || 0}" onchange="cbUpdateItemField(${i}, 'sellingPrice', Number(this.value)||0)"></td>
+                    <td style="text-align:right;">
+                        <div class="cb-discount-cell">
+                            <button type="button" class="cb-disc-toggle" data-role="discount-mode" data-cart-index="${i}" onclick="cbToggleRowDiscountMode(${i})">${item.discountMode || '₹'}</button>
+                            <input type="number" class="cb-cell-input cb-num-input" data-role="discount" data-cart-index="${i}" value="${item.discount || 0}" onchange="cbUpdateItemField(${i}, 'discount', Number(this.value)||0)">
+                        </div>
+                    </td>
+                    <td style="text-align:right; font-weight:700; font-family:'JetBrains Mono';" data-role="net-amount" data-cart-index="${i}">₹${cashBillLineTotal(item)}</td>
+                    <td style="text-align:center;"><button type="button" class="cb-row-remove" data-role="remove" data-cart-index="${i}" title="Remove this item" onclick="removeCashBillItem(${i})">✕</button></td>
                 </tr>`).join('');
         }
         let cartTotal = cashBillCart.reduce((s, item) => s + cashBillLineTotal(item), 0);
@@ -2425,12 +2678,13 @@
         let paymentModeEl = document.getElementById('cbPaymentMode');
         let paymentMode = paymentModeEl ? paymentModeEl.value : 'Cash';
         let cartTotal = cashBillCart.reduce((s, item) => s + cashBillLineTotal(item), 0);
-        let rows = cashBillCart.length === 0
-            ? '<div style="text-align:center; color:#94a3b8; padding:10px 0;">No items yet</div>'
-            : cashBillCart.map(item => `
-                <div style="display:flex; justify-content:space-between; margin:2px 0;"><span>${item.name} x${item.qty}</span><span>₹${cashBillLineTotal(item)}</span></div>
-                ${item.discount ? `<div style="display:flex; justify-content:space-between; font-size:9px; color:#666;"><span>&nbsp;&nbsp;(MRP ₹${item.mrp}, ${cashBillDiscountLabel(item)} off)</span><span></span></div>` : ''}`
-            ).join('');
+        let draftLine = '';
+        let tableLines = cashBillItemsTableLines(cashBillCart, draftLine);
+        let rows = '<pre style="margin:0; font-family:\'JetBrains Mono\',monospace; font-size:10.5px; line-height:1.5; white-space:pre;">' +
+            tableLines.map(line => (draftLine && line === draftLine)
+                ? `<span style="border:1px dashed #94a3b8; display:block; padding:1px 2px; color:#0369a1;">${line}</span>`
+                : line
+            ).join('\n') + '</pre>';
         let custNameEl = document.getElementById('cbCustomerName');
         let custNumEl = document.getElementById('cbCustomerNumber');
         let custName = custNameEl ? custNameEl.value.trim() : '';
@@ -2498,10 +2752,23 @@
         return n;
     }
 
+    function clearCbSalesmanError() {
+        let errEl = document.getElementById('cbSalesmanNameError');
+        if (errEl) errEl.style.display = 'none';
+    }
+
     function submitCashBill() {
         if (cashBillCart.length === 0) { alert('Add at least one item before submitting.'); return; }
 
-        let salesman = document.getElementById('cbSalesmanName').value.trim();
+        let salesmanField = document.getElementById('cbSalesmanName');
+        let salesman = salesmanField.value.trim();
+        if (!salesman) {
+            let errEl = document.getElementById('cbSalesmanNameError');
+            if (errEl) errEl.style.display = 'block';
+            salesmanField.focus();
+            return;
+        }
+        clearCbSalesmanError();
         let paymentMode = document.getElementById('cbPaymentMode').value;
 
         // Remembered for next time, same as every product — the next bill
@@ -2553,15 +2820,14 @@
         cashBillCart = [];
         clearCashBillDraft();
         document.getElementById('cashBillModal').style.display = 'none';
+        document.body.style.overflow = '';
     }
 
     function printCashBillReceipt(billNo, items, cartTotal, salesman, paymentMode, extra) {
         extra = extra || {};
         let branch = document.getElementById('branchLocation').value;
-        let rows = items.map(item => `
-            <div class="row"><span>${item.name} x${item.qty}</span><span>₹${cashBillLineTotal(item)}</span></div>
-            ${item.discount ? `<div class="row" style="font-size:9px; color:#444;"><span>&nbsp;&nbsp;(MRP ₹${item.mrp}, ${cashBillDiscountLabel(item)} off)</span><span></span></div>` : ''}`
-        ).join('');
+        let tableLines = cashBillItemsTableLines(items, '');
+        let rows = `<pre class="items-table">${tableLines.join('\n')}</pre>`;
 
         let logoSrc = appSettings.businessLogo || '';
         let businessName = (appSettings.businessName || 'Lalitha Naturals').toUpperCase();
@@ -2593,6 +2859,7 @@
                     .line { border-bottom: 1px dashed #000; margin: 6px 0; }
                     .row { display: flex; justify-content: space-between; margin: 3px 0; }
                     .receipt-logo { filter: grayscale(100%) contrast(1.15); }
+                    .items-table { margin: 4px 0; font-size: 10.5px; line-height: 1.5; white-space: pre; }
                 </style>
             </head>
             <body>
@@ -2633,6 +2900,11 @@
         if (!bill) {
             body.innerHTML = `<p>No itemized detail found for Cash Bill #${billNo} (it may have been billed before this feature was added).</p>`;
         } else {
+            let deletedBanner = bill.deleted
+                ? `<p style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:8px; font-size:12px; margin:0 0 8px;">
+                     ⚠️ This bill was deleted${bill.deletedAt ? ' on ' + new Date(bill.deletedAt).toLocaleString('en-IN') : ''}.<br>
+                     Reason: ${bill.deletedReason || '—'}
+                   </p>` : '';
             let rows = (bill.items || []).map(item => `
                 <tr>
                     <td style="padding:4px 6px;">${item.name}</td>
@@ -2642,6 +2914,7 @@
                     <td style="text-align:right; padding:4px 6px; font-family:'JetBrains Mono'; font-weight:700;">₹${item.total}</td>
                 </tr>`).join('');
             body.innerHTML = `
+                ${deletedBanner}
                 <p style="font-size:12px; margin:0 0 8px;">Salesman: <strong>${bill.salesman || '—'}</strong> · Payment: <strong>${bill.paymentMode}</strong> · ${bill.date ? new Date(bill.date).toLocaleString('en-IN') : ''}</p>
                 <table style="width:100%; border-collapse:collapse; font-size:12px; border:1px solid var(--border);">
                     <thead><tr style="background:var(--header-bg);"><th style="text-align:left; padding:4px 6px;">Item</th><th style="padding:4px 6px;">Qty</th><th style="text-align:right; padding:4px 6px;">Price</th><th style="text-align:right; padding:4px 6px;">Disc</th><th style="text-align:right; padding:4px 6px;">Total</th></tr></thead>
@@ -2761,11 +3034,28 @@
             if (entered === null) return;
             if (entered !== appSettings.ownerPassword) { alert('Incorrect password. Not deleted.'); return; }
         }
-        if (!confirm(`Delete Cash Bill #${billNo} and remove it from Unbilled Sell? This cannot be undone.`)) return;
+        // Deletion is no longer silent: a mandatory explanatory note (10+
+        // characters, trimmed) is required before the delete proceeds, and
+        // the itemized record is marked deleted (with the reason) rather
+        // than erased outright, so there's a permanent audit trail.
+        let reason = prompt(`Reason for deleting Cash Bill #${billNo} (required, at least 10 characters):`);
+        if (reason === null) return;
+        if (reason.trim().length < 10) {
+            alert('Deletion cancelled: reason must be at least 10 characters.');
+            return;
+        }
+        reason = reason.trim();
 
         let allBillItems = {};
         try { allBillItems = JSON.parse(localStorage.getItem(CASH_BILL_ITEMS_KEY) || '{}'); } catch (e) {}
-        delete allBillItems[billNo];
+        let originalRecord = allBillItems[billNo];
+        if (originalRecord) {
+            allBillItems[billNo] = Object.assign({}, originalRecord, {
+                deleted: true,
+                deletedReason: reason,
+                deletedAt: Date.now()
+            });
+        }
         localStorage.setItem(CASH_BILL_ITEMS_KEY, JSON.stringify(allBillItems));
 
         tr.remove();
