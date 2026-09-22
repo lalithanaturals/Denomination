@@ -25,6 +25,105 @@
             --muted: #475569;
             --header-bg: #f1f5f9;
         }
+        /* Dark mode: overrides the same CSS variables the rest of the sheet
+           already uses, so every existing rule (backgrounds, borders, table
+           stripes, modals) picks it up automatically with no per-rule changes. */
+        html[data-theme="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --border-focus: #818cf8;
+            --primary: #f1f5f9;
+            --accent: #818cf8;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --header-bg: #273449;
+        }
+        html[data-theme="dark"] body, html[data-theme="dark"] {
+            background-color: var(--bg);
+        }
+        html[data-theme="dark"] input[type="number"],
+        html[data-theme="dark"] input[type="text"],
+        html[data-theme="dark"] input[type="date"],
+        html[data-theme="dark"] input[type="month"],
+        html[data-theme="dark"] input[type="password"],
+        html[data-theme="dark"] select,
+        html[data-theme="dark"] textarea { background: #0f172a; color: var(--primary); color-scheme: dark; }
+        html[data-theme="dark"] input:focus { background: #1e2c4a !important; }
+        html[data-theme="dark"] tr:hover { background-color: #24324a; }
+        html[data-theme="dark"] .audit-table tr:hover { background-color: #24324a; }
+        html[data-theme="dark"] .dropdown-menu { background: #1e293b; }
+        html[data-theme="dark"] .dropdown-menu button { color: var(--text); }
+        html[data-theme="dark"] .dropdown-menu button:hover { background: #273449; }
+        html[data-theme="dark"] .audit-table th { background: #1e293b; color: var(--text); }
+        html[data-theme="dark"] .search-filter-bar input,
+        html[data-theme="dark"] .search-filter-bar select { background: #0f172a; color: var(--text); }
+        /* Placeholder text has no rule anywhere in this sheet, so it was
+           falling back to each browser's own default placeholder color
+           (tuned for light backgrounds) and became unreadable once inputs
+           turned dark. Give both themes an explicit, clearly-muted but
+           legible placeholder color. */
+        input::placeholder, textarea::placeholder { color: #94a3b8; opacity: 1; }
+        html[data-theme="dark"] input::placeholder,
+        html[data-theme="dark"] textarea::placeholder { color: #7c8aa5; opacity: 1; }
+        /* Report-table rows that tint their own background inline (variance
+           history sign colors, over-threshold highlight in the archive
+           report) don't set a text color on every cell, so those cells were
+           inheriting the theme's light body text color onto a light inline
+           background and disappearing. Force readable dark text on those
+           tinted rows specifically; cells that set their own color inline
+           (the amount/variance figures) already win over this. */
+        html[data-theme="dark"] .audit-table tr[style*="#fef2f2"],
+        html[data-theme="dark"] .audit-table tr[style*="#dcfce7"],
+        html[data-theme="dark"] .audit-table tr[style*="#fee2e2"],
+        html[data-theme="dark"] .audit-table tr[style*="#fef3c7"] { color: #0f172a; }
+        /* The sign-highlight background tints (negative/zero/positive) are
+           fixed light pastels that don't change with theme; on the dark
+           background they read as slightly washed out, so darken/saturate
+           them a touch in dark mode while keeping the same forced text
+           colors for contrast. */
+        html[data-theme="dark"] .summary-row.sign-negative { background: #4b1113; }
+        html[data-theme="dark"] .summary-row.sign-negative span,
+        html[data-theme="dark"] .summary-row.sign-negative strong { color: #f87171 !important; }
+        html[data-theme="dark"] .summary-row.sign-zero { background: #0f3320; }
+        html[data-theme="dark"] .summary-row.sign-zero span,
+        html[data-theme="dark"] .summary-row.sign-zero strong { color: #4ade80 !important; }
+        html[data-theme="dark"] .summary-row.sign-positive { background: #0f2350; }
+        html[data-theme="dark"] .summary-row.sign-positive span,
+        html[data-theme="dark"] .summary-row.sign-positive strong { color: #60a5fa !important; }
+        #themeToggleBtn { font-size: 16px; line-height: 1; }
+        /* Printed output must always stay light/white regardless of the
+           on-screen theme, so print-relevant containers get the light
+           variable values forced back on, scoped to the print media only. */
+        @media print {
+            html[data-theme="dark"] {
+                --bg: #f8fafc; --card: #ffffff; --border: #cbd5e1; --border-focus: #4f46e5;
+                --primary: #0f172a; --accent: #4f46e5; --text: #1e293b; --muted: #475569;
+                --header-bg: #f1f5f9;
+            }
+            html[data-theme="dark"] input[type="number"],
+            html[data-theme="dark"] input[type="text"],
+            html[data-theme="dark"] input[type="date"],
+            html[data-theme="dark"] input[type="month"],
+            html[data-theme="dark"] input[type="password"],
+            html[data-theme="dark"] select,
+            html[data-theme="dark"] textarea { background: #ffffff; color: #0f172a; color-scheme: light; }
+            html[data-theme="dark"] input::placeholder,
+            html[data-theme="dark"] textarea::placeholder { color: #94a3b8; }
+            html[data-theme="dark"] .audit-table tr[style*="#fef2f2"],
+            html[data-theme="dark"] .audit-table tr[style*="#dcfce7"],
+            html[data-theme="dark"] .audit-table tr[style*="#fee2e2"],
+            html[data-theme="dark"] .audit-table tr[style*="#fef3c7"] { color: #0f172a; }
+            html[data-theme="dark"] .summary-row.sign-negative { background: #fee2e2; }
+            html[data-theme="dark"] .summary-row.sign-negative span,
+            html[data-theme="dark"] .summary-row.sign-negative strong { color: #dc2626 !important; }
+            html[data-theme="dark"] .summary-row.sign-zero { background: #dcfce7; }
+            html[data-theme="dark"] .summary-row.sign-zero span,
+            html[data-theme="dark"] .summary-row.sign-zero strong { color: #16a34a !important; }
+            html[data-theme="dark"] .summary-row.sign-positive { background: #dbeafe; }
+            html[data-theme="dark"] .summary-row.sign-positive span,
+            html[data-theme="dark"] .summary-row.sign-positive strong { color: #2563eb !important; }
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html {
             width: 100%;
@@ -97,19 +196,30 @@
         .table-scroll { overflow-y: auto; max-height: calc(100vh - 280px); flex-grow: 1; }
 
         /* Summary Card Column */
-        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; overflow-y: auto; }
-        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border-bottom: 1px dashed var(--border); font-weight: 600; }
-        .summary-row.bold { font-weight: 700; color: var(--primary); font-size: 12.5px; }
+        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 5px; font-size: 15.5px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; overflow-y: auto; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 6px; border-bottom: 1px dashed var(--border); font-weight: 700; gap: 6px; }
+        .summary-row span, .summary-row strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .summary-row.bold { font-weight: 800; color: var(--primary); font-size: 16.5px; }
+        /* Tally/Total sign-coloring (task: red = negative/shortage, green =
+           zero/tallied, blue = positive/surplus) — a background tint on the
+           whole row plus bold colored text so the state reads at a glance,
+           not just from a small colored number. */
+        .summary-row.sign-negative { background: #fee2e2; border-radius: 6px; }
+        .summary-row.sign-negative span, .summary-row.sign-negative strong { color: #dc2626 !important; font-weight: 800; }
+        .summary-row.sign-zero { background: #dcfce7; border-radius: 6px; }
+        .summary-row.sign-zero span, .summary-row.sign-zero strong { color: #16a34a !important; font-weight: 800; }
+        .summary-row.sign-positive { background: #dbeafe; border-radius: 6px; }
+        .summary-row.sign-positive span, .summary-row.sign-positive strong { color: #2563eb !important; font-weight: 800; }
 
         /* Notes Input Area */
         .notes-box { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
-        .notes-box label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-        .notes-box textarea { border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; resize: none; height: 40px; background: #fff; color: var(--primary); outline: none; }
+        .notes-box label { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+        .notes-box textarea { border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15.5px; resize: none; height: 48px; background: #fff; color: var(--primary); outline: none; }
         .notes-box textarea:focus { border-color: var(--border-focus); background: #eef2ff; }
 
         .grand-display { background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); border: 2px solid #eab308; padding: 6px; text-align: center; border-radius: 8px; margin-top: auto; flex-shrink: 0; }
-        .grand-display span { display: block; font-size: 9px; color: #713f12; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-        .grand-display strong { font-size: 16px; color: #713f12; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+        .grand-display span { display: block; font-size: 11px; color: #713f12; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .grand-display strong { font-size: 22px; color: #713f12; font-family: 'JetBrains Mono', monospace; font-weight: 800; }
 
         .btn-mini { background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 700; }
         .btn-mini:hover { background: #e0e7ff; }
@@ -237,37 +347,60 @@
         .print-opt-card.whatsapp-opt { background: #f0fdf4; border-color: #bbf7d0; color: #16a34a; grid-column: span 2; }
         .print-opt-card.whatsapp-opt:hover { background: #dcfce7; border-color: #22c55e; }
 
-        /* A4 LANDSCAPE EXPORT CONTAINER FIXED ALIGNMENTS */
+        /* A4 LANDSCAPE EXPORT CONTAINER FIXED ALIGNMENTS
+           Font sizes bumped and padding/gaps tightened for WhatsApp
+           readability — the report is shared as an image/PDF and small
+           print was hard to read on a phone screen. */
         #a4ExportContainer {
             position: fixed; top: -9999px; left: -9999px; width: 1754px; height: 1240px;
-            background: #ffffff; padding: 30px; font-family: 'Plus Jakarta Sans', sans-serif;
-            display: flex; flex-direction: column; gap: 15px; color: #1e293b; box-sizing: border-box;
+            background: #f8fafc; padding: 20px; font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex; flex-direction: column; gap: 12px; color: #1e293b; box-sizing: border-box;
         }
+        /* Header band: a single bold gradient bar carrying business identity +
+           report title + the date/branch/cashier meta, so the printed sheet
+           reads top-down like a designed document instead of a plain table. */
         #a4ExportContainer .sheet-header {
-            background: #ffffff; border: 3px solid #0f172a; border-radius: 10px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff;
+            border: none; border-radius: 12px; padding: 14px 26px; display: flex;
+            justify-content: space-between; align-items: center; flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(15,23,42,0.25);
         }
-        #a4ExportContainer .sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; flex-grow: 1; align-items: stretch; height: calc(1240px - 140px); overflow: hidden; }
-        #a4ExportContainer .sheet-section { background: #ffffff; border: 2px solid #0f172a; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; height: 100%; justify-content: space-between; }
-        #a4ExportContainer .section-header { background: #0f172a; color: white; font-size: 16px; font-weight: 800; text-transform: uppercase; padding: 12px 15px; flex-shrink: 0; }
+        #a4ExportContainer .sheet-header img#a4LogoImg { filter: brightness(0) invert(1); }
+        #a4ExportContainer .sheet-header .report-kicker { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-top: 6px; }
+        #a4ExportContainer .sheet-header .report-badge { background: rgba(255,255,255,0.12); color: #fff; border: 2px solid rgba(255,255,255,0.35); padding: 8px 20px; font-weight: 800; font-size: 20px; text-transform: uppercase; border-radius: 8px; letter-spacing: 0.5px; }
+        #a4ExportContainer .sheet-header .report-meta { display: flex; gap: 14px; font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        #a4ExportContainer .sheet-header .report-meta > div { background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; }
+        #a4ExportContainer .sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; flex-grow: 1; align-items: stretch; height: calc(1240px - 116px); overflow: hidden; }
+        #a4ExportContainer .sheet-section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; height: 100%; justify-content: space-between; box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
+        #a4ExportContainer .section-header { background: #0f172a; color: white; font-size: 18px; font-weight: 800; text-transform: uppercase; padding: 10px 14px; flex-shrink: 0; letter-spacing: 0.3px; display: flex; align-items: center; gap: 8px; }
+        #a4ExportContainer .section-header::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.85); flex-shrink: 0; }
         #a4ExportContainer .section-header.owner-header { background: #7c3aed; }
         /* Match the printed sheet's section colors to the on-screen ones so the
            A4 report reads the same way staff already recognize it on screen. */
         #a4ExportContainer .section-header.header-blue { background: #2563eb; }
         #a4ExportContainer .section-header.header-amber { background: #d97706; }
         #a4ExportContainer .section-header.header-rose { background: #dc2626; }
-        #a4ExportContainer .sheet-section.accent-blue { border-color: #2563eb; }
-        #a4ExportContainer .sheet-section.accent-amber { border-color: #d97706; }
-        #a4ExportContainer .sheet-section.accent-rose { border-color: #dc2626; }
-        #a4ExportContainer .sheet-section.accent-purple { border-color: #7c3aed; }
-        #a4ExportContainer .summary-card.accent-green { border-color: #16a34a; }
-        #a4ExportContainer .sub-header { background: #f1f5f9; font-size: 14px; font-weight: 800; color: #334155; padding: 10px 14px; border-bottom: 2px solid #cbd5e1; display: flex; justify-content: space-between; text-transform: uppercase; flex-shrink: 0; }
+        #a4ExportContainer .sheet-section.accent-blue { border-top: 4px solid #2563eb; }
+        #a4ExportContainer .sheet-section.accent-amber { border-top: 4px solid #d97706; }
+        #a4ExportContainer .sheet-section.accent-rose { border-top: 4px solid #dc2626; }
+        #a4ExportContainer .sheet-section.accent-purple { border-top: 4px solid #7c3aed; }
+        #a4ExportContainer .summary-card.accent-green { border-top: 4px solid #16a34a; }
+        #a4ExportContainer .sub-header { background: #f1f5f9; font-size: 16px; font-weight: 800; color: #334155; padding: 8px 14px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; text-transform: uppercase; flex-shrink: 0; }
         #a4ExportContainer table { width: 100%; border-collapse: collapse; }
-        #a4ExportContainer th, #a4ExportContainer td { padding: 9px 12px; border-bottom: 1px solid #cbd5e1; font-size: 15px; font-weight: 600; }
-        #a4ExportContainer .cell-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; font-size: 16px; }
-        #a4ExportContainer .summary-card { background: #ffffff; border: 2px solid #0f172a; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; height: 100%; justify-content: space-between; }
-        #a4ExportContainer .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px dashed #cbd5e1; font-weight: 700; }
-        #a4ExportContainer .summary-row.bold { font-weight: 800; color: #0f172a; font-size: 16px; }
-        #a4ExportContainer .grand-display { background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); border: 3px solid #eab308; padding: 12px; text-align: center; border-radius: 8px; flex-shrink: 0; }
+        #a4ExportContainer tr:nth-child(even) td { background: #f8fafc; }
+        #a4ExportContainer th, #a4ExportContainer td { padding: 6px 12px; border-bottom: 1px solid #eef2f6; font-size: 17px; font-weight: 600; }
+        #a4ExportContainer .cell-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; font-size: 18px; }
+        #a4ExportContainer .summary-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 5px; font-size: 18px; height: 100%; justify-content: space-between; box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
+        #a4ExportContainer .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 700; border-radius: 4px; }
+        #a4ExportContainer .summary-row.bold { font-weight: 800; color: #0f172a; font-size: 19px; background: #f1f5f9; }
+        #a4ExportContainer .summary-row.sign-negative { background: #fee2e2 !important; }
+        #a4ExportContainer .summary-row.sign-negative span, #a4ExportContainer .summary-row.sign-negative strong { color: #dc2626 !important; }
+        #a4ExportContainer .summary-row.sign-zero { background: #dcfce7 !important; }
+        #a4ExportContainer .summary-row.sign-zero span, #a4ExportContainer .summary-row.sign-zero strong { color: #16a34a !important; }
+        #a4ExportContainer .summary-row.sign-positive { background: #dbeafe !important; }
+        #a4ExportContainer .summary-row.sign-positive span, #a4ExportContainer .summary-row.sign-positive strong { color: #2563eb !important; }
+        #a4ExportContainer .grand-display { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); border: none; padding: 14px; text-align: center; border-radius: 10px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(234,179,8,0.35); }
+        #a4ExportContainer .grand-display strong { text-shadow: 0 1px 2px rgba(113,63,18,0.25); }
 
         /* THERMAL RECEIPT PRINT CONTAINER (80mm) */
         #thermalReceiptContainer {
@@ -335,7 +468,12 @@
         .cb-btn-primary { min-height: 44px; padding: 0 20px; font-size: 15px; font-weight: 700; }
         .cb-btn-secondary { min-height: 40px; padding: 0 16px; }
         .cb-add-btn { min-height: 40px; padding: 0 16px; font-weight: 700; }
-        .cb-preview { box-shadow: 0 2px 12px rgba(15,23,42,0.08); position: relative; }
+        /* This preview always renders on a plain white "receipt paper"
+           background (inherited from .modal-box, which never themes dark),
+           but its text had no explicit color and was inheriting the page's
+           --text variable — invisible/near-white on white once dark mode
+           made --text light. Pin it to dark, fixed ink regardless of theme. */
+        .cb-preview { box-shadow: 0 2px 12px rgba(15,23,42,0.08); position: relative; color: #0f172a; }
         .cb-preview::before { content: 'Live Preview'; position: absolute; top: -9px; left: 12px; background: #fff; padding: 0 6px; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 
         /* ---- CASH BILL — TOP BAR (scan + salesman + payment mode) ---- */
@@ -390,6 +528,17 @@
     </style>
 </head>
 <body>
+<script>
+    // Applied as early as possible (before the rest of the page's script
+    // runs) so there's no flash of the light theme when a device has dark
+    // mode saved.
+    (function() {
+        try {
+            var t = localStorage.getItem('lalitha_theme');
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) {}
+    })();
+</script>
 
 <!-- ===================== APP LOCK PIN GATE ===================== -->
 <!-- Lightweight "keep randoms from opening the app" gate — not an accounts/
@@ -447,12 +596,21 @@
                         <button type="button" class="btn-mini" style="display:block; width:100%; text-align:left;" onclick="discardCashBillDraft()">Start New (discard draft)</button>
                     </div>
                 </div>
+                <button class="btn-mini" onclick="toggleAppTheme()" id="themeToggleBtn" title="Toggle dark / light mode" style="height:34px; width:34px; padding:0; display:flex; align-items:center; justify-content:center; background:#334155; color:#fff; border-color:#0f172a;">🌙</button>
                 <div class="dropdown-wrap">
                     <button class="btn-mini" onclick="toggleMoreMenu()" id="moreMenuBtn" style="height:34px; padding:0 12px; background:#334155; color:#fff; border-color:#0f172a;">⋯ More</button>
                     <div class="dropdown-menu" id="moreMenu">
                         <button onclick="closeMoreMenu(); openQuickEntryModal();">⚡ Quick Entry</button>
                         <button onclick="closeMoreMenu(); openDamageLedgerModal();">⚠️ Damage/Expiry</button>
                         <button onclick="closeMoreMenu(); openOwnerInsights();">🔒 Owner Insights</button>
+                        <button onclick="closeMoreMenu(); openVarianceHistoryModal();">📊 Variance History</button>
+                        <button onclick="closeMoreMenu(); openSalesSummaryModal();">💰 Sales Summary</button>
+                        <button onclick="closeMoreMenu(); openTopItemsModal();">🏆 Top Items</button>
+                        <button onclick="closeMoreMenu(); openExpenseBreakdownModal();">📁 Expense Breakdown</button>
+                        <button onclick="closeMoreMenu(); openMonthEndReportModal();">🗓️ Month-End Report</button>
+                        <button id="branchComparisonMenuBtn" onclick="closeMoreMenu(); openBranchComparisonReportModal();" style="display:none;">⚖️ Branch Comparison</button>
+                        <button onclick="closeMoreMenu(); copySummaryAsWhatsAppText();">📋 Copy Today's Summary (WhatsApp Text)</button>
+                        <button onclick="closeMoreMenu(); openStockLevelsModal();">📦 Manage Stock Levels</button>
                         <button onclick="closeMoreMenu(); openSettingsModal();">⚙ Settings</button>
                     </div>
                 </div>
@@ -559,13 +717,22 @@
             <div class="balances-strip" style="display:flex; gap:10px; padding:10px 12px; background:#fffbeb; border-top:2px solid #f59e0b; flex-shrink:0;">
                 <div style="flex:1;">
                     <label for="openingBalInput" title="Opening Balance — starting cash float for this shift" style="font-size:10px; font-weight:800; color:#854d0e; text-transform:uppercase; display:flex; align-items:flex-end; min-height:26px; margin-bottom:3px;">Opening Bal (−)</label>
-                    <input type="number" id="openingBalInput" class="balance-input" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #fcd34d; border-radius:6px; padding:6px 8px; background:#fff;">
+                    <input type="number" id="openingBalInput" class="balance-input" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #fcd34d; border-radius:6px; padding:6px 8px;">
                     <span id="openingBalSub" style="display:none;">0</span>
                 </div>
                 <div style="flex:1;">
-                    <label for="closingBalInput" title="Closing Balance — small notes (₹200 and below) kept back as tomorrow's float" style="font-size:10px; font-weight:800; color:#0f172a; text-transform:uppercase; display:flex; align-items:flex-end; min-height:26px; margin-bottom:3px;">Closing Bal</label>
-                    <input type="number" id="closingBalInput" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; background:#fff;">
-                    <input type="text" id="closingBalNote" placeholder="Note / description (optional)" title="Optional note for the Closing Balance — e.g. reason for variance, carried forward from previous shift, etc." style="width:100%; box-sizing:border-box; font-size:11px; font-style:italic; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; margin-top:4px; background:#fff;">
+                    <label for="closingBalInput" title="Closing Balance — small notes (₹200 and below) kept back as tomorrow's float" style="font-size:10px; font-weight:800; color:#0f172a; text-transform:uppercase; display:flex; align-items:flex-end; min-height:26px; margin-bottom:3px;">Closing Balance (₹200 to ₹1)</label>
+                    <input type="number" id="closingBalInput" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px;">
+                </div>
+            </div>
+            <div class="balances-strip" style="display:flex; gap:10px; padding:0 12px 10px; background:#fffbeb; flex-shrink:0;">
+                <div style="flex:1;">
+                    <label for="extraChangeGivenInput" title="Extra cash given out to a customer because the shop lacked small change — a shop loss, reduces Grand Total" style="font-size:10px; font-weight:800; color:#854d0e; text-transform:uppercase; display:flex; align-items:flex-end; min-height:26px; margin-bottom:3px;">Extra Change Given (₹)</label>
+                    <input type="number" id="extraChangeGivenInput" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #fcd34d; border-radius:6px; padding:6px 8px;">
+                </div>
+                <div style="flex:1;">
+                    <label for="changeLeftByCustomerInput" title="Change a customer left behind instead of taking it back — a shop gain, increases Grand Total" style="font-size:10px; font-weight:800; color:#0f172a; text-transform:uppercase; display:flex; align-items:flex-end; min-height:26px; margin-bottom:3px;">Change Left by Customer (₹)</label>
+                    <input type="number" id="changeLeftByCustomerInput" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px;">
                 </div>
             </div>
             <div id="balanceCheckIndicator" style="font-size:10.5px; padding:4px 12px 8px; color:var(--muted); flex-shrink:0;"></div>
@@ -633,17 +800,17 @@
 
         <!-- Column 5: Total Summary Card -->
         <div class="summary-card accent-green">
-            <div style="font-weight:700; font-size:12px; border-bottom:2px solid var(--primary); padding-bottom:5px; margin-bottom:4px; text-transform:uppercase; flex-shrink:0;">Total Summary</div>
+            <div style="font-weight:800; font-size:15px; border-bottom:2px solid var(--primary); padding-bottom:5px; margin-bottom:4px; text-transform:uppercase; flex-shrink:0;">Total Summary</div>
             <div class="summary-row"><span>Grand Total:</span> <strong id="sumGrand" style="font-family:'JetBrains Mono';">₹0</strong></div>
             <div class="summary-row"><span>Expn Total (+) :</span> <span id="sumExp" style="font-family:'JetBrains Mono';">₹0</span></div>
             <div class="summary-row"><span>Owner Bills (+) :</span> <span id="sumOwner" style="font-family:'JetBrains Mono'; color:#7c3aed;">₹0</span></div>
             <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="sumVend" style="font-family:'JetBrains Mono';">₹0</span></div>
-            <div class="summary-row bold" style="background:var(--header-bg);"><span>Total :</span> <span id="sumTotal1" style="font-family:'JetBrains Mono';">₹0</span></div>
+            <div class="summary-row bold" id="sumTotal1Row" style="background:var(--header-bg);"><span>Total :</span> <span id="sumTotal1" style="font-family:'JetBrains Mono';">₹0</span></div>
             <div style="height:2px;"></div>
-            <div class="summary-row"><span>Software Sale:</span> <input type="number" id="vasySale" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:85px; border:1px solid var(--border); padding:2px 6px; border-radius:4px; background:#fff; text-align:right;"></div>
+            <div class="summary-row"><span>Software Sale:</span> <input type="number" id="vasySale" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:85px; border:1px solid var(--border); padding:2px 6px; border-radius:4px; text-align:right; font-size:15px;"></div>
             <div class="summary-row"><span>Unbill Total (+) :</span> <span id="sumUnb" style="font-family:'JetBrains Mono';">₹0</span></div>
             <div class="summary-row bold" style="background:#f1f5f9;"><span>Final Sale :</span> <span id="sumTotalSale" style="font-family:'JetBrains Mono';">₹0</span></div>
-            <div class="summary-row" style="font-weight:700;"><span>Tally / ± :</span> <span id="sumVariance" style="font-family:'JetBrains Mono';">₹0</span></div>
+            <div class="summary-row" id="sumVarianceRow" style="font-weight:800; padding:10px 8px; margin:4px 0;"><span style="font-size:18px;">Tally / ± :</span> <span id="sumVariance" style="font-family:'JetBrains Mono'; font-size:26px; font-weight:900;">₹0</span></div>
 
             <!-- Notes Section Above Final Grand Total -->
             <div class="notes-box">
@@ -802,6 +969,7 @@
                 <button type="button" class="settings-nav-btn" data-panel="backup" onclick="switchSettingsTab('backup')">💾 Backup &amp; Restore</button>
                 <button type="button" class="settings-nav-btn" data-panel="owner" onclick="switchSettingsTab('owner')">🔒 Owner Access</button>
                 <button type="button" class="settings-nav-btn" data-panel="cloudsync" onclick="switchSettingsTab('cloudsync')">☁️ Cloud Sync</button>
+                <button type="button" class="settings-nav-btn" data-panel="formulas" onclick="switchSettingsTab('formulas')">🧮 Formulas &amp; Advanced</button>
             </div>
 
             <div class="settings-panels">
@@ -815,6 +983,16 @@
                         <label for="settingsBusinessName">Business Name</label>
                         <input type="text" id="settingsBusinessName" placeholder="e.g. Lalitha Naturals" oninput="previewBusinessNameLive()">
                         <p style="font-size:11px; color:#94a3b8; margin:4px 0 0;">Updates the header live as you type — click Save Settings to keep it.</p>
+                    </div>
+                    <div class="settings-field">
+                        <label for="settingsBusinessAddress">Business Address (optional)</label>
+                        <input type="text" id="settingsBusinessAddress" placeholder="e.g. Door No 1-2-3, Main Road, Gajuwaka">
+                        <p style="font-size:11px; color:#94a3b8; margin:4px 0 0;">Shown under the business name on printed A4 reports and thermal receipts, when set. Left blank, it's skipped — nothing prints in its place.</p>
+                    </div>
+                    <div class="settings-field">
+                        <label for="settingsBusinessPhone">Business Phone (optional)</label>
+                        <input type="text" id="settingsBusinessPhone" placeholder="e.g. 98765 43210">
+                        <p style="font-size:11px; color:#94a3b8; margin:4px 0 0;">Also shown under the business name on printed reports/receipts, when set. Left blank, it's skipped.</p>
                     </div>
                     <div class="settings-field">
                         <label>Logo</label>
@@ -912,6 +1090,20 @@
                         </select>
                         <p>Used the first time Cash Bill is opened on a device — after that, the last payment mode used takes over.</p>
                     </div>
+                    <div class="settings-field">
+                        <label>Thermal Receipt Paper Width</label>
+                        <div style="display:flex; gap:16px; align-items:center; margin-top:2px;">
+                            <label style="display:flex; align-items:center; gap:6px; font-weight:400; margin:0;">
+                                <input type="radio" name="settingsThermalPaperWidth" id="settingsThermalPaperWidth80" value="80mm" style="width:auto;">
+                                80mm (standard)
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-weight:400; margin:0;">
+                                <input type="radio" name="settingsThermalPaperWidth" id="settingsThermalPaperWidth58" value="58mm" style="width:auto;">
+                                58mm (compact)
+                            </label>
+                        </div>
+                        <p>Paper width used for both the Cash Bill receipt and the register's Thermal Printer export. Takes effect on the next print.</p>
+                    </div>
                     <div class="settings-field" style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
                         <label style="color:#dc2626;">Reset Item Catalog</label>
                         <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 10px;">Clears every barcode-remembered item name/price/discount used by Cash Bill, so scanning any barcode again is treated as brand new.</p>
@@ -990,8 +1182,12 @@
                         <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 0;">Optional. Mirrors every saved shift into a Google Sheet you control, so it's viewable from any device — not just this one browser.</p>
                     </div>
                     <div class="settings-field">
-                        <label for="settingsCloudSyncUrl">Google Apps Script Web App URL</label>
-                        <input type="text" id="settingsCloudSyncUrl" placeholder="https://script.google.com/macros/s/.../exec">
+                        <label for="settingsCloudSyncUrl">🔒 Google Apps Script Web App URL</label>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <input type="text" id="settingsCloudSyncUrl" placeholder="https://script.google.com/macros/s/.../exec" readonly style="opacity:0.65; cursor:not-allowed; flex:1;" onblur="lockCloudSyncUrlField()">
+                            <button type="button" class="btn-mini" id="cloudSyncUrlLockBtn" onclick="toggleCloudSyncUrlLock()" style="white-space:nowrap;">✏️ Edit</button>
+                        </div>
+                        <p style="font-size:10.5px; color:#94a3b8; margin:4px 0 0;">Locked to prevent accidental changes — this URL controls where your shift data is sent. Click Edit to unlock it.</p>
                     </div>
                     <div class="settings-field" style="flex-direction:row; align-items:center; gap:8px;">
                         <input type="checkbox" id="settingsCloudSyncEnabled" style="width:auto;">
@@ -1002,6 +1198,7 @@
                         <button type="button" class="btn-mini" onclick="syncNowFlushPending()">☁️ Sync Now</button>
                         <button type="button" class="btn-mini" id="syncCatalogNowBtn" onclick="syncCatalogNow()">☁️ Sync Catalog Now</button>
                         <button type="button" class="btn-mini" id="cloudSyncInfoBtn" onclick="toggleCloudSyncInfo()">ℹ️ What is this?</button>
+                        <button type="button" class="btn-mini" onclick="openAppsScriptCodeModal()">📄 View / Copy Apps Script Code</button>
                     </div>
                     <div id="cloudSyncInfoBox" style="display:none; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-size:11.5px; color:#334155; line-height:1.6;">
                         <b>First-time setup (once, ~5 min):</b>
@@ -1024,6 +1221,62 @@
                     <div style="margin-top:10px; padding-top:12px; border-top:1px solid var(--border); font-size:11.5px; color:#94a3b8;">
                         <p style="margin:0 0 6px;"><b>One-time setup (free):</b> this needs a small "Google Apps Script" web app tied to a Google Sheet you own — ask for the "Cloud Sync Setup Instructions" that came with this app, or search "Google Apps Script web app" for how to create and deploy one, then paste its URL above.</p>
                         <p style="margin:0;">The app works fully offline either way — nothing here is required for daily use. Cloud Sync just also mirrors saved shifts to your Sheet in the background; if it fails (no internet, wrong URL) the shift is still saved locally and queued to retry, never lost.</p>
+                    </div>
+                </div>
+
+                <!-- Formulas & Advanced -->
+                <div class="settings-panel" id="settingsPanelFormulas">
+                    <div>
+                        <h4>How The Numbers Are Calculated</h4>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 0;">Read-only — shown so you can see exactly how every figure on screen is derived. This is financial logic, so it isn't editable here; changing it would mean editing the app itself.</p>
+                    </div>
+                    <div id="formulasInfoBox" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; font-size:12px; color:#334155; line-height:1.85; display:flex; flex-direction:column; gap:12px;">
+                        <div>
+                            <b>Grand Total</b> (Tray Balance's "Grand Total" and the Total Summary's "Grand Total" are kept identical) =<br>
+                            (₹500+₹200+₹100+₹50+₹20+₹10+₹5+₹2+₹1 Denomination Total) + (Card Pay + UPI Pay + Pluxee) − Opening Balance − Cash Added − Extra Change Given + Change Left by Customer
+                        </div>
+                        <div>
+                            <b>Total (Total Summary panel)</b> = Grand Total + Expenses Total + Owner Bills Total + Vendor Payments Total
+                        </div>
+                        <div>
+                            <b>Final Sale</b> = Software Sale (Vasy) + Unbilled Total
+                        </div>
+                        <div>
+                            <b>Tally / Variance</b> = Total (Total Summary) − Final Sale. Zero means a perfect tally (shown in green); any other amount is shown in red.
+                        </div>
+                        <div>
+                            <b>Expense Total</b> = sum of every amount entered in the Expenses table.
+                        </div>
+                        <div>
+                            <b>Comb. Total (Owner/Vendor/Unbilled combined)</b> = Owner Bills Total + Vendor Payments Total + Unbilled Total.
+                        </div>
+                        <div>
+                            <b>Tray Balance total (denomination total)</b> = sum of (note/coin value × quantity) across all ₹500 down to ₹1 rows.
+                        </div>
+                        <div>
+                            <b>Total Digital Payments</b> = Card Pay + UPI Pay + Pluxee.
+                        </div>
+                        <div>
+                            <b>Total Cash Added</b> = sum of every quantity × denomination value entered in the "Cash Added" float top-up rows.
+                        </div>
+                        <div>
+                            <b>Closing Balance</b> (when not typed in manually) = sum of (value × quantity) for only the ₹200-and-below denomination rows (₹200, ₹100, ₹50, ₹20, ₹10, ₹5, ₹2, ₹1) — the ₹500 notes are excluded, since those are usually banked rather than kept in the tray as float.
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+                        <h4>Section Defaults</h4>
+                        <div class="settings-field" style="flex-direction:row; align-items:center; gap:8px; margin-top:8px;">
+                            <input type="checkbox" id="settingsSectionsCollapsedByDefault" style="width:auto;">
+                            <label for="settingsSectionsCollapsedByDefault" style="margin:0;">Start "Cash Added" and "Vendor Payments" sections collapsed on a fresh page</label>
+                        </div>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:6px 0 0;">Unchecking this makes both sections open by default instead. Either way, they can still be expanded/collapsed by hand at any time — this only sets the starting state.</p>
+                    </div>
+
+                    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+                        <label style="font-size:12px; font-weight:700; color:#dc2626;">Danger Zone</label>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 10px;">Resets branch names, owner/expense/vendor/unbilled names, business info, alert threshold, section defaults, and Cloud Sync URL back to this app's original defaults. Your saved shift records, Cash Bills, item catalog and damage ledger are NOT touched.</p>
+                        <button class="btn-mini" style="background:#fee2e2; color:#dc2626; border-color:#fecaca;" onclick="resetAllSettingsToDefault()">⚠️ Reset All Settings to Default</button>
                     </div>
                 </div>
             </div>
@@ -1220,6 +1473,161 @@
     </div>
 </div>
 
+<!-- VARIANCE HISTORY MODAL (read-only report over lalitha_audit_register) -->
+<div class="modal-overlay" id="varianceHistoryModal">
+    <div class="modal-box" style="width:95vw; max-width:1000px; max-height:90vh; overflow:auto;">
+        <h3>📊 Variance History</h3>
+        <p style="margin-top:-8px;">Every saved shift's Grand Total vs. Final Sale variance, newest first. Read-only — does not affect any saved record.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:10px;">
+            <div class="field-group" style="flex:0 0 170px;">
+                <label for="vhBranch">Branch</label>
+                <select id="vhBranch" style="width:100%;" onchange="renderVarianceHistory()"><option value="">All</option></select>
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="vhFrom">From</label>
+                <input type="date" id="vhFrom" style="width:100%;" onchange="renderVarianceHistory()">
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="vhTo">To</label>
+                <input type="date" id="vhTo" style="width:100%;" onchange="renderVarianceHistory()">
+            </div>
+            <div class="field-group" style="flex:0 0 auto;">
+                <button type="button" class="btn-mini" onclick="document.getElementById('vhBranch').value=''; document.getElementById('vhFrom').value=''; document.getElementById('vhTo').value=''; renderVarianceHistory();">Clear Filters</button>
+            </div>
+        </div>
+        <div id="vhSummary" style="display:flex; gap:14px; flex-wrap:wrap; margin:12px 0; font-size:12.5px; font-weight:700; color:#0f172a;"></div>
+        <div style="overflow-x:auto;">
+            <table class="audit-table" style="width:100%;">
+                <thead><tr><th>Date</th><th>Branch</th><th>Shift</th><th style="text-align:right;">Grand Total</th><th style="text-align:right;">Variance</th></tr></thead>
+                <tbody id="vhBody"></tbody>
+            </table>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('varianceHistoryModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- DAILY SALES SUMMARY MODAL (read-only report over lalitha_cash_bill_items) -->
+<div class="modal-overlay" id="salesSummaryModal">
+    <div class="modal-box" style="width:95vw; max-width:700px; max-height:90vh; overflow:auto;">
+        <h3>💰 Sales Summary</h3>
+        <p style="margin-top:-8px;">Cash Bill activity, aggregated from all saved bills. Note: bills don't record which branch they were made at, so this view is not branch-filterable.</p>
+        <div id="salesSummaryContent" style="margin-top:10px;"></div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('salesSummaryModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOP SELLING ITEMS MODAL (read-only report over lalitha_cash_bill_items) -->
+<div class="modal-overlay" id="topItemsModal">
+    <div class="modal-box" style="width:95vw; max-width:800px; max-height:90vh; overflow:auto;">
+        <h3>🏆 Top Selling Items</h3>
+        <p style="margin-top:-8px;">Top 20 items by quantity sold, across all Cash Bills in the selected date range.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:10px;">
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="tiFrom">From</label>
+                <input type="date" id="tiFrom" style="width:100%;" onchange="renderTopItems()">
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="tiTo">To</label>
+                <input type="date" id="tiTo" style="width:100%;" onchange="renderTopItems()">
+            </div>
+            <div class="field-group" style="flex:0 0 auto;">
+                <button type="button" class="btn-mini" onclick="renderTopItems()">Refresh</button>
+            </div>
+        </div>
+        <div style="overflow-x:auto; margin-top:12px;">
+            <table class="audit-table" style="width:100%;">
+                <thead><tr><th>Item Name</th><th style="text-align:right;">Qty Sold</th><th style="text-align:right;">Revenue</th></tr></thead>
+                <tbody id="tiBody"></tbody>
+            </table>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('topItemsModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- EXPENSE CATEGORY BREAKDOWN MODAL (read-only report over lalitha_audit_register expenses) -->
+<div class="modal-overlay" id="expenseBreakdownModal">
+    <div class="modal-box" style="width:95vw; max-width:750px; max-height:90vh; overflow:auto;">
+        <h3>📁 Expense Breakdown</h3>
+        <p style="margin-top:-8px;">Expenses across saved shifts, grouped by category name.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:10px;">
+            <div class="field-group" style="flex:0 0 170px;">
+                <label for="ebBranch">Branch</label>
+                <select id="ebBranch" style="width:100%;" onchange="renderExpenseBreakdown()"><option value="">All</option></select>
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="ebFrom">From</label>
+                <input type="date" id="ebFrom" style="width:100%;" onchange="renderExpenseBreakdown()">
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="ebTo">To</label>
+                <input type="date" id="ebTo" style="width:100%;" onchange="renderExpenseBreakdown()">
+            </div>
+        </div>
+        <div style="overflow-x:auto; margin-top:12px;">
+            <table class="audit-table" style="width:100%;">
+                <thead><tr><th>Category</th><th style="text-align:right;">Total Amount</th><th style="text-align:right;">% of Total</th><th style="width:35%;"></th></tr></thead>
+                <tbody id="ebBody"></tbody>
+            </table>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('expenseBreakdownModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- MONTH-END ROLLUP / PRINT MODAL -->
+<div class="modal-overlay" id="monthEndReportModal">
+    <div class="modal-box" style="width:95vw; max-width:500px;">
+        <h3>🗓️ Month-End Report</h3>
+        <p style="margin-top:-8px;">Pick a month and branch, then generate a print-friendly rollup of every shift recorded in that month.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <div class="field-group" style="flex:1 1 150px;">
+                <label for="meMonth">Month</label>
+                <input type="month" id="meMonth" style="width:100%;">
+            </div>
+            <div class="field-group" style="flex:1 1 150px;">
+                <label for="meBranch">Branch</label>
+                <select id="meBranch" style="width:100%;"><option value="">All Branches</option></select>
+            </div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('monthEndReportModal').style.display='none'">Close</button>
+            <button class="submit-btn" onclick="generateMonthEndReport()">Generate & Print</button>
+        </div>
+    </div>
+</div>
+
+<!-- BRANCH COMPARISON REPORT MODAL (More menu shortcut; reuses computeBranchTotals) -->
+<div class="modal-overlay" id="branchComparisonReportModal">
+    <div class="modal-box" style="width:95vw; max-width:900px; max-height:90vh; overflow:auto;">
+        <h3>⚖️ Branch Comparison</h3>
+        <p style="margin-top:-8px;">Gajuwaka vs. Kurmannapalem for a selected date range — Final Sale, Expenses and Variance from saved shift records.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:10px;">
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="bcFrom">From</label>
+                <input type="date" id="bcFrom" style="width:100%;" onchange="renderBranchComparisonReport()">
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="bcTo">To</label>
+                <input type="date" id="bcTo" style="width:100%;" onchange="renderBranchComparisonReport()">
+            </div>
+            <div class="field-group" style="flex:0 0 auto;">
+                <button type="button" class="btn-mini" onclick="renderBranchComparisonReport()">Refresh</button>
+            </div>
+        </div>
+        <div id="bcContent" style="margin-top:12px;"></div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('branchComparisonReportModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- CASH BILL DETAILS (read-only itemized lookup) MODAL -->
 <div class="modal-overlay" id="cashBillDetailsModal">
     <div class="modal-box" style="width:480px; max-width:95vw;">
@@ -1352,15 +1760,67 @@
     </div>
 </div>
 
+<!-- MANAGE STOCK LEVELS MODAL -->
+<!-- Manual, low-effort stock tracker: this app has no sales-driven stock
+     deduction (a Cash Bill never reduces this). Each catalog item optionally
+     gets a reorderLevel and lastKnownStock the owner updates by hand; when
+     both are set and lastKnownStock <= reorderLevel, the row is flagged. -->
+<div class="modal-overlay" id="stockLevelsModal">
+    <div class="modal-box" style="width:640px; max-width:94vw;">
+        <h3>📦 Manage Stock Levels</h3>
+        <p style="margin-top:-8px;">Manual stock tracker for catalog items. Nothing here is updated automatically — a Cash Bill does <strong>not</strong> reduce stock. Set a Reorder Level and update Current Stock by hand; items at or below their reorder level are flagged in red.</p>
+        <div style="max-height:55vh; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+            <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+                <thead>
+                    <tr style="background:var(--header-bg); position:sticky; top:0;">
+                        <th style="text-align:left; padding:6px 8px;">Item</th>
+                        <th style="text-align:left; padding:6px 8px;">Barcode</th>
+                        <th style="text-align:right; padding:6px 8px; width:110px;">Current Stock</th>
+                        <th style="text-align:right; padding:6px 8px; width:110px;">Reorder Level</th>
+                        <th style="text-align:center; padding:6px 8px; width:90px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="stockLevelsTbody"></tbody>
+            </table>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('stockLevelsModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- APPS SCRIPT CODE VIEWER MODAL (read-only, copy-only) -->
+<div class="modal-overlay" id="appsScriptCodeModal">
+    <div class="modal-box" style="width:90vw; max-width:900px; max-height:92vh; overflow:auto;">
+        <h3>📄 Google Apps Script — Cloud Sync Backend</h3>
+        <p style="margin-top:-8px;">This is the exact backend code (also provided as a separate "Code.gs" file) that must be pasted into a Google Apps Script project to make Cloud Sync work. It's the free script that receives shift/catalog/ledger data from this app and writes it into your own Google Sheet.</p>
+        <textarea id="appsScriptCodeTextarea" readonly spellcheck="false" style="width:100%; height:550px; font-family:'JetBrains Mono', monospace; font-size:11.5px; line-height:1.5; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg, var(--panel-bg)); color:var(--text); resize:vertical; box-sizing:border-box;"></textarea>
+        <div style="font-size:11.5px; color:#94a3b8; line-height:1.6; margin-top:4px;">
+            <b>What to do with it:</b>
+            <ol style="margin:6px 0 0 18px; padding:0;">
+                <li>Copy the code above (button below).</li>
+                <li>Go to a Google Sheet &gt; <b>Extensions &gt; Apps Script</b>, delete any placeholder code, and paste this in. Save.</li>
+                <li><b>Deploy &gt; New deployment &gt; Web app &gt; Execute as: Me &gt; Who has access: Anyone with the link &gt; Deploy.</b> Authorize when prompted.</li>
+                <li>Copy the resulting <code>/exec</code> URL, click <b>✏️ Edit</b> to unlock the URL field above, and paste it in there.</li>
+            </ol>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="document.getElementById('appsScriptCodeModal').style.display='none'">Close</button>
+            <button class="submit-btn" onclick="copyAppsScriptCode()">📋 Copy Code</button>
+        </div>
+    </div>
+</div>
+
 <!-- HIDDEN A4 LANDSCAPE EXPORT CONTAINER -->
 <div id="a4ExportContainer">
     <div class="sheet-header">
         <div>
-            <img id="a4LogoImg" src="" alt="Business logo" style="height:60px; width:auto; display:block;">
-            <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #475569; font-weight: 700; margin-top:6px;">Cash Denomination Register & Audit Sheet</div>
+            <img id="a4LogoImg" src="" alt="Business logo" style="height:52px; width:auto; display:block;">
+            <div class="report-kicker">Cash Denomination Register & Audit Sheet</div>
+            <div id="a4BusinessContact" style="font-size: 12px; color: #cbd5e1; font-weight: 600; margin-top:3px;"></div>
         </div>
-        <div style="background: #eef2ff; color: #4f46e5; border: 2px solid #c7d2fe; padding: 8px 18px; font-weight: 800; font-size: 15px; text-transform: uppercase; border-radius: 6px;">Daily Register Report</div>
-        <div style="display: flex; gap: 15px; font-size: 15px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
+        <div class="report-badge">Daily Register Report</div>
+        <div class="report-meta">
             <div>Date: <span id="a4Date"></span></div>
             <div>Branch: <span id="a4Branch"></span></div>
             <div>Cashier: <span id="a4Cashier"></span></div>
@@ -1375,11 +1835,11 @@
                     <tr><td>Card Pay</td><td class="cell-val" id="a4CardPay">₹0</td></tr>
                     <tr><td>UPI Pay</td><td class="cell-val" id="a4UpiPay">₹0</td></tr>
                     <tr><td>Pluxee (Sodexo)</td><td class="cell-val" id="a4PluxeePay">₹0</td></tr>
-                    <tr style="background:#f1f5f9;"><td colspan="2" style="font-weight:800; font-size:13px; color:#475569;">CASH ADDED</td></tr>
+                    <tr style="background:#f1f5f9;"><td colspan="2" style="font-weight:800; font-size:15px; color:#475569;">CASH ADDED</td></tr>
                     <tbody id="a4DigitalAddTable"></tbody>
                 </table>
             </div>
-            <div style="background:#f1f5f9; padding:10px; font-weight:800; font-size:15px; border-top:2px solid #0f172a; text-align:right;">Digital Ready</div>
+            <div style="background:#f1f5f9; padding:7px 10px; font-weight:800; font-size:20px; border-top:2px solid #0f172a; text-align:right;">Digital Ready</div>
         </div>
 
         <div class="sheet-section accent-amber">
@@ -1390,8 +1850,8 @@
                     <tbody id="a4TrayTable"></tbody>
                 </table>
             </div>
-            <div style="background:#f1f5f9; padding:10px; font-weight:800; font-size:16px; display:flex; justify-content:space-between; border-top:2px solid #0f172a;">
-                <span>Grand Total:</span><span id="a4LblTotalDenom" style="color:#4f46e5; font-family:'JetBrains Mono'; font-size:17px;">₹0</span>
+            <div style="background:#f1f5f9; padding:7px 10px; font-weight:800; font-size:19px; display:flex; justify-content:space-between; border-top:2px solid #0f172a;">
+                <span>Grand Total:</span><span id="a4LblTotalDenom" style="color:#4f46e5; font-family:'JetBrains Mono'; font-size:20px;">₹0</span>
             </div>
         </div>
 
@@ -1403,8 +1863,8 @@
                     <tbody id="a4ExpTable"></tbody>
                 </table>
             </div>
-            <div style="background:#f1f5f9; padding:10px; font-weight:800; font-size:16px; display:flex; justify-content:space-between; border-top:2px solid #0f172a;">
-                <span>Exp Total:</span><span id="a4LblExpTotal" style="color:#4f46e5; font-family:'JetBrains Mono'; font-size:17px;">₹0</span>
+            <div style="background:#f1f5f9; padding:7px 10px; font-weight:800; font-size:19px; display:flex; justify-content:space-between; border-top:2px solid #0f172a;">
+                <span>Exp Total:</span><span id="a4LblExpTotal" style="color:#4f46e5; font-family:'JetBrains Mono'; font-size:20px;">₹0</span>
             </div>
         </div>
 
@@ -1412,35 +1872,35 @@
             <div class="section-header owner-header">Owner, Vendor & Unbilled</div>
             <div class="sub-header"><span>Name / Item</span><span>Amt (₹)</span></div>
             <div style="flex-grow:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
-                <div style="font-size:12px; font-weight:800; color:#7c3aed; padding:4px 10px; background:#f5f3ff;">OWNER BILLS</div>
+                <div style="font-size:14px; font-weight:800; color:#7c3aed; padding:4px 10px; background:#f5f3ff;">OWNER BILLS</div>
                 <table><tbody id="a4OwnerTable"></tbody></table>
-                <div style="font-size:12px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">VENDORS</div>
+                <div style="font-size:14px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">VENDORS</div>
                 <table><tbody id="a4VendTable"></tbody></table>
-                <div style="font-size:12px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">UNBILLED</div>
+                <div style="font-size:14px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">UNBILLED</div>
                 <table><tbody id="a4UnbTable"></tbody></table>
             </div>
-            <div style="background:#f1f5f9; padding:10px; font-weight:800; font-size:16px; display:flex; justify-content:space-between; border-top:2px solid #0f172a; flex-shrink:0;">
-                <span>Comb. Total:</span><span id="a4LblCombined" style="color:#7c3aed; font-family:'JetBrains Mono'; font-size:17px;">₹0</span>
+            <div style="background:#f1f5f9; padding:7px 10px; font-weight:800; font-size:19px; display:flex; justify-content:space-between; border-top:2px solid #0f172a; flex-shrink:0;">
+                <span>Comb. Total:</span><span id="a4LblCombined" style="color:#7c3aed; font-family:'JetBrains Mono'; font-size:20px;">₹0</span>
             </div>
         </div>
 
         <div class="summary-card accent-green">
-            <div style="font-weight:800; font-size:15px; border-bottom:3px solid #0f172a; padding-bottom:6px; margin-bottom:4px; text-transform:uppercase; flex-shrink:0;">Total Summary</div>
+            <div style="font-weight:800; font-size:20px; border-bottom:3px solid #0f172a; padding-bottom:6px; margin-bottom:4px; text-transform:uppercase; flex-shrink:0;">Total Summary</div>
             <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:space-evenly;">
-                <div class="summary-row"><span>Grand Total:</span> <strong id="a4SumGrand" style="font-family:'JetBrains Mono'; font-size:16px;">₹0</strong></div>
-                <div class="summary-row"><span>Expn Total (+) :</span> <span id="a4SumExp" style="font-family:'JetBrains Mono'; font-size:15px;">₹0</span></div>
-                <div class="summary-row"><span>Owner Bills (+) :</span> <span id="a4SumOwner" style="font-family:'JetBrains Mono'; color:#7c3aed; font-size:15px;">₹0</span></div>
-                <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="a4SumVend" style="font-family:'JetBrains Mono'; font-size:15px;">₹0</span></div>
-                <div class="summary-row bold" style="background:#f1f5f9;"><span>Total :</span> <span id="a4SumTotal1" style="font-family:'JetBrains Mono'; font-size:16px;">₹0</span></div>
-                <div class="summary-row"><span>Software Sale:</span> <span id="a4VasySale" style="font-family:'JetBrains Mono'; font-weight:800; font-size:16px;">₹0</span></div>
-                <div class="summary-row"><span>Unbill Total (+) :</span> <span id="a4SumUnb" style="font-family:'JetBrains Mono'; font-size:15px;">₹0</span></div>
-                <div class="summary-row bold" style="background:#f1f5f9;"><span>Final Sale :</span> <span id="a4SumTotalSale" style="font-family:'JetBrains Mono'; font-size:16px;">₹0</span></div>
-                <div class="summary-row" style="font-weight:800;"><span>Tally / ± :</span> <span id="a4SumVariance" style="font-family:'JetBrains Mono'; font-size:16px;">₹0</span></div>
+                <div class="summary-row"><span>Grand Total:</span> <strong id="a4SumGrand" style="font-family:'JetBrains Mono'; font-size:19px;">₹0</strong></div>
+                <div class="summary-row"><span>Expn Total (+) :</span> <span id="a4SumExp" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
+                <div class="summary-row"><span>Owner Bills (+) :</span> <span id="a4SumOwner" style="font-family:'JetBrains Mono'; color:#7c3aed; font-size:20px;">₹0</span></div>
+                <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="a4SumVend" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
+                <div class="summary-row bold" id="a4SumTotal1Row" style="background:#f1f5f9;"><span>Total :</span> <span id="a4SumTotal1" style="font-family:'JetBrains Mono'; font-size:19px;">₹0</span></div>
+                <div class="summary-row"><span>Software Sale:</span> <span id="a4VasySale" style="font-family:'JetBrains Mono'; font-weight:800; font-size:19px;">₹0</span></div>
+                <div class="summary-row"><span>Unbill Total (+) :</span> <span id="a4SumUnb" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
+                <div class="summary-row bold" style="background:#f1f5f9;"><span>Final Sale :</span> <span id="a4SumTotalSale" style="font-family:'JetBrains Mono'; font-size:19px;">₹0</span></div>
+                <div class="summary-row" id="a4SumVarianceRow" style="font-weight:800;"><span>Tally / ± :</span> <span id="a4SumVariance" style="font-family:'JetBrains Mono'; font-size:19px;">₹0</span></div>
             </div>
-            <div style="font-size:11px; font-weight:700; color:#475569; margin-top:2px; flex-shrink:0;">Notes: <span id="a4NotesDisplay" style="font-weight:500;">None</span></div>
+            <div style="font-size:15px; font-weight:700; color:#475569; margin-top:2px; flex-shrink:0;">Notes: <span id="a4NotesDisplay" style="font-weight:500;">None</span></div>
             <div class="grand-display">
-                <span style="font-size:11px; font-weight:800; color:#713f12;">Final Grand Total</span>
-                <strong id="a4FinalGrandDisplay" style="font-size: 22px;">₹0</strong>
+                <span style="font-size:15px; font-weight:800; color:#713f12;">Final Grand Total</span>
+                <strong id="a4FinalGrandDisplay" style="font-size: 26px;">₹0</strong>
             </div>
         </div>
     </div>
@@ -1471,6 +1931,8 @@
     <div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
     <div>Opening Bal: <span id="tOpening" style="float:right;"></span></div>
     <div>Closing Bal (₹200-₹1): <span id="tClosing" style="float:right;"></span></div>
+    <div>Extra Change Given: <span id="tExtraChangeGiven" style="float:right;"></span></div>
+    <div>Change Left by Cust: <span id="tChangeLeft" style="float:right;"></span></div>
     <div>Grand Total: <span id="tTray" style="float:right;"></span></div>
     <div>Digital Pay: <span id="tDigital" style="float:right;"></span></div>
     <div>Expenses: <span id="tExp" style="float:right;"></span></div>
@@ -1492,7 +1954,15 @@
     let lastFilteredRecords = [];
     let lastMonthlySummary = null;
     let lastRangeSummary = null;
-    let appSettings = { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true };
+    // Single source of truth for "defaults": this literal is both the value appSettings
+    // starts from on a first run AND what "Reset All Settings to Default" (see
+    // resetAllSettingsToDefault()) restores appSettings to. Kept as a function so a
+    // fresh, independent object/array copy is produced each time (never a shared
+    // reference that a later appSettings mutation could accidentally corrupt).
+    function getDefaultAppSettings() {
+        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true };
+    }
+    let appSettings = getDefaultAppSettings();
     let activeLogoDataURI = '';
     const SETTINGS_KEY = 'lalitha_app_settings';
     // Device-local branch lock. Deliberately NOT part of appSettings/SETTINGS_KEY so it
@@ -1568,17 +2038,21 @@
         // the lock gate decides whether to show itself.
         loadSettings();
         initAppLockGate();
+        updateThemeToggleBtn();
         updateCashBillDraftBanner();
         populateBranchSelects();
         populateShiftSelect();
+        let branchCompBtn = document.getElementById('branchComparisonMenuBtn');
+        if (branchCompBtn) branchCompBtn.style.display = (appSettings.branches || []).length > 1 ? 'block' : 'none';
         applyShiftsEnabled();
         // Cash Added and Vendor Payments start collapsed by default — they're
         // used far less often than the rest of the sheet, so keeping them
         // tucked away out of the box reduces clutter on first load.
-        document.getElementById('cashAddedWrap').style.display = 'none';
-        document.getElementById('cashAddedToggle').textContent = '▸';
-        document.getElementById('vendorsBody').style.display = 'none';
-        document.getElementById('vendorsToggle').textContent = '▸';
+        let startCollapsed = appSettings.sectionsCollapsedByDefault !== false;
+        document.getElementById('cashAddedWrap').style.display = startCollapsed ? 'none' : '';
+        document.getElementById('cashAddedToggle').textContent = startCollapsed ? '▸' : '▾';
+        document.getElementById('vendorsBody').style.display = startCollapsed ? 'none' : '';
+        document.getElementById('vendorsToggle').textContent = startCollapsed ? '▸' : '▾';
         removeActionButtonsFromTabOrder();
         applyBranchLock();
         applyBusinessProfile();
@@ -1831,6 +2305,39 @@
         let box = document.getElementById('cloudSyncInfoBox');
         if (!box) return;
         box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+    }
+
+    // Locks/unlocks the Cloud Sync URL field against accidental edits.
+    // Locked (default): readonly, dimmed. Unlocking requires an explicit
+    // confirm() — same "are you sure" pattern used elsewhere in the app
+    // (e.g. resetAppSettings, the closing-balance change confirm) — since
+    // this URL controls where shift data gets sent. Re-locking on blur so
+    // it doesn't stay editable indefinitely after the cashier is done.
+    function toggleCloudSyncUrlLock() {
+        let input = document.getElementById('settingsCloudSyncUrl');
+        let btn = document.getElementById('cloudSyncUrlLockBtn');
+        if (!input || !btn) return;
+        if (input.hasAttribute('readonly')) {
+            if (!confirm('This is your Cloud Sync connection — changing it will redirect where your shift data is sent. Are you sure you want to edit it?')) return;
+            input.removeAttribute('readonly');
+            input.style.opacity = '1';
+            input.style.cursor = 'text';
+            btn.textContent = '🔒 Lock';
+            input.focus();
+            input.select();
+        } else {
+            lockCloudSyncUrlField();
+        }
+    }
+
+    function lockCloudSyncUrlField() {
+        let input = document.getElementById('settingsCloudSyncUrl');
+        let btn = document.getElementById('cloudSyncUrlLockBtn');
+        if (!input || !btn) return;
+        input.setAttribute('readonly', 'readonly');
+        input.style.opacity = '0.65';
+        input.style.cursor = 'not-allowed';
+        btn.textContent = '✏️ Edit';
     }
 
     function testCloudSyncConnection() {
@@ -2109,6 +2616,19 @@
 
         let thermalName = document.getElementById('thermalBusinessName');
         if (thermalName) thermalName.innerText = name.toUpperCase();
+
+        let a4Contact = document.getElementById('a4BusinessContact');
+        if (a4Contact) a4Contact.innerText = businessContactLine();
+    }
+
+    // Address + phone as one "Address | Phone" line for print headers,
+    // skipping either half silently when it's left blank in Settings, and
+    // returning '' (nothing shown) when both are blank.
+    function businessContactLine() {
+        let parts = [];
+        if (appSettings.businessAddress) parts.push(appSettings.businessAddress);
+        if (appSettings.businessPhone) parts.push('Ph: ' + appSettings.businessPhone);
+        return parts.join(' | ');
     }
 
     // Live preview of the business name in the header as it's typed in
@@ -2168,6 +2688,12 @@
     function openSettingsModal() {
         document.getElementById('settingsVarianceThreshold').value = appSettings.varianceAlertThreshold || 0;
         document.getElementById('settingsBusinessName').value = appSettings.businessName || 'Lalitha Naturals';
+        document.getElementById('settingsBusinessAddress').value = appSettings.businessAddress || '';
+        document.getElementById('settingsBusinessPhone').value = appSettings.businessPhone || '';
+        let thermalWidth = appSettings.thermalPaperWidth === '58mm' ? '58mm' : '80mm';
+        document.getElementById('settingsThermalPaperWidth80').checked = thermalWidth === '80mm';
+        document.getElementById('settingsThermalPaperWidth58').checked = thermalWidth === '58mm';
+        document.getElementById('settingsSectionsCollapsedByDefault').checked = appSettings.sectionsCollapsedByDefault !== false;
         document.getElementById('settingsLogoPreview').src = appSettings.businessLogo || DEFAULT_LOGO_DATA_URI;
         pendingBusinessLogo = null;
         pendingBranches = getBranchList().slice();
@@ -2420,7 +2946,7 @@
         document.querySelectorAll('.settings-nav-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.panel === name);
         });
-        let panelIdMap = { branding: 'settingsPanelBranding', branches: 'settingsPanelBranches', shifts: 'settingsPanelShifts', fields: 'settingsPanelFields', cashbill: 'settingsPanelCashbill', branch: 'settingsPanelBranch', pins: 'settingsPanelPins', backup: 'settingsPanelBackup', owner: 'settingsPanelOwner', cloudsync: 'settingsPanelCloudSync' };
+        let panelIdMap = { branding: 'settingsPanelBranding', branches: 'settingsPanelBranches', shifts: 'settingsPanelShifts', fields: 'settingsPanelFields', cashbill: 'settingsPanelCashbill', branch: 'settingsPanelBranch', pins: 'settingsPanelPins', backup: 'settingsPanelBackup', owner: 'settingsPanelOwner', cloudsync: 'settingsPanelCloudSync', formulas: 'settingsPanelFormulas' };
         Object.values(panelIdMap).forEach(id => document.getElementById(id).classList.remove('active'));
         let activeId = panelIdMap[name];
         if (activeId) document.getElementById(activeId).classList.add('active');
@@ -2485,6 +3011,9 @@
 
         appSettings.varianceAlertThreshold = Math.abs(Number(document.getElementById('settingsVarianceThreshold').value) || 0);
         appSettings.businessName = document.getElementById('settingsBusinessName').value.trim() || 'Lalitha Naturals';
+        appSettings.businessAddress = document.getElementById('settingsBusinessAddress').value.trim();
+        appSettings.businessPhone = document.getElementById('settingsBusinessPhone').value.trim();
+        appSettings.sectionsCollapsedByDefault = document.getElementById('settingsSectionsCollapsedByDefault').checked;
 
         // Shifts: same clean/trim/dedupe pattern as branches.
         let cleanedShifts = [];
@@ -2496,6 +3025,7 @@
         appSettings.shifts = cleanedShifts;
         appSettings.shiftsEnabled = document.getElementById('settingsShiftsEnabled').checked;
         appSettings.defaultPaymentMode = document.getElementById('settingsDefaultPaymentMode').value || 'Cash';
+        appSettings.thermalPaperWidth = document.getElementById('settingsThermalPaperWidth58').checked ? '58mm' : '80mm';
 
         // Default field names (expenses / owners / vendors / unbilled items):
         // trim, drop blanks, keep unique. Expense/owner names fall back to the
@@ -2925,16 +3455,49 @@
         return item.discount ? cashBillDiscountLabel(item) : '—';
     }
 
+    // Column widths for the fixed-width table, keyed by paper width. The
+    // 80mm set (#3+ITEM12+QTY4+MRP6+DISC6+TOTAL12=43 chars) is unchanged
+    // from the earlier fix (see the long comment this replaced, preserved
+    // below). The 58mm set is a proportionally narrower 32-char row
+    // (58mm/80mm ≈ 0.725 of 43 ≈ 31-32 usable chars at the same font size,
+    // confirmed by rendering and measuring the actual 58mm content box so
+    // TOTAL's right edge still lines up with the grand TOTAL row) — the #
+    // column is trimmed to 2 chars and ITEM (the most flexible column)
+    // absorbs most of the reduction, while QTY/MRP/DISC/TOTAL keep enough
+    // width to stay numerically meaningful for typical ₹ amounts.
+    // Old note on the 80mm row (kept for context): the previous 35-char row
+    // (ITEM12+QTY4+MRP6+DISC6+TOTAL7) rendered NARROWER than the receipt's
+    // actual content box (measured ~275px at this font/width vs. ~6.32px
+    // per monospace character => ~43.5 characters needed to fill it) — the
+    // <pre> block itself stretches to the full content width, but its text
+    // only occupied the first 35/39 character-widths of that box,
+    // left-anchored, so TOTAL's glyphs stopped well short of the right edge
+    // that the grand TOTAL line (a flex row that DOES span the full content
+    // width) reaches. TOTAL was widened 7->12 chars (on top of the 3-char #
+    // column) to a 43-char row that fills the measured content width.
+    const CB_TABLE_COLS = {
+        '80mm': { sno: 3, item: 12, qty: 4, mrp: 6, disc: 6, total: 12 },
+        '58mm': { sno: 2, item: 8, qty: 3, mrp: 5, disc: 5, total: 9 }
+    };
+    function cbTableCols() {
+        return CB_TABLE_COLS[appSettings.thermalPaperWidth === '58mm' ? '58mm' : '80mm'];
+    }
+
     function cashBillItemsTableLines(items, draftLine) {
         let lines = [];
-        lines.push(cbPadR('ITEM', 12) + cbPadL('QTY', 4) + cbPadL('MRP', 6) + cbPadL('DISC', 6) + cbPadL('TOTAL', 7));
-        lines.push('-'.repeat(35));
+        // Column widths are read live from appSettings.thermalPaperWidth on
+        // every call (never cached), so switching the Settings toggle takes
+        // effect on the very next preview render / print, no reload needed.
+        let c = cbTableCols();
+        let rowWidth = c.sno + c.item + c.qty + c.mrp + c.disc + c.total;
+        lines.push(cbPadR('#', c.sno) + cbPadR('ITEM', c.item) + cbPadL('QTY', c.qty) + cbPadL('MRP', c.mrp) + cbPadL('DISC', c.disc) + cbPadL('TOTAL', c.total));
+        lines.push('-'.repeat(rowWidth));
         if (items.length === 0 && !draftLine) {
             lines.push('No items yet');
             return lines;
         }
-        items.forEach(item => {
-            lines.push(cbPadR(item.name, 12) + cbPadL(item.qty, 4) + cbPadL(item.mrp, 6) + cbPadL(cashBillReceiptDiscCell(item), 6) + cbPadL(cashBillLineTotal(item), 7));
+        items.forEach((item, i) => {
+            lines.push(cbPadR(String(i + 1), c.sno) + cbPadR(item.name, c.item) + cbPadL(item.qty, c.qty) + cbPadL(item.mrp, c.mrp) + cbPadL(cashBillReceiptDiscCell(item), c.disc) + cbPadL(cashBillLineTotal(item), c.total));
         });
         if (draftLine) lines.push(draftLine);
         return lines;
@@ -3038,7 +3601,7 @@
         let includeSw = document.getElementById('cbIncludeSoftwareOnReceipt').checked;
         let swBillNo = document.getElementById('cbSoftwareBillNo').value.trim();
         let swLine = (includeSw && swAmt > 0)
-            ? `<div style="display:flex; justify-content:space-between; margin:2px 0;"><span>Software Bill${swBillNo ? ' #' + swBillNo : ''}</span><span>₹${swAmt}</span></div>` : '';
+            ? `<div style="display:flex; justify-content:space-between; margin:2px 0;"><span>${cashBillCart.length + 1}. Software Bill${swBillNo ? ' #' + swBillNo : ''}</span><span>₹${swAmt}</span></div>` : '';
         // Printed/preview TOTAL: cart+software when the software line is
         // shown on the receipt, cart-only otherwise (per the requirement
         // that an un-ticked receipt stays uncluttered) — but the amount this
@@ -3152,19 +3715,34 @@
         let branch = document.getElementById('branchLocation').value;
         let tableLines = cashBillItemsTableLines(items, '');
         let rows = `<pre class="items-table">${tableLines.join('\n')}</pre>`;
+        // Paper width is read live from appSettings.thermalPaperWidth on every
+        // print call (never cached), so a Settings change takes effect on the
+        // very next print without a page reload. The 58mm body/content width
+        // and items-table font-size are scaled down from the 80mm values so
+        // the (narrower, see cbTableCols()) column table still fits the
+        // physical paper without wrapping — verified by rendering and
+        // measuring the printed box.
+        let is58 = appSettings.thermalPaperWidth === '58mm';
+        let paperWidthMm = is58 ? '58mm' : '80mm';
+        let bodyWidthMm = is58 ? '54mm' : '76mm';
+        let itemsFontSize = is58 ? '9px' : '10.5px';
 
         let logoSrc = appSettings.businessLogo || '';
         let businessName = (appSettings.businessName || 'Lalitha Naturals').toUpperCase();
-        let headingHTML = logoSrc
+        let contactLine = businessContactLine();
+        let contactHTML = contactLine ? `<div class="center" style="font-size: 8.5px; margin-top:1px;">${contactLine}</div>` : '';
+        let headingHTML = (logoSrc
             ? `<div class="center" style="margin-bottom:4px;"><img src="${logoSrc}" class="receipt-logo" style="max-width:120px; max-height:60px;"></div>`
-            : `<div class="center bold" style="font-size: 13px;">${businessName}</div>`;
+            : `<div class="center biz-name">${businessName}</div>`) + contactHTML;
 
         let custLine = (extra.customerName || extra.customerNumber)
             ? `<div class="center" style="font-size: 9px;">${extra.customerName ? 'Customer: ' + extra.customerName : ''}${extra.customerName && extra.customerNumber ? ' | ' : ''}${extra.customerNumber ? 'Ph: ' + extra.customerNumber : ''}</div>` : '';
 
         let includeSwOnReceipt = extra.includeSoftwareOnReceipt && extra.softwareBillAmount > 0;
+        // Given the next sequential S.No after the cart's own item rows,
+        // for consistency with the numbered item table above it.
         let swLine = includeSwOnReceipt
-            ? `<div class="row"><span>Software Bill${extra.softwareBillNo ? ' #' + extra.softwareBillNo : ''}</span><span>₹${extra.softwareBillAmount}</span></div>` : '';
+            ? `<div class="row"><span>${items.length + 1}. Software Bill${extra.softwareBillNo ? ' #' + extra.softwareBillNo : ''}</span><span>₹${extra.softwareBillAmount}</span></div>` : '';
         // Printed total mirrors the live preview: cart+software only when the
         // software line is actually shown on the receipt, cart-only
         // otherwise — the combined amount is still what was recorded to
@@ -3172,40 +3750,97 @@
         let grandTotal = includeSwOnReceipt ? cartTotal + extra.softwareBillAmount : cartTotal;
 
         let printWin = window.open('', '_blank', 'width=320,height=600');
-        printWin.document.write(`
+        printWin.document.write(`<!DOCTYPE html>
             <html>
             <head>
                 <title>Cash Bill #${billNo}</title>
                 <style>
-                    body { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: 280px; padding: 10px; color: #000; }
+                    /* NOTE ON THE PRINTED-PAGE-HEIGHT FIX (2nd attempt):
+                       The previous fix declared "@page { size: 80mm auto; }",
+                       which LOOKS right but is actually invalid CSS —
+                       CSS.supports('size','80mm auto') is false, because the
+                       two-value form of the size property only accepts two
+                       lengths, not a length plus the auto keyword. Chrome
+                       silently drops the whole invalid @page rule and falls
+                       back to its default Letter-sized page, which is
+                       EXACTLY the original blank-space-after-total bug —
+                       it never actually printed at 80mm-auto-height in the
+                       first place, on screen it looked fine (regular HTML
+                       flow just shows the content, no page box involved),
+                       but real print / print-to-PDF output still had the
+                       full-height blank page below the receipt.
+                       The real fix: @page size cannot express "auto" height,
+                       so the height has to be a real, computed number. After
+                       the content is written, JS below measures the
+                       rendered body height and injects a concrete
+                       "@page { size: 80mm <height>mm; margin:0; }" rule
+                       sized exactly to that content, then prints. */
+                    * { box-sizing: border-box; }
+                    html, body { height: auto; }
+                    body { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: ${bodyWidthMm}; margin: 0 auto; padding: 8px 6px 6px; color: #000; -webkit-print-color-adjust: exact; }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
-                    .line { border-bottom: 1px dashed #000; margin: 6px 0; }
-                    .row { display: flex; justify-content: space-between; margin: 3px 0; }
+                    .biz-name { font-size: 14px; font-weight: 800; letter-spacing: 0.5px; }
+                    .divider { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+                    .divider.heavy { border-top-width: 2px; border-top-style: solid; }
+                    .meta { font-size: 9px; line-height: 1.45; text-align: center; color: #111; }
+                    .row { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
                     .receipt-logo { filter: grayscale(100%) contrast(1.15); }
-                    .items-table { margin: 4px 0; font-size: 10.5px; line-height: 1.5; white-space: pre; }
+                    .items-table { margin: 4px 0 0; font-size: ${itemsFontSize}; line-height: 1.55; white-space: pre; }
+                    .totals { margin-top: 2px; }
+                    .total-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; padding: 3px 0; }
+                    .footer { text-align: center; font-size: 9.5px; margin-top: 8px; line-height: 1.5; }
+                    .footer .thanks { font-weight: 700; font-size: 10.5px; letter-spacing: 0.5px; }
                 </style>
             </head>
             <body>
                 ${headingHTML}
-                <div class="center" style="font-size: 9px; margin-bottom: 4px;">CASH BILL</div>
-                <div class="center" style="font-size: 9px;">Bill #${billNo} | Branch: ${branch}</div>
-                <div class="center" style="font-size: 9px;">${salesman ? 'Salesman: ' + salesman + ' | ' : ''}Payment: ${paymentMode}</div>
-                <div class="center" style="font-size: 9px; margin-bottom: 6px;">${new Date().toLocaleString('en-IN')}</div>
+                <div class="meta">
+                    CASH BILL &middot; Bill #${billNo} &middot; Branch: ${branch}<br>
+                    ${salesman ? 'Salesman: ' + salesman + ' &middot; ' : ''}Payment: ${paymentMode}<br>
+                    ${new Date().toLocaleString('en-IN')}
+                </div>
                 ${custLine}
-                <div class="line"></div>
+                <hr class="divider">
                 ${rows}
                 ${swLine}
-                <div class="line"></div>
-                <div class="row bold" style="font-size:13px;"><span>TOTAL</span><span>₹${grandTotal}</span></div>
-                <div class="line"></div>
-                <div class="center" style="font-size: 9px; margin-top: 8px;">*** THANK YOU ***</div>
+                <hr class="divider heavy">
+                <div class="totals">
+                    <div class="total-row"><span>TOTAL</span><span>₹${grandTotal}</span></div>
+                </div>
+                <hr class="divider">
+                <div class="footer">
+                    <div class="thanks">THANK YOU, VISIT AGAIN!</div>
+                </div>
             </body>
             </html>
         `);
         printWin.document.close();
         printWin.focus();
-        setTimeout(() => { printWin.print(); printWin.close(); }, 500);
+        setTimeout(() => {
+            applyComputedThermalPageSize(printWin, paperWidthMm);
+            printWin.print();
+        }, 500);
+    }
+
+    // Measures the print window's actual rendered content height and
+    // injects a concrete "@page { size: <width> <height>mm; }" rule sized to
+    // it, then leaves it in place for the print. See the long comment above
+    // printCashBillReceipt's <style> block for why this is needed instead
+    // of the (invalid) "size: 80mm auto". paperWidthMm is read live from
+    // appSettings.thermalPaperWidth by each caller (defaults to '80mm' when
+    // a caller doesn't pass one) so the page-size rule always matches the
+    // width actually used for the printed content.
+    function applyComputedThermalPageSize(win, paperWidthMm) {
+        paperWidthMm = paperWidthMm || '80mm';
+        try {
+            let heightPx = Math.max(win.document.body.scrollHeight, win.document.documentElement.scrollHeight);
+            let heightMm = Math.ceil((heightPx * 25.4 / 96) + 4); // +4mm safety margin
+            let styleEl = win.document.createElement('style');
+            styleEl.id = 'computedPageSize';
+            styleEl.textContent = `@page { size: ${paperWidthMm} ${heightMm}mm; margin: 0; }`;
+            win.document.head.appendChild(styleEl);
+        } catch (e) { /* best-effort — printing still works without it */ }
     }
 
     // Shows the full itemized detail of a Cash Bill, looked up by its bill
@@ -3674,7 +4309,7 @@
             alert('No earlier versions recorded for this entry.');
             return;
         }
-        document.getElementById('historyModalDesc').innerText = `${branch} — ${date} (${shift}). Current Closing Balance: ₹${rec.closingBal || 0}${rec.closingBalNote ? ' (' + rec.closingBalNote + ')' : ''}. ${rec.history.length} earlier version${rec.history.length === 1 ? '' : 's'} before the current one.`;
+        document.getElementById('historyModalDesc').innerText = `${branch} — ${date} (${shift}). Current Closing Balance: ₹${rec.closingBal || 0}. ${rec.history.length} earlier version${rec.history.length === 1 ? '' : 's'} before the current one.`;
         let versions = rec.history.slice().reverse(); // most recent edit first
         let html = versions.map((v, i) => `
             <div style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px;">
@@ -3682,7 +4317,6 @@
                 ${v.editNote ? `<div style="background:#fef9c3; border:1px solid #fde047; border-radius:6px; padding:6px 8px; margin-bottom:6px; font-weight:700; color:#854d0e;">📝 ${v.editNote}</div>` : ''}
                 <div>Cashier: <strong>${v.cashier || ''}</strong></div>
                 <div>Closing Bal: <strong>₹${v.closingBal || 0}</strong> · Final Sale: <strong>₹${v.totalSale || 0}</strong> · Variance: <strong>${(v.variance > 0 ? '+' : '')}₹${v.variance || 0}</strong></div>
-                ${v.closingBalNote ? `<div style="color:var(--muted); font-size:11.5px; font-style:italic;">Closing Bal note: ${v.closingBalNote}</div>` : ''}
                 <div style="color:var(--muted); font-size:11.5px;">Notes: ${v.notes || 'None'}</div>
             </div>`).join('');
         document.getElementById('historyModalContent').innerHTML = html;
@@ -3856,8 +4490,9 @@
             pluxeePay: document.getElementById('pluxeePay').value,
             openingBal: document.getElementById('openingBalInput').value,
             closingBal: document.getElementById('closingBalInput').value,
-            closingBalNote: document.getElementById('closingBalNote').value,
             closingManual: document.getElementById('closingBalInput').dataset.manual === 'true',
+            extraChangeGiven: document.getElementById('extraChangeGivenInput').value,
+            changeLeftByCustomer: document.getElementById('changeLeftByCustomerInput').value,
             vasySale: document.getElementById('vasySale').value,
             notes: document.getElementById('registerNotes').value,
             cCounts: Array.from(document.querySelectorAll('.c-count')).map(i => ({ val: i.getAttribute('data-val'), qty: i.value })),
@@ -3912,8 +4547,9 @@
         document.getElementById('pluxeePay').value = state.pluxeePay || '';
         document.getElementById('openingBalInput').value = state.openingBal || '';
         document.getElementById('closingBalInput').value = state.closingBal || '';
-        document.getElementById('closingBalNote').value = state.closingBalNote || '';
         document.getElementById('closingBalInput').dataset.manual = state.closingManual ? 'true' : 'false';
+        document.getElementById('extraChangeGivenInput').value = state.extraChangeGiven || '';
+        document.getElementById('changeLeftByCustomerInput').value = state.changeLeftByCustomer || '';
         document.getElementById('vasySale').value = state.vasySale || '';
         document.getElementById('registerNotes').value = state.notes || '';
 
@@ -4022,7 +4658,7 @@
         let tbId = type === 'exp' ? 'expTableBody' : 'ownerTableBody';
         let tb = document.getElementById(tbId);
         let tr = document.createElement('tr');
-        tr.innerHTML = `<td><input type="text" class="${type}-name" value="${name}" readonly style="background:#f8fafc; border:none; font-weight:600;" tabindex="-1"></td><td><input type="number" class="${type}-amt" value="${amt}" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td style="width:${type === 'exp' ? '48px' : '28px'}; text-align:center; white-space:nowrap;">${photoCellHTML(type)}</td>`;
+        tr.innerHTML = `<td><input type="text" class="${type}-name" value="${name}" readonly style="background:var(--header-bg); border:none; font-weight:600;" tabindex="-1"</td><td><input type="number" class="${type}-amt" value="${amt}" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td style="width:${type === 'exp' ? '48px' : '28px'}; text-align:center; white-space:nowrap;">${photoCellHTML(type)}</td>`;
         if (photo) { tr.dataset.photo = photo; markRowPhotoAttached(tr); }
         tb.appendChild(tr);
         recalcRegister();
@@ -4075,6 +4711,40 @@
         location.reload();
     }
 
+    // Resets ONLY appSettings (branch names, owner/expense/vendor/unbilled names,
+    // business profile, alert threshold, section defaults, Cloud Sync URL, etc.)
+    // back to getDefaultAppSettings(). Deliberately leaves untouched: the
+    // device-local branch lock (DEVICE_LOCKED_BRANCH_KEY — never part of
+    // appSettings, see its own comment above), theme preference, and every piece
+    // of actual business data (shift records, Cash Bills, item catalog, damage
+    // ledger, stock levels) which all live under their own separate
+    // localStorage keys, not inside appSettings.
+    function resetAllSettingsToDefault() {
+        let sure = confirm('This will reset all app settings (branch names, owner names, expense categories, business info, thresholds, cloud sync URL, etc.) back to defaults. Your saved shift records, cash bills, and catalog will NOT be deleted. Continue?');
+        if (!sure) return;
+
+        appSettings = getDefaultAppSettings();
+        saveSettings();
+
+        // Re-render everything Settings and the main page derive from
+        // appSettings, so the reset is visible immediately without a reload.
+        populateBranchSelects();
+        populateShiftSelect();
+        applyShiftsEnabled();
+        applyBranchLock();
+        applyBusinessProfile();
+        syncFieldRowsWithSettings();
+        recalcRegister();
+
+        pendingBusinessLogo = null;
+        pendingBranches = null;
+        pendingShifts = null;
+        pendingFieldNames = null;
+        openSettingsModal();
+        switchSettingsTab('formulas');
+        alert('All settings have been reset to their defaults.');
+    }
+
     // Resizes/compresses the chosen image client-side (max 800px wide, JPEG
     // ~60% quality) before storing it, since these end up as base64 text
     // inside localStorage/backups and full-size phone photos would eat
@@ -4122,6 +4792,8 @@
             document.querySelectorAll('.d-count').forEach(i => i.value = '');
             document.getElementById('openingBalInput').value = '';
             document.getElementById('closingBalInput').value = '';
+            document.getElementById('extraChangeGivenInput').value = '';
+            document.getElementById('changeLeftByCustomerInput').value = '';
         } else if (cat === 'exp') {
             document.querySelectorAll('.exp-amt').forEach(i => i.value = '');
         } else if (cat === 'owner_vend') {
@@ -4217,6 +4889,18 @@
         return card + upi + plux;
     }
 
+    // Applies the red/green/blue sign-highlight (negative/zero/positive) to
+    // a Total Summary row + its value element. Shared by the Tally row and
+    // the Total row (and the A4 export equivalents) so both are colored by
+    // THEIR OWN value's sign, not a shared variance value.
+    function applySignHighlight(rowEl, valueEl, value) {
+        if (rowEl) rowEl.classList.remove('sign-negative', 'sign-zero', 'sign-positive');
+        let cls = value < 0 ? 'sign-negative' : (value === 0 ? 'sign-zero' : 'sign-positive');
+        let color = value < 0 ? '#dc2626' : (value === 0 ? '#16a34a' : '#2563eb');
+        if (rowEl) rowEl.classList.add(cls);
+        if (valueEl) valueEl.style.color = color;
+    }
+
     function recalcRegister() {
         let cashAddedTotalEl = document.getElementById('lblCashAddedTotal');
         if (cashAddedTotalEl) cashAddedTotalEl.innerText = '₹' + calcCashAddedTotal();
@@ -4245,17 +4929,20 @@
             closingInputEl.value = calculatedClosing;
         }
 
+        let extraChangeGiven = parseFloat(document.getElementById('extraChangeGivenInput').value) || 0;
+        let changeLeftByCustomer = parseFloat(document.getElementById('changeLeftByCustomerInput').value) || 0;
+
         let grandTotalDenom = denomSum - openingVal;
 
         // Tray Balance section's own "Grand Total" (lblTotalDenom / dockTray):
-        // denomination sum + digital payments - opening balance - cash added,
-        // per the user's requested formula. The Total Summary panel's
-        // "Grand Total" (sumGrand, below) now uses this identical formula
-        // (cash added is subtracted there too, per the user's follow-up
-        // confirmation), so both Grand Total labels are kept in sync and
-        // both feed Final Sale / Tally / Variance the same way.
+        // denomination sum + digital payments - opening balance - cash added
+        // - extra change given + change left by customer, per the user's
+        // requested formula. The Total Summary panel's "Grand Total"
+        // (sumGrand, below) now uses this identical formula, so both Grand
+        // Total labels are kept in sync and both feed Final Sale / Tally /
+        // Variance the same way.
         let cashAddedTotal = calcCashAddedTotal();
-        let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - cashAddedTotal;
+        let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - cashAddedTotal - extraChangeGiven + changeLeftByCustomer;
         document.getElementById('lblTotalDenom').innerText = '₹' + trayGrandTotal;
         document.getElementById('dockTray').innerText = '₹' + trayGrandTotal;
 
@@ -4272,7 +4959,7 @@
         let card = parseFloat(document.getElementById('cardPay').value) || 0;
         let upi = parseFloat(document.getElementById('upiPay').value) || 0;
         let plux = parseFloat(document.getElementById('pluxeePay').value) || 0;
-        let grandTotal = grandTotalDenom + (card + upi + plux) - cashAddedTotal;
+        let grandTotal = grandTotalDenom + (card + upi + plux) - cashAddedTotal - extraChangeGiven + changeLeftByCustomer;
 
         document.getElementById('sumGrand').innerText = '₹' + grandTotal;
         document.getElementById('sumExp').innerText = '₹' + expTotal;
@@ -4281,6 +4968,7 @@
 
         let total1 = grandTotal + expTotal + ownerTotal + vendTotal;
         document.getElementById('sumTotal1').innerText = '₹' + total1;
+        applySignHighlight(document.getElementById('sumTotal1Row'), document.getElementById('sumTotal1'), total1);
 
         let vasySale = parseFloat(document.getElementById('vasySale').value) || 0;
         document.getElementById('dockVasy').innerText = '₹' + vasySale;
@@ -4291,13 +4979,13 @@
         let variance = total1 - totalSale;
         let varLbl = document.getElementById('sumVariance');
         varLbl.innerText = (variance > 0 ? '+' : '') + '₹' + variance;
-        // Green when perfectly tallied, red otherwise — a quick glance tells
-        // a hurried cashier whether they're done or still need to find the gap.
-        let varianceColor = variance === 0 ? '#16a34a' : '#dc2626';
-        varLbl.style.color = varianceColor;
+        // Sign-based highlight: red = shortage (negative), green = perfectly
+        // tallied (zero), blue = surplus (positive) — a quick glance tells a
+        // hurried cashier exactly which state they're in, not just pass/fail.
+        applySignHighlight(document.getElementById('sumVarianceRow'), varLbl, variance);
         let dockVarianceEl = document.getElementById('dockVariance');
         dockVarianceEl.innerText = '₹' + variance;
-        dockVarianceEl.style.color = variance === 0 ? '#4ade80' : '#fca5a5';
+        dockVarianceEl.style.color = variance === 0 ? '#4ade80' : (variance < 0 ? '#fca5a5' : '#93c5fd');
         document.getElementById('finalGrandDisplay').innerText = '₹' + total1;
 
         updateBalanceCheckIndicator();
@@ -4547,7 +5235,7 @@
             html2canvas(exportEl, { scale: 2, useCORS: true }).then(canvas => {
                 let imgData = canvas.toDataURL('image/jpeg', 0.95);
                 let printWin = window.open('', '_blank');
-                printWin.document.write(`<html><head><title>Standard Print View</title><style>@page{size:A4 landscape;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();window.close();"></body></html>`);
+                printWin.document.write(`<html><head><title>Standard Print View</title><style>@page{size:A4 landscape;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();"></body></html>`);
                 printWin.document.close();
                 closeModalOnly();
             });
@@ -4567,7 +5255,7 @@
             html2canvas(exportEl, { scale: 2, useCORS: true }).then(canvas => {
                 let imgData = canvas.toDataURL('image/jpeg', 0.95);
                 let pdfWindow = window.open('', '_blank');
-                pdfWindow.document.write(`<html><head><title>PDF Document</title><style>@page{size:A4 landscape;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();window.close();"></body></html>`);
+                pdfWindow.document.write(`<html><head><title>PDF Document</title><style>@page{size:A4 landscape;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();"></body></html>`);
                 pdfWindow.document.close();
                 closeModalOnly();
             });
@@ -4579,16 +5267,42 @@
             }
             let thermalContent = document.getElementById('thermalReceiptContainer').innerHTML;
             let printWin = window.open('', '_blank', 'width=350,height=600');
-            printWin.document.write(`<html><head><style>body { font-family: 'JetBrains Mono', monospace; font-size: 12px; width: 280px; padding: 10px; }</style></head><body>${thermalContent}</body></html>`);
+            // Two separate bugs were fixed here (this window was missed
+            // entirely by round 1's fix, which only touched
+            // printCashBillReceipt's window — see this file's Cash Bill
+            // receipt <style> comment for the second, deeper bug: the old
+            // "@page { size: 80mm auto; }" is invalid CSS and gets dropped
+            // by Chrome, silently falling back to a full Letter-height page).
+            // No DOCTYPE also puts the popup in quirks mode, where body can
+            // stretch to the window's full height instead of shrinking to
+            // its content — <!DOCTYPE html> below fixes that too.
+            // Paper width read live from appSettings.thermalPaperWidth on every
+            // export (never cached), same as printCashBillReceipt, so a
+            // Settings change takes effect on the very next export/print.
+            let regIs58 = appSettings.thermalPaperWidth === '58mm';
+            let regPaperWidthMm = regIs58 ? '58mm' : '80mm';
+            let regBodyWidthPx = regIs58 ? 203 : 280;
+            let regFontSize = regIs58 ? '11px' : '12px';
+            printWin.document.write(`<!DOCTYPE html><html><head><style>
+                * { box-sizing: border-box; }
+                html, body { height: auto; }
+                body { font-family: 'JetBrains Mono', monospace; font-size: ${regFontSize}; width: ${regBodyWidthPx}px; margin: 0 auto; padding: 10px; }
+            </style></head><body>${thermalContent}</body></html>`);
             printWin.document.close();
             printWin.focus();
-            setTimeout(() => { printWin.print(); printWin.close(); closeModalOnly(); }, 500);
+            setTimeout(() => {
+                applyComputedThermalPageSize(printWin, regPaperWidthMm);
+                printWin.print();
+                closeModalOnly();
+            }, 500);
         }
     }
 
     function commitRegisterEntryToStorage() {
         let openingBal = parseFloat(document.getElementById('openingBalInput').value) || 0;
         let closingBal = parseFloat(document.getElementById('closingBalInput').value) || 0;
+        let extraChangeGiven = parseFloat(document.getElementById('extraChangeGivenInput').value) || 0;
+        let changeLeftByCustomer = parseFloat(document.getElementById('changeLeftByCustomerInput').value) || 0;
 
         let record = {
             date: document.getElementById('regDate').value,
@@ -4597,7 +5311,8 @@
             cashier: document.getElementById('cashierName').value.trim(),
             openingBal: Number(openingBal),
             closingBal: Number(closingBal),
-            closingBalNote: document.getElementById('closingBalNote').value || '',
+            extraChangeGiven: Number(extraChangeGiven),
+            changeLeftByCustomer: Number(changeLeftByCustomer),
             grandTotal: Number(document.getElementById('sumGrand').innerText.replace('₹','')) || 0,
             totalSale: Number(document.getElementById('sumTotalSale').innerText.replace('₹','')) || 0,
             vasySale: Number(document.getElementById('vasySale').value) || 0,
@@ -4684,6 +5399,14 @@
             trayHtml += `<tr><td>${denom}</td><td class="cell-val">${qty} | ₹${sub}</td></tr>`;
         });
         trayHtml += `<tr><td>Closing Bal (₹200-₹1)</td><td class="cell-val">₹${document.getElementById('closingBalInput').value || 0}</td></tr>`;
+        let extraChangeGivenVal = document.getElementById('extraChangeGivenInput').value || 0;
+        let changeLeftByCustomerVal = document.getElementById('changeLeftByCustomerInput').value || 0;
+        if (Number(extraChangeGivenVal) > 0) {
+            trayHtml += `<tr><td>Extra Change Given (-)</td><td class="cell-val">₹${extraChangeGivenVal}</td></tr>`;
+        }
+        if (Number(changeLeftByCustomerVal) > 0) {
+            trayHtml += `<tr><td>Change Left by Customer (+)</td><td class="cell-val">₹${changeLeftByCustomerVal}</td></tr>`;
+        }
         document.getElementById('a4TrayTable').innerHTML = trayHtml;
         document.getElementById('a4LblTotalDenom').innerText = document.getElementById('lblTotalDenom').innerText;
 
@@ -4728,12 +5451,13 @@
         document.getElementById('a4SumOwner').innerText = document.getElementById('sumOwner').innerText;
         document.getElementById('a4SumVend').innerText = document.getElementById('sumVend').innerText;
         document.getElementById('a4SumTotal1').innerText = document.getElementById('sumTotal1').innerText;
+        applySignHighlight(document.getElementById('a4SumTotal1Row'), document.getElementById('a4SumTotal1'), Number(document.getElementById('sumTotal1').innerText.replace('₹','')) || 0);
         document.getElementById('a4VasySale').innerText = '₹' + (document.getElementById('vasySale').value || 0);
         document.getElementById('a4SumUnb').innerText = document.getElementById('sumUnb').innerText;
         document.getElementById('a4SumTotalSale').innerText = document.getElementById('sumTotalSale').innerText;
         let a4VarEl = document.getElementById('a4SumVariance');
         a4VarEl.innerText = document.getElementById('sumVariance').innerText;
-        a4VarEl.style.color = document.getElementById('sumVariance').style.color || '#dc2626';
+        applySignHighlight(document.getElementById('a4SumVarianceRow'), a4VarEl, Number(document.getElementById('sumVariance').innerText.replace('₹','').replace('+','')) || 0);
         document.getElementById('a4NotesDisplay').innerText = document.getElementById('registerNotes').value || 'None';
         document.getElementById('a4FinalGrandDisplay').innerText = document.getElementById('finalGrandDisplay').innerText;
     }
@@ -4748,7 +5472,14 @@
         document.getElementById('a4PluxeePay').innerText = '₹0';
         document.getElementById('a4DigitalAddTable').innerHTML = '';
 
-        document.getElementById('a4TrayTable').innerHTML = `<tr><td>Opening Balance</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr><tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}${rec.closingBalNote ? '<br><span style="font-style:italic; font-weight:400; font-size:10px;">' + rec.closingBalNote + '</span>' : ''}</td></tr>`;
+        let recTrayHtml = `<tr><td>Opening Balance</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr><tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}</td></tr>`;
+        if (Number(rec.extraChangeGiven || 0) > 0) {
+            recTrayHtml += `<tr><td>Extra Change Given (-)</td><td class="cell-val">₹${rec.extraChangeGiven}</td></tr>`;
+        }
+        if (Number(rec.changeLeftByCustomer || 0) > 0) {
+            recTrayHtml += `<tr><td>Change Left by Customer (+)</td><td class="cell-val">₹${rec.changeLeftByCustomer}</td></tr>`;
+        }
+        document.getElementById('a4TrayTable').innerHTML = recTrayHtml;
         document.getElementById('a4LblTotalDenom').innerText = '₹' + (rec.grandTotal || 0);
 
         let expH = '';
@@ -4785,13 +5516,16 @@
         document.getElementById('a4SumOwner').innerText = '₹' + totOwn;
         let totVend = 0; if(rec.vendors) rec.vendors.forEach(v => totVend += v.amt);
         document.getElementById('a4SumVend').innerText = '₹' + totVend;
-        document.getElementById('a4SumTotal1').innerText = '₹' + (rec.finalTotal || rec.grandTotal || 0);
+        let recTotal1 = Number(rec.finalTotal || rec.grandTotal || 0);
+        document.getElementById('a4SumTotal1').innerText = '₹' + recTotal1;
+        applySignHighlight(document.getElementById('a4SumTotal1Row'), document.getElementById('a4SumTotal1'), recTotal1);
         document.getElementById('a4VasySale').innerText = '₹' + (rec.vasySale || 0);
         document.getElementById('a4SumUnb').innerText = '₹' + totUnb;
         document.getElementById('a4SumTotalSale').innerText = '₹' + (rec.totalSale || 0);
         let a4VarElRec = document.getElementById('a4SumVariance');
-        a4VarElRec.innerText = (rec.variance >= 0 ? '+' : '') + '₹' + (rec.variance || 0);
-        a4VarElRec.style.color = (Number(rec.variance) || 0) === 0 ? '#16a34a' : '#dc2626';
+        let recVariance = Number(rec.variance) || 0;
+        a4VarElRec.innerText = (recVariance >= 0 ? '+' : '') + '₹' + recVariance;
+        applySignHighlight(document.getElementById('a4SumVarianceRow'), a4VarElRec, recVariance);
         document.getElementById('a4NotesDisplay').innerText = rec.notes || 'None';
         document.getElementById('a4FinalGrandDisplay').innerText = '₹' + (rec.finalTotal || rec.grandTotal || 0);
     }
@@ -4802,6 +5536,10 @@
         document.getElementById('tCashier').innerText = document.getElementById('cashierName').value.trim();
         document.getElementById('tOpening').innerText = '₹' + document.getElementById('openingBalInput').value;
         document.getElementById('tClosing').innerText = '₹' + document.getElementById('closingBalInput').value;
+        let tExtraChangeGivenEl = document.getElementById('tExtraChangeGiven');
+        let tChangeLeftEl = document.getElementById('tChangeLeft');
+        if (tExtraChangeGivenEl) tExtraChangeGivenEl.innerText = '₹' + (document.getElementById('extraChangeGivenInput').value || 0);
+        if (tChangeLeftEl) tChangeLeftEl.innerText = '₹' + (document.getElementById('changeLeftByCustomerInput').value || 0);
         document.getElementById('tTray').innerText = document.getElementById('lblTotalDenom').innerText;
         document.getElementById('tDigital').innerText = '₹' + ((parseFloat(document.getElementById('cardPay').value)||0) + (parseFloat(document.getElementById('upiPay').value)||0) + (parseFloat(document.getElementById('pluxeePay').value)||0));
         document.getElementById('tExp').innerText = document.getElementById('lblExpTotal').innerText;
@@ -5437,7 +6175,7 @@
         `);
         printWin.document.close();
         printWin.focus();
-        setTimeout(() => { printWin.print(); printWin.close(); }, 500);
+        setTimeout(() => { printWin.print(); }, 500);
     }
 
     function printAuditDashboard() {
@@ -5510,7 +6248,551 @@
         `);
         printWin.document.close();
         printWin.focus();
-        setTimeout(() => { printWin.print(); printWin.close(); }, 500);
+        setTimeout(() => { printWin.print(); }, 500);
+    }
+
+    // ===================== DARK MODE TOGGLE =====================
+    // Persists 'lalitha_theme' ('light' | 'dark') in localStorage. The
+    // attribute itself is applied as early as possible by the small inline
+    // script right after <body> to avoid a flash of the wrong theme; this
+    // just keeps the toggle button + storage in sync after that.
+    function updateThemeToggleBtn() {
+        let btn = document.getElementById('themeToggleBtn');
+        if (!btn) return;
+        let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        btn.textContent = isDark ? '☀️' : '🌙';
+        btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+    }
+
+    function toggleAppTheme() {
+        let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+            document.documentElement.removeAttribute('data-theme');
+            try { localStorage.setItem('lalitha_theme', 'light'); } catch (e) {}
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            try { localStorage.setItem('lalitha_theme', 'dark'); } catch (e) {}
+        }
+        updateThemeToggleBtn();
+    }
+
+    // ===================== APPS SCRIPT CODE VIEWER (read-only, copy-only) =====================
+    // Embeds the full companion "Code.gs" Apps Script backend source so it
+    // can be viewed/copied from inside Settings > Cloud Sync, not just as a
+    // separate downloaded file. Never executed or edited here — purely for
+    // display + clipboard copy, to paste into script.google.com yourself.
+    const APPS_SCRIPT_SOURCE = "/**\n * Lalitha Naturals \u2014 Shift Register \u2014 Google Sheets Cloud Sync\n * =============================================================\n *\n * WHAT THIS IS\n * A tiny free \"Google Apps Script Web App\" that receives shift records\n * posted by the Shift Register HTML app and appends/updates them as rows\n * in a Google Sheet named \"ShiftRegister\" (created automatically the first\n * time it runs). This is what makes your shift data reachable from any\n * device \u2014 the Sheet lives in your own Google account.\n *\n * ONE-TIME SETUP (do this once; takes about 3 minutes):\n *   1. Go to https://sheets.google.com and create a new, blank Google Sheet\n *      (or open an existing one you want to use for this).\n *   2. In the menu, click Extensions > Apps Script. A code editor opens in\n *      a new tab, with a default empty \"Code.gs\" file.\n *   3. Select all the placeholder code in that editor and delete it. Paste\n *      in the ENTIRE contents of this file instead.\n *   4. Click the disk/Save icon (or Ctrl/Cmd+S).\n *   5. Click \"Deploy\" (top-right) > \"New deployment\".\n *   6. Next to \"Select type\", click the gear icon and choose \"Web app\".\n *   7. Fill in:\n *        Description:      Shift Register Sync (or anything you like)\n *        Execute as:        Me (your own Google account)\n *        Who has access:    Anyone with the link\n *      (These exact choices matter \u2014 \"Execute as: Me\" lets the script write\n *      to your Sheet on the app's behalf even though the app itself never\n *      logs into Google, and \"Anyone with the link\" lets the offline app\n *      call the URL without you having to log in from inside it.)\n *   8. Click \"Deploy\". The first time, Google will ask you to authorize the\n *      script \u2014 click through \"Review permissions\" > pick your account >\n *      \"Advanced\" > \"Go to (project name) (unsafe)\" > \"Allow\". This warning\n *      is expected and normal for a script you wrote/pasted yourself.\n *   9. Copy the \"Web app URL\" it gives you (ends in /exec). That is the URL\n *      you paste into the Shift Register app's Settings > Cloud Sync panel.\n *\n * If you ever edit this script again, you must create a NEW deployment (or\n * use \"Manage deployments\" > edit > \"New version\") for the changes to take\n * effect on the same URL.\n *\n * WHAT IT STORES\n * Every time a shift is saved in the app (with Cloud Sync turned on), it\n * POSTs the shift's data as JSON here. This script appends one row per\n * shift into a sheet tab named \"ShiftRegister\", creating that tab and its\n * header row automatically if they don't exist yet. If a row already\n * exists for the same Date + Branch + Shift, it's updated in place instead\n * of duplicated (an \"upsert\").\n *\n * The display columns cover the most useful fields at a glance. A final\n * \"Full Record (JSON)\" column also stores the ENTIRE record exactly as\n * received, so nothing is ever lost even if a future version of the app\n * adds fields this script doesn't explicitly list yet.\n *\n * This script also creates two more tabs automatically, the first time each\n * kind of item is synced:\n *   - \"ItemCatalog\": the Cash Bill's barcode/item catalog (name, MRP, price).\n *   - \"DamageExpiryLedger\": the Damage/Expiry write-off log (date, item,\n *     qty, reason, loss amount, branch) \u2014 a simple record, push-only from\n *     the app, upserted by its own id so re-syncs never duplicate a row.\n */\n\nvar SHEET_NAME = 'ShiftRegister';\nvar CATALOG_SHEET_NAME = 'ItemCatalog';\nvar CATALOG_HEADERS = ['barcode', 'name', 'mrp', 'sellingPrice', 'discount', 'discountMode', 'updatedAt'];\n\nfunction getOrCreateCatalogSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(CATALOG_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(CATALOG_SHEET_NAME);\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one catalog item row, keyed on barcode.\n */\nfunction upsertCatalogItem_(item) {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    item.barcode || '',\n    item.name || '',\n    item.mrp != null ? item.mrp : '',\n    item.sellingPrice != null ? item.sellingPrice : '',\n    item.discount != null ? item.discount : '',\n    item.discountMode || '',\n    item.updatedAt != null ? item.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(item.barcode)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all ItemCatalog rows as an array of plain objects.\n */\nfunction getCatalogRecords_() {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.barcode) rows.push(obj);\n  }\n  return rows;\n}\n\nvar DAMAGE_SHEET_NAME = 'DamageExpiryLedger';\nvar DAMAGE_HEADERS = ['id', 'date', 'item', 'qty', 'reason', 'note', 'lossAmount', 'branch', 'updatedAt'];\n\nfunction getOrCreateDamageSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(DAMAGE_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(DAMAGE_SHEET_NAME);\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one damage/expiry ledger row, keyed on its unique id\n * (last-write-wins by updatedAt, same pattern as the item catalog).\n */\nfunction upsertDamageEntry_(entry) {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    entry.id || '',\n    entry.date || '',\n    entry.item || '',\n    entry.qty != null ? entry.qty : '',\n    entry.reason || '',\n    entry.note || '',\n    entry.lossAmount != null ? entry.lossAmount : '',\n    entry.branch || '',\n    entry.updatedAt != null ? entry.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(entry.id)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all DamageExpiryLedger rows as plain objects \u2014 supports the\n * optional ?type=damage pull-merge path on doGet for symmetry with the\n * catalog sync, even though the app itself currently only pushes entries\n * (a logged write-off rarely needs to be pulled back and re-merged the way\n * a shared product catalog does, but the endpoint supports it either way).\n */\nfunction getDamageRecords_() {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.id) rows.push(obj);\n  }\n  return rows;\n}\n\nvar HEADERS = [\n  'Date', 'Branch', 'Shift', 'Cashier',\n  'Grand Total', 'Tray Balance (Closing Bal)', 'Total Outflows',\n  'Software Sale', 'Variance', 'Opening Bal', 'Closing Bal',\n  'Extra Change Given', 'Change Left by Customer',\n  'Notes', 'Synced At', 'Full Record (JSON)'\n];\n\nfunction getOrCreateSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(SHEET_NAME);\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\nfunction sumField_(list, key) {\n  var total = 0;\n  (list || []).forEach(function (item) {\n    total += Number(item && item[key]) || 0;\n  });\n  return total;\n}\n\nfunction recordToRow_(record) {\n  var totalOutflows =\n    sumField_(record.expenses, 'amt') +\n    sumField_(record.owners, 'amt') +\n    sumField_(record.vendors, 'amt');\n\n  return [\n    record.date || '',\n    record.branch || '',\n    record.shift || 'Full Day',\n    record.cashier || '',\n    record.grandTotal != null ? record.grandTotal : '',\n    record.closingBal != null ? record.closingBal : '', // \"Tray Balance\" note field\n    totalOutflows,\n    record.vasySale != null ? record.vasySale : '',\n    record.variance != null ? record.variance : '',\n    record.openingBal != null ? record.openingBal : '',\n    record.closingBal != null ? record.closingBal : '',\n    record.extraChangeGiven != null ? record.extraChangeGiven : '',\n    record.changeLeftByCustomer != null ? record.changeLeftByCustomer : '',\n    record.notes || '',\n    new Date().toISOString(),\n    JSON.stringify(record)\n  ];\n}\n\n/**\n * Receives a POST from the Shift Register app. Body is JSON for a single\n * shift record. Upserts a row keyed on Date + Branch + Shift.\n */\nfunction doPost(e) {\n  try {\n    var body = JSON.parse(e.postData.contents);\n\n    // A catalog-item post is additive, new behavior \u2014 the existing shift-\n    // record behavior below (no \"type\", or type: \"shift\") is unchanged.\n    if (body && body.type === 'catalog_item') {\n      upsertCatalogItem_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'catalog_item' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // A damage/expiry ledger entry \u2014 also additive, separate sheet tab.\n    if (body && body.type === 'damage_entry') {\n      upsertDamageEntry_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'damage_entry' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n\n    // Accept either a single record, or a { records: [...] } batch.\n    var records = Array.isArray(body) ? body\n      : (body.records ? body.records : [body]);\n\n    var data = sheet.getDataRange().getValues();\n    records.forEach(function (record) {\n      var rowValues = recordToRow_(record);\n      var matchRow = -1;\n      for (var i = 1; i < data.length; i++) {\n        if (data[i][0] === record.date && data[i][1] === record.branch &&\n            (data[i][2] || 'Full Day') === (record.shift || 'Full Day')) {\n          matchRow = i + 1; // 1-indexed sheet row\n          break;\n        }\n      }\n      if (matchRow > -1) {\n        sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n      } else {\n        sheet.appendRow(rowValues);\n        data.push(rowValues); // keep local copy in sync for subsequent records in this batch\n      }\n    });\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: records.length })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\n/**\n * Health check / fetch-existing-records. Called with a plain GET (e.g. the\n * app's \"Test Connection\" button, or a future \"Restore from Cloud\" feature).\n * Optional query param ?since=YYYY-MM-DD filters to rows on/after that date.\n */\nfunction doGet(e) {\n  try {\n    var type = e && e.parameter && e.parameter.type;\n\n    // New, additive behavior: ?type=catalog returns the ItemCatalog sheet\n    // instead of shift records. Existing behavior (no type, or type=shifts)\n    // is unchanged below.\n    if (type === 'catalog') {\n      var catalogRecords = getCatalogRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: catalogRecords.length, records: catalogRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // ?type=damage \u2014 symmetry with the catalog pull, for a future/manual\n    // pull-merge of the damage/expiry ledger. The app itself only pushes\n    // today (see notes above getDamageRecords_).\n    if (type === 'damage') {\n      var damageRecords = getDamageRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: damageRecords.length, records: damageRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n    var data = sheet.getDataRange().getValues();\n    var headers = data[0];\n    var since = e && e.parameter && e.parameter.since;\n\n    var rows = [];\n    for (var i = 1; i < data.length; i++) {\n      var rowDate = data[i][0];\n      if (since && String(rowDate) < since) continue;\n      var obj = {};\n      headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n      rows.push(obj);\n    }\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: rows.length, records: rows })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n";
+
+    function openAppsScriptCodeModal() {
+        document.getElementById('appsScriptCodeTextarea').value = APPS_SCRIPT_SOURCE;
+        document.getElementById('appsScriptCodeModal').style.display = 'flex';
+    }
+
+    function copyAppsScriptCode() {
+        let text = APPS_SCRIPT_SOURCE;
+        function done(ok) { showAppToast(ok ? '✅ Copied! Paste it into the Apps Script editor.' : '⚠️ Could not copy — please copy manually.'); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => done(true)).catch(() => fallbackCopyText(text, done));
+        } else {
+            fallbackCopyText(text, done);
+        }
+    }
+
+    // ===================== SIMPLE TOAST NOTIFICATION =====================
+    function showAppToast(message) {
+        let existing = document.getElementById('appMiniToast');
+        if (existing) existing.remove();
+        let el = document.createElement('div');
+        el.id = 'appMiniToast';
+        el.textContent = message;
+        el.style.cssText = 'position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#0f172a; color:#fff; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; box-shadow:0 10px 25px -5px rgba(0,0,0,0.35); z-index:999999; opacity:0; transition:opacity 0.15s ease;';
+        document.body.appendChild(el);
+        requestAnimationFrame(() => { el.style.opacity = '1'; });
+        setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 200);
+        }, 1800);
+    }
+
+    // ===================== COPY TODAY'S SUMMARY AS WHATSAPP TEXT =====================
+    // Plain-text (no HTML/images) version of the live register — pulls from
+    // the same fields/ids used by sendToWhatsAppDirect()/populateA4Data() so
+    // the numbers always match what's shown on screen and in print/export.
+    function buildWhatsAppSummaryText() {
+        let branch, date, shift, cashier, opening, closing, card, upi, pluxee, cashAdded, exp, grand, varVal;
+
+        if (currentSelectedArchiveRecord) {
+            let r = currentSelectedArchiveRecord;
+            branch = r.branch;
+            date = r.date;
+            shift = r.shift || 'Full Day';
+            opening = r.openingBal || 0;
+            closing = r.closingBal || 0;
+            card = 0; upi = 0; pluxee = 0;
+            cashAdded = r.cashAdded || 0;
+            let totalExp = 0; if (r.expenses) r.expenses.forEach(e => totalExp += e.amt);
+            exp = totalExp;
+            grand = r.finalTotal || r.grandTotal || 0;
+            varVal = r.variance || 0;
+        } else {
+            branch = document.getElementById('branchLocation').value;
+            date = document.getElementById('regDate').value;
+            shift = document.getElementById('shiftLabel') ? document.getElementById('shiftLabel').value : 'Full Day';
+            opening = document.getElementById('openingBalInput').value || 0;
+            closing = document.getElementById('closingBalInput').value || 0;
+            card = document.getElementById('cardPay') ? (document.getElementById('cardPay').value || 0) : 0;
+            upi = document.getElementById('upiPay') ? (document.getElementById('upiPay').value || 0) : 0;
+            pluxee = document.getElementById('pluxeePay') ? (document.getElementById('pluxeePay').value || 0) : 0;
+            cashAdded = (typeof calcCashAddedTotal === 'function') ? calcCashAddedTotal() : 0;
+            exp = (document.getElementById('lblExpTotal').innerText || '₹0').replace(/[^0-9.\-]/g, '') || 0;
+            grand = document.getElementById('sumGrand').innerText;
+            varVal = document.getElementById('sumVariance').innerText;
+        }
+
+        let digitalTotal = (Number(card) || 0) + (Number(upi) || 0) + (Number(pluxee) || 0);
+        let varianceNum = (typeof varVal === 'string') ? Number(String(varVal).replace(/[^0-9.\-]/g, '')) || 0 : Number(varVal) || 0;
+        let varianceLine = varianceNum === 0 ? '✅ No variance' : (varianceNum > 0 ? `⚠️ Variance: +₹${varianceNum}` : `⚠️ Variance: -₹${Math.abs(varianceNum)}`);
+
+        let lines = [
+            `🌿 ${(appSettings.businessName || 'Lalitha Naturals')} — Daily Summary`,
+            `📍 ${branch} | 📅 ${date} | ${shift} Shift`,
+            ``,
+            `Opening Balance: ₹${opening}`,
+            `Digital Payments: ₹${digitalTotal}`,
+            `Cash Added: ₹${cashAdded}`,
+            `Closing Balance: ₹${closing}`,
+            `Expenses Total: ₹${exp}`,
+            `Grand Total: ${typeof grand === 'string' && grand.startsWith('₹') ? grand : '₹' + grand}`,
+            ``,
+            varianceLine
+        ];
+        return lines.join('\n');
+    }
+
+    function copySummaryAsWhatsAppText() {
+        let text = buildWhatsAppSummaryText();
+        function done(ok) { showAppToast(ok ? '✅ Copied! Paste it into WhatsApp.' : '⚠️ Could not copy — please copy manually.'); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => done(true)).catch(() => fallbackCopyText(text, done));
+        } else {
+            fallbackCopyText(text, done);
+        }
+    }
+
+    function fallbackCopyText(text, cb) {
+        try {
+            let ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            let ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            cb(ok);
+        } catch (e) {
+            cb(false);
+        }
+    }
+
+    // ===================== MANUAL STOCK / REORDER LEVELS =====================
+    // Deliberately simple: this app has no sales-driven inventory deduction
+    // anywhere (a Cash Bill does not touch stock). Each catalog item
+    // (lalitha_pos_catalog, keyed by barcode) optionally gets lastKnownStock
+    // and reorderLevel numbers the owner enters/updates by hand here; a
+    // "Low Stock" flag shows only when both are set and stock <= reorder level.
+    function openStockLevelsModal() {
+        renderStockLevelsTable();
+        document.getElementById('stockLevelsModal').style.display = 'flex';
+    }
+
+    function renderStockLevelsTable() {
+        let catalog = getPosCatalog();
+        let tbody = document.getElementById('stockLevelsTbody');
+        let barcodes = Object.keys(catalog).sort((a, b) => (catalog[a].name || '').localeCompare(catalog[b].name || ''));
+        if (barcodes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--muted);">No catalog items yet. Items are added automatically the first time they\'re used in a Cash Bill.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = barcodes.map(code => {
+            let item = catalog[code];
+            let stock = (item.lastKnownStock === undefined || item.lastKnownStock === null) ? '' : item.lastKnownStock;
+            let reorder = (item.reorderLevel === undefined || item.reorderLevel === null) ? '' : item.reorderLevel;
+            let isLow = (stock !== '' && reorder !== '' && Number(stock) <= Number(reorder));
+            return `<tr style="${isLow ? 'background:#fee2e2;' : ''}">
+                <td style="padding:5px 8px;">${(item.name || code)}</td>
+                <td style="padding:5px 8px; font-family:'JetBrains Mono'; color:var(--muted);">${code}</td>
+                <td style="padding:5px 8px; text-align:right;"><input type="number" value="${stock}" style="width:90px; text-align:right;" onchange="updateStockField('${code}','lastKnownStock',this.value)"></td>
+                <td style="padding:5px 8px; text-align:right;"><input type="number" value="${reorder}" style="width:90px; text-align:right;" onchange="updateStockField('${code}','reorderLevel',this.value)"></td>
+                <td style="padding:5px 8px; text-align:center;">${isLow ? '<span style="background:#dc2626; color:#fff; padding:2px 8px; border-radius:10px; font-size:10.5px; font-weight:700;">LOW STOCK</span>' : '<span style="color:var(--muted); font-size:11px;">—</span>'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function updateStockField(barcode, field, value) {
+        let catalog = getPosCatalog();
+        if (!catalog[barcode]) return;
+        catalog[barcode][field] = (value === '' ? null : Number(value));
+        savePosCatalog(catalog);
+        renderStockLevelsTable();
+    }
+
+    // =========================================================================
+    // NEW REPORTING / DASHBOARD FEATURES (all strictly read-only over the
+    // existing localStorage data — lalitha_audit_register / CASH_BILL_ITEMS_KEY.
+    // None of these touch how records are saved, the Grand Total formula, the
+    // print-window-stays-open behaviour of existing exports, Cash Bill entry,
+    // or Closing Balance. Each is opened from the "⋯ More" menu.
+    // =========================================================================
+
+    function fmtINR(n) {
+        n = Number(n) || 0;
+        return (n < 0 ? '-' : '') + '₹' + Math.abs(n).toLocaleString('en-IN');
+    }
+
+    function populateFilterBranchSelect(selectEl, includeAllLabel) {
+        if (!selectEl) return;
+        let current = selectEl.value;
+        let branches = getBranchList();
+        selectEl.innerHTML = `<option value="">${includeAllLabel}</option>` + branches.map(b => `<option value="${b}">${b}</option>`).join('');
+        if (current && branches.indexOf(current) > -1) selectEl.value = current;
+    }
+
+    // ---- 1. VARIANCE HISTORY -------------------------------------------------
+    function openVarianceHistoryModal() {
+        populateFilterBranchSelect(document.getElementById('vhBranch'), 'All');
+        renderVarianceHistory();
+        document.getElementById('varianceHistoryModal').style.display = 'flex';
+    }
+
+    function renderVarianceHistory() {
+        let branch = document.getElementById('vhBranch').value;
+        let from = document.getElementById('vhFrom').value;
+        let to = document.getElementById('vhTo').value;
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+
+        let rows = store.filter(r => {
+            if (branch && r.branch !== branch) return false;
+            if (from && r.date < from) return false;
+            if (to && r.date > to) return false;
+            return true;
+        }).sort((a, b) => (b.date + (b.shift || '')).localeCompare(a.date + (a.shift || '')));
+
+        let daysWithVariance = 0, totalVarianceAmt = 0;
+        rows.forEach(r => {
+            let v = Number(r.variance || 0);
+            if (v !== 0) daysWithVariance++;
+            totalVarianceAmt += v;
+        });
+
+        document.getElementById('vhSummary').innerHTML = `
+            <div>Records: <span style="color:#4f46e5;">${rows.length}</span></div>
+            <div>Days with Variance: <span style="color:#dc2626;">${daysWithVariance}</span></div>
+            <div>Total Variance Amount: <span style="color:${totalVarianceAmt === 0 ? '#16a34a' : (totalVarianceAmt < 0 ? '#dc2626' : '#b45309')};">${(totalVarianceAmt > 0 ? '+' : '') + fmtINR(totalVarianceAmt)}</span></div>
+        `;
+
+        let tbody = document.getElementById('vhBody');
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:16px;">No records found for this filter.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => {
+            let v = Number(r.variance || 0);
+            // Sign convention matches recalcRegister(): variance = total1 - totalSale.
+            // 0 = tallied (green), negative = shortage (red), positive = surplus (amber).
+            let rowColor = v === 0 ? '#dcfce7' : (v < 0 ? '#fee2e2' : '#fef3c7');
+            let textColor = v === 0 ? '#15803d' : (v < 0 ? '#dc2626' : '#b45309');
+            return `<tr style="background:${rowColor};">
+                <td>${r.date}</td><td>${r.branch || ''}</td><td>${r.shift || 'Full Day'}</td>
+                <td style="text-align:right;">${fmtINR(r.grandTotal)}</td>
+                <td style="text-align:right; font-weight:700; color:${textColor};">${(v > 0 ? '+' : '') + fmtINR(v)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ---- 2. DAILY SALES SUMMARY ----------------------------------------------
+    function getAllCashBills() {
+        let allBillItems = {};
+        try { allBillItems = JSON.parse(localStorage.getItem(CASH_BILL_ITEMS_KEY) || '{}'); } catch (e) {}
+        return Object.keys(allBillItems).map(billNo => Object.assign({ billNo }, allBillItems[billNo]));
+    }
+
+    function cashBillDiscountTotal(bill) {
+        let total = 0;
+        (bill.items || []).forEach(item => {
+            let mode = item.discountMode || '₹';
+            let discount = item.discount || 0;
+            if (!discount) return;
+            total += mode === '%' ? (item.sellingPrice || 0) * (discount / 100) * (item.qty || 1) : discount * (item.qty || 1);
+        });
+        return Math.round(total * 100) / 100;
+    }
+
+    function summarizeBills(bills) {
+        let count = bills.length;
+        let revenue = bills.reduce((s, b) => s + (Number(b.grandTotal) || 0), 0);
+        let discount = bills.reduce((s, b) => s + cashBillDiscountTotal(b), 0);
+        let avg = count > 0 ? revenue / count : 0;
+        return { count, revenue, discount, avg };
+    }
+
+    function openSalesSummaryModal() {
+        renderSalesSummary();
+        document.getElementById('salesSummaryModal').style.display = 'flex';
+    }
+
+    function renderSalesSummary() {
+        let bills = getAllCashBills();
+        let now = new Date();
+        let todayStr = now.toISOString().slice(0, 10);
+        let weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 6);
+        let monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        let today = bills.filter(b => (b.date || '').slice(0, 10) === todayStr);
+        let thisWeek = bills.filter(b => new Date(b.date) >= weekAgo);
+        let thisMonth = bills.filter(b => new Date(b.date) >= monthStart);
+
+        let sToday = summarizeBills(today), sWeek = summarizeBills(thisWeek), sMonth = summarizeBills(thisMonth);
+
+        function card(label, s) {
+            return `<div style="background:#0f172a; color:#fff; border-radius:8px; padding:12px; flex:1 1 200px; border-left:4px solid #38bdf8;">
+                <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; margin-bottom:6px; font-weight:700;">${label}</div>
+                <div style="font-size:12.5px; line-height:1.9;">
+                    Bills: <strong>${s.count}</strong><br>
+                    Revenue: <strong>${fmtINR(s.revenue)}</strong><br>
+                    Discount Given: <strong style="color:#fca5a5;">${fmtINR(s.discount)}</strong><br>
+                    Avg Bill Value: <strong>${fmtINR(Math.round(s.avg))}</strong>
+                </div>
+            </div>`;
+        }
+
+        document.getElementById('salesSummaryContent').innerHTML = `<div style="display:flex; gap:12px; flex-wrap:wrap;">
+            ${card('Today', sToday)}${card('This Week', sWeek)}${card('This Month', sMonth)}
+        </div>`;
+    }
+
+    // ---- 3. TOP SELLING ITEMS ------------------------------------------------
+    function openTopItemsModal() {
+        let today = new Date();
+        let monthAgo = new Date(today); monthAgo.setDate(today.getDate() - 30);
+        document.getElementById('tiFrom').value = monthAgo.toISOString().slice(0, 10);
+        document.getElementById('tiTo').value = today.toISOString().slice(0, 10);
+        renderTopItems();
+        document.getElementById('topItemsModal').style.display = 'flex';
+    }
+
+    function renderTopItems() {
+        let from = document.getElementById('tiFrom').value;
+        let to = document.getElementById('tiTo').value;
+        let bills = getAllCashBills().filter(b => {
+            let d = (b.date || '').slice(0, 10);
+            if (from && d < from) return false;
+            if (to && d > to) return false;
+            return true;
+        });
+
+        let agg = {};
+        bills.forEach(b => {
+            (b.items || []).forEach(item => {
+                let name = item.name || 'Unnamed';
+                if (!agg[name]) agg[name] = { qty: 0, revenue: 0 };
+                agg[name].qty += Number(item.qty) || 0;
+                agg[name].revenue += Number(item.total) || 0;
+            });
+        });
+
+        let rows = Object.keys(agg).map(name => ({ name, qty: agg[name].qty, revenue: agg[name].revenue }))
+            .sort((a, b) => b.qty - a.qty).slice(0, 20);
+
+        let tbody = document.getElementById('tiBody');
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:16px;">No cash bill sales found in this range.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => `<tr><td>${r.name}</td><td style="text-align:right;">${r.qty}</td><td style="text-align:right;">${fmtINR(r.revenue)}</td></tr>`).join('');
+    }
+
+    // ---- 4. EXPENSE CATEGORY BREAKDOWN ---------------------------------------
+    function openExpenseBreakdownModal() {
+        populateFilterBranchSelect(document.getElementById('ebBranch'), 'All');
+        let today = new Date();
+        let monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('ebFrom').value = monthStart.toISOString().slice(0, 10);
+        document.getElementById('ebTo').value = today.toISOString().slice(0, 10);
+        renderExpenseBreakdown();
+        document.getElementById('expenseBreakdownModal').style.display = 'flex';
+    }
+
+    function renderExpenseBreakdown() {
+        let branch = document.getElementById('ebBranch').value;
+        let from = document.getElementById('ebFrom').value;
+        let to = document.getElementById('ebTo').value;
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+        let records = store.filter(r => {
+            if (branch && r.branch !== branch) return false;
+            if (from && r.date < from) return false;
+            if (to && r.date > to) return false;
+            return true;
+        });
+
+        let agg = {};
+        let grandTotal = 0;
+        records.forEach(r => {
+            (r.expenses || []).forEach(e => {
+                let name = e.name || 'Uncategorized';
+                let amt = Number(e.amt) || 0;
+                agg[name] = (agg[name] || 0) + amt;
+                grandTotal += amt;
+            });
+        });
+
+        let rows = Object.keys(agg).map(name => ({ name, amt: agg[name] })).sort((a, b) => b.amt - a.amt);
+        let tbody = document.getElementById('ebBody');
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No expenses found for this filter.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => {
+            let pct = grandTotal > 0 ? (r.amt / grandTotal) * 100 : 0;
+            return `<tr>
+                <td>${r.name}</td>
+                <td style="text-align:right;">${fmtINR(r.amt)}</td>
+                <td style="text-align:right;">${pct.toFixed(1)}%</td>
+                <td><div style="background:#e2e8f0; border-radius:4px; overflow:hidden; height:14px; width:100%;"><div style="background:#4f46e5; height:100%; width:${pct.toFixed(1)}%;"></div></div></td>
+            </tr>`;
+        }).join('') + `<tr style="font-weight:800; background:#f1f5f9;"><td>TOTAL</td><td style="text-align:right;">${fmtINR(grandTotal)}</td><td style="text-align:right;">100%</td><td></td></tr>`;
+    }
+
+    // ---- 5. MONTH-END ROLLUP PRINT/EXPORT ------------------------------------
+    function openMonthEndReportModal() {
+        populateFilterBranchSelect(document.getElementById('meBranch'), 'All Branches');
+        let now = new Date();
+        document.getElementById('meMonth').value = now.toISOString().slice(0, 7);
+        document.getElementById('monthEndReportModal').style.display = 'flex';
+    }
+
+    function generateMonthEndReport() {
+        let monthVal = document.getElementById('meMonth').value; // "YYYY-MM"
+        if (!monthVal) { alert('Please pick a month first.'); return; }
+        let branch = document.getElementById('meBranch').value;
+        let from = monthVal + '-01';
+        let toDate = new Date(Number(monthVal.split('-')[0]), Number(monthVal.split('-')[1]), 0);
+        let to = toDate.toISOString().slice(0, 10);
+
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+        let rows = store.filter(r => {
+            if (branch && r.branch !== branch) return false;
+            if (r.date < from || r.date > to) return false;
+            return true;
+        }).sort((a, b) => a.date.localeCompare(b.date));
+
+        if (rows.length === 0) {
+            alert('No shift records found for that month' + (branch ? ' / branch' : '') + '.');
+            return;
+        }
+
+        let totalCash = 0, totalExpenses = 0, totalVariance = 0;
+        let tableRows = rows.map(r => {
+            let expTotal = 0; (r.expenses || []).forEach(e => expTotal += Number(e.amt || 0));
+            totalCash += Number(r.closingBal || 0);
+            totalExpenses += expTotal;
+            totalVariance += Number(r.variance || 0);
+            return { r, expTotal };
+        });
+        // Digital payments (Card/UPI/Pluxee) are not stored as separate fields
+        // on the saved record — only folded into Grand Total by recalcRegister()
+        // — so a standalone "Total Digital Payments" figure isn't available
+        // from history alone and is intentionally omitted here to avoid
+        // showing a misleading number; Grand Total and Closing Balance (cash)
+        // are shown instead, which are both fields actually saved on the record.
+
+        let monthLabel = new Date(Number(monthVal.split('-')[0]), Number(monthVal.split('-')[1]) - 1, 1)
+            .toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+        let bodyRows = tableRows.map(({ r, expTotal }) => {
+            let v = Number(r.variance || 0);
+            let vColor = v === 0 ? '#16a34a' : (v < 0 ? '#dc2626' : '#b45309');
+            return `<tr>
+                <td>${r.date}</td><td>${r.shift || 'Full Day'}</td><td>${r.branch || ''}</td>
+                <td style="text-align:right;">${fmtINR(r.grandTotal)}</td>
+                <td style="text-align:right;">${fmtINR(expTotal)}</td>
+                <td style="text-align:right; color:${vColor}; font-weight:700;">${(v > 0 ? '+' : '') + fmtINR(v)}</td>
+            </tr>`;
+        }).join('');
+
+        // Reuses the same window.open + document.write + focus + delayed
+        // print pattern as the existing Audit & Analytics Dashboard export
+        // (see printAuditDashboardReport above), including NOT auto-closing
+        // the window after printing.
+        let printWin = window.open('', '_blank', 'width=950,height=750');
+        printWin.document.write(`
+            <html>
+            <head>
+                <title>Month-End Report - ${monthLabel} - ${appSettings.businessName || 'Lalitha Naturals'}</title>
+                <style>
+                    @page { size: A4 landscape; margin: 10mm; }
+                    body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; padding: 24px; color: #1e293b; }
+                    h2 { color: #dc2626; margin-bottom: 4px; font-size: 22px; }
+                    .meta { font-size: 12px; color: #64748b; margin-bottom: 20px; font-family: monospace; }
+                    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+                    .card { background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #38bdf8; padding: 14px; border-radius: 8px; }
+                    .card span { font-size: 10px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px; font-family: monospace; }
+                    .card strong { font-size: 18px; font-family: monospace; color: #0f172a; }
+                    h3 { font-size: 15px; margin-bottom: 10px; color: #0f172a; text-transform: uppercase; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 12.5px; font-family: monospace; }
+                    th, td { border: 1px solid #cbd5e1; padding: 9px 12px; text-align: left; }
+                    th { background: #f1f5f9; color: #0f172a; text-transform: uppercase; font-size: 11px; }
+                    thead { display: table-header-group; }
+                    tr, .card { page-break-inside: avoid; }
+                    tfoot td { font-weight: 800; background: #f1f5f9; }
+                </style>
+            </head>
+            <body>
+                <div style="font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:#64748b; font-weight:700; margin-bottom:4px;">${appSettings.businessName || 'Lalitha Naturals'}</div>
+                <h2>Month-End Report — ${monthLabel}</h2>
+                <div class="meta">Branch: ${branch || 'All Branches'} | Shifts: ${rows.length} | Printed On: ${new Date().toLocaleString()}</div>
+
+                <div class="summary-grid">
+                    <div class="card"><span>Total Cash Counted (Closing Bal)</span><strong>${fmtINR(totalCash)}</strong></div>
+                    <div class="card"><span>Total Expenses</span><strong>${fmtINR(totalExpenses)}</strong></div>
+                    <div class="card"><span>Total Variance</span><strong style="color:${totalVariance === 0 ? '#16a34a' : (totalVariance < 0 ? '#dc2626' : '#b45309')};">${(totalVariance > 0 ? '+' : '') + fmtINR(totalVariance)}</strong></div>
+                </div>
+
+                <h3>Shifts in ${monthLabel}</h3>
+                <table>
+                    <thead><tr><th>Date</th><th>Shift</th><th>Branch</th><th>Grand Total</th><th>Expenses</th><th>Variance</th></tr></thead>
+                    <tbody>${bodyRows}</tbody>
+                    <tfoot><tr><td colspan="3">TOTAL</td><td>${fmtINR(tableRows.reduce((s, x) => s + (x.r.grandTotal || 0), 0))}</td><td>${fmtINR(totalExpenses)}</td><td>${(totalVariance > 0 ? '+' : '') + fmtINR(totalVariance)}</td></tr></tfoot>
+                </table>
+            </body>
+            </html>
+        `);
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => { printWin.print(); }, 500);
+    }
+
+    // ---- 6. BRANCH COMPARISON (More menu shortcut) ---------------------------
+    function openBranchComparisonReportModal() {
+        let today = new Date();
+        let monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('bcFrom').value = monthStart.toISOString().slice(0, 10);
+        document.getElementById('bcTo').value = today.toISOString().slice(0, 10);
+        renderBranchComparisonReport();
+        document.getElementById('branchComparisonReportModal').style.display = 'flex';
+    }
+
+    function renderBranchComparisonReport() {
+        let from = document.getElementById('bcFrom').value;
+        let to = document.getElementById('bcTo').value;
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+        let records = store.filter(r => (!from || r.date >= from) && (!to || r.date <= to));
+        // Reuses the same computeBranchTotals()/renderBranchComparisonHTML()
+        // helpers the existing Monthly Summary / Custom Range comparison
+        // panel uses, so figures stay consistent with that panel.
+        let data = computeBranchTotals(records);
+        document.getElementById('bcContent').innerHTML = renderBranchComparisonHTML(data, `${from || 'Start'} to ${to || 'Today'}`, null);
     }
 </script>
 
