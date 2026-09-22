@@ -486,6 +486,9 @@
                     <tr><td>UPI Pay</td><td><input type="number" id="upiPay" class="dig-input" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
                     <tr><td>Pluxee (Sodexo)</td><td><input type="number" id="pluxeePay" class="dig-input" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
                 </table>
+                <div id="digitalPaymentsTotalRow" style="background:var(--header-bg); padding:8px 10px; font-weight:700; font-size:12px; display:flex; justify-content:space-between; border-top:1px solid var(--border); flex-shrink:0;">
+                    <span>Total Digital Payments:</span><span id="lblDigitalPaymentsTotal" style="color:var(--accent); font-family:'JetBrains Mono';">₹0</span>
+                </div>
                 <!-- REVIEW NOTE: the "Cash Added" counts below (.c-count) are captured
                      and shown on printed/exported reports, but recalcRegister() never
                      adds them into Grand Total / Tally — only Tray Balance (.d-count)
@@ -493,24 +496,34 @@
                      that should affect the day's reconciliation, that's a real gap;
                      if it's just a log of change added to the tray for record-keeping,
                      it's working as intended. Worth confirming which one you meant. -->
-                <div class="sub-header" style="background:#f1f5f9; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
-                    <span style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; display:flex; align-items:center; gap:6px;">
-                        <button type="button" class="btn-collapse-toggle" id="cashAddedToggle" onclick="toggleCollapsible('cashAddedBody', 'cashAddedToggle')" title="Hide/show Cash Added">▾</button>
+                <div class="sub-header" style="background:#f1f5f9; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); border-bottom:1px solid var(--border); cursor:pointer;" onclick="toggleCollapsible('cashAddedWrap', 'cashAddedToggle')">
+                    <span style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <button type="button" class="btn-collapse-toggle" id="cashAddedToggle" onclick="event.stopPropagation(); toggleCollapsible('cashAddedWrap', 'cashAddedToggle')" title="Hide/show Cash Added">▾</button>
                         Cash Added
                     </span>
-                    <button class="btn-clear-mini" onclick="clearCategory('cash_added')">Clear</button>
+                    <button class="btn-clear-mini" onclick="event.stopPropagation(); clearCategory('cash_added')">Clear</button>
                 </div>
-                <table id="cashAddedBody">
-                    <tr><td>₹500</td><td><input type="number" class="c-count" data-val="500" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹200</td><td><input type="number" class="c-count" data-val="200" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹100</td><td><input type="number" class="c-count" data-val="100" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹50</td><td><input type="number" class="c-count" data-val="50" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹20</td><td><input type="number" class="c-count" data-val="20" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹10</td><td><input type="number" class="c-count" data-val="10" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹5</td><td><input type="number" class="c-count" data-val="5" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹2</td><td><input type="number" class="c-count" data-val="2" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
-                    <tr><td>₹1</td><td><input type="number" class="c-count" data-val="1" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td></tr>
+                <div id="cashAddedWrap">
+                <div class="sub-header"><span>Denom / Field</span><span>Qty | Amount (₹)</span></div>
+                <div class="table-scroll no-internal-scroll">
+                <table>
+                    <tbody id="cashAddedBody">
+                    <tr><td>₹500</td><td><input type="number" class="c-count" data-val="500" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹200</td><td><input type="number" class="c-count" data-val="200" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹100</td><td><input type="number" class="c-count" data-val="100" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹50</td><td><input type="number" class="c-count" data-val="50" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹20</td><td><input type="number" class="c-count" data-val="20" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹10</td><td><input type="number" class="c-count" data-val="10" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹5</td><td><input type="number" class="c-count" data-val="5" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹2</td><td><input type="number" class="c-count" data-val="2" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹1</td><td><input type="number" class="c-count" data-val="1" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    </tbody>
                 </table>
+                </div>
+                </div>
+                <div id="cashAddedTotalRow" style="background:var(--header-bg); padding:8px 10px; font-weight:700; font-size:12px; display:flex; justify-content:space-between; border-top:1px solid var(--border); flex-shrink:0;">
+                    <span>Total Cash Added:</span><span id="lblCashAddedTotal" style="color:var(--accent); font-family:'JetBrains Mono';">₹0</span>
+                </div>
             </div>
         </div>
 
@@ -552,6 +565,7 @@
                 <div style="flex:1;">
                     <label for="closingBalInput" title="Closing Balance — small notes (₹200 and below) kept back as tomorrow's float" style="font-size:10px; font-weight:800; color:#0f172a; text-transform:uppercase; display:flex; align-items:flex-end; min-height:26px; margin-bottom:3px;">Closing Bal</label>
                     <input type="number" id="closingBalInput" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:100%; box-sizing:border-box; font-weight:700; font-family:'JetBrains Mono'; text-align:right; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; background:#fff;">
+                    <input type="text" id="closingBalNote" placeholder="Note / description (optional)" title="Optional note for the Closing Balance — e.g. reason for variance, carried forward from previous shift, etc." style="width:100%; box-sizing:border-box; font-size:11px; font-style:italic; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; margin-top:4px; background:#fff;">
                 </div>
             </div>
             <div id="balanceCheckIndicator" style="font-size:10.5px; padding:4px 12px 8px; color:var(--muted); flex-shrink:0;"></div>
@@ -592,12 +606,12 @@
                     <table><tbody id="ownerTableBody"></tbody></table>
                 </div>
                 <div>
-                    <div style="font-size:10px; font-weight:700; color:var(--muted); padding:4px 8px; background:var(--header-bg); display:flex; justify-content:space-between; align-items:center;">
-                        <span style="display:flex; align-items:center; gap:6px;">
-                            <button type="button" class="btn-collapse-toggle" id="vendorsToggle" onclick="toggleCollapsible('vendorsBody', 'vendorsToggle')" title="Hide/show Vendor Payments">▾</button>
+                    <div style="font-size:10px; font-weight:700; color:var(--muted); padding:4px 8px; background:var(--header-bg); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleCollapsible('vendorsBody', 'vendorsToggle')">
+                        <span style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <button type="button" class="btn-collapse-toggle" id="vendorsToggle" onclick="event.stopPropagation(); toggleCollapsible('vendorsBody', 'vendorsToggle')" title="Hide/show Vendor Payments">▾</button>
                             VENDORS
                         </span>
-                        <button class="btn-mini" onclick="addRow('vend')" style="padding:1px 6px; font-size:9.5px;">+Vend</button>
+                        <button class="btn-mini" onclick="event.stopPropagation(); addRow('vend')" style="padding:1px 6px; font-size:9.5px;">+Vend</button>
                     </div>
                     <table id="vendorsBody"><tbody id="vendTableBody"></tbody></table>
                 </div>
@@ -1561,7 +1575,7 @@
         // Cash Added and Vendor Payments start collapsed by default — they're
         // used far less often than the rest of the sheet, so keeping them
         // tucked away out of the box reduces clutter on first load.
-        document.getElementById('cashAddedBody').style.display = 'none';
+        document.getElementById('cashAddedWrap').style.display = 'none';
         document.getElementById('cashAddedToggle').textContent = '▸';
         document.getElementById('vendorsBody').style.display = 'none';
         document.getElementById('vendorsToggle').textContent = '▸';
@@ -3660,7 +3674,7 @@
             alert('No earlier versions recorded for this entry.');
             return;
         }
-        document.getElementById('historyModalDesc').innerText = `${branch} — ${date} (${shift}). Current Closing Balance: ₹${rec.closingBal || 0}. ${rec.history.length} earlier version${rec.history.length === 1 ? '' : 's'} before the current one.`;
+        document.getElementById('historyModalDesc').innerText = `${branch} — ${date} (${shift}). Current Closing Balance: ₹${rec.closingBal || 0}${rec.closingBalNote ? ' (' + rec.closingBalNote + ')' : ''}. ${rec.history.length} earlier version${rec.history.length === 1 ? '' : 's'} before the current one.`;
         let versions = rec.history.slice().reverse(); // most recent edit first
         let html = versions.map((v, i) => `
             <div style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px;">
@@ -3668,6 +3682,7 @@
                 ${v.editNote ? `<div style="background:#fef9c3; border:1px solid #fde047; border-radius:6px; padding:6px 8px; margin-bottom:6px; font-weight:700; color:#854d0e;">📝 ${v.editNote}</div>` : ''}
                 <div>Cashier: <strong>${v.cashier || ''}</strong></div>
                 <div>Closing Bal: <strong>₹${v.closingBal || 0}</strong> · Final Sale: <strong>₹${v.totalSale || 0}</strong> · Variance: <strong>${(v.variance > 0 ? '+' : '')}₹${v.variance || 0}</strong></div>
+                ${v.closingBalNote ? `<div style="color:var(--muted); font-size:11.5px; font-style:italic;">Closing Bal note: ${v.closingBalNote}</div>` : ''}
                 <div style="color:var(--muted); font-size:11.5px;">Notes: ${v.notes || 'None'}</div>
             </div>`).join('');
         document.getElementById('historyModalContent').innerHTML = html;
@@ -3841,6 +3856,7 @@
             pluxeePay: document.getElementById('pluxeePay').value,
             openingBal: document.getElementById('openingBalInput').value,
             closingBal: document.getElementById('closingBalInput').value,
+            closingBalNote: document.getElementById('closingBalNote').value,
             closingManual: document.getElementById('closingBalInput').dataset.manual === 'true',
             vasySale: document.getElementById('vasySale').value,
             notes: document.getElementById('registerNotes').value,
@@ -3896,6 +3912,7 @@
         document.getElementById('pluxeePay').value = state.pluxeePay || '';
         document.getElementById('openingBalInput').value = state.openingBal || '';
         document.getElementById('closingBalInput').value = state.closingBal || '';
+        document.getElementById('closingBalNote').value = state.closingBalNote || '';
         document.getElementById('closingBalInput').dataset.manual = state.closingManual ? 'true' : 'false';
         document.getElementById('vasySale').value = state.vasySale || '';
         document.getElementById('registerNotes').value = state.notes || '';
@@ -4174,7 +4191,39 @@
         document.getElementById('cashierName').focus();
     }
 
+    // Reusable sum of the "Cash Added" denomination inputs (.c-count),
+    // used both by recalcRegister() to update the visible "Total Cash
+    // Added" line and by any other code that needs the same figure, so
+    // the calculation logic lives in exactly one place.
+    function calcCashAddedTotal() {
+        let total = 0;
+        document.querySelectorAll('.c-count').forEach(i => {
+            let v = parseFloat(i.getAttribute('data-val')) || 0;
+            let q = parseFloat(i.value) || 0;
+            let sub = v * q;
+            total += sub;
+            let subEl = i.closest('tr').querySelector('.c-sub');
+            if (subEl) subEl.innerText = sub;
+        });
+        return total;
+    }
+
+    // Card Pay + UPI Pay + Pluxee (Sodexo) only — mirrors calcCashAddedTotal()'s
+    // pattern. Does NOT include Cash Added, which is a separate total.
+    function calcDigitalPaymentsTotal() {
+        let card = parseFloat(document.getElementById('cardPay').value) || 0;
+        let upi = parseFloat(document.getElementById('upiPay').value) || 0;
+        let plux = parseFloat(document.getElementById('pluxeePay').value) || 0;
+        return card + upi + plux;
+    }
+
     function recalcRegister() {
+        let cashAddedTotalEl = document.getElementById('lblCashAddedTotal');
+        if (cashAddedTotalEl) cashAddedTotalEl.innerText = '₹' + calcCashAddedTotal();
+
+        let digitalPaymentsTotalEl = document.getElementById('lblDigitalPaymentsTotal');
+        if (digitalPaymentsTotalEl) digitalPaymentsTotalEl.innerText = '₹' + calcDigitalPaymentsTotal();
+
         let openingVal = parseFloat(document.getElementById('openingBalInput').value) || 0;
         document.getElementById('openingBalSub').innerText = openingVal;
 
@@ -4197,8 +4246,17 @@
         }
 
         let grandTotalDenom = denomSum - openingVal;
-        document.getElementById('lblTotalDenom').innerText = '₹' + grandTotalDenom;
-        document.getElementById('dockTray').innerText = '₹' + grandTotalDenom;
+
+        // Tray Balance section's own "Grand Total" (lblTotalDenom / dockTray):
+        // denomination sum + digital payments - opening balance - cash added,
+        // per the user's requested formula. This is a physical-tray
+        // reconciliation figure and is intentionally kept separate from the
+        // Total Summary panel's "Grand Total" (sumGrand, below), whose
+        // existing formula (denomSum - openingVal + digital) is unchanged and
+        // still feeds Final Sale / Tally / Variance exactly as before.
+        let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - calcCashAddedTotal();
+        document.getElementById('lblTotalDenom').innerText = '₹' + trayGrandTotal;
+        document.getElementById('dockTray').innerText = '₹' + trayGrandTotal;
 
         let expTotal = 0; document.querySelectorAll('.exp-amt').forEach(i => expTotal += parseFloat(i.value) || 0);
         document.getElementById('lblExpTotal').innerText = '₹' + expTotal;
@@ -4538,6 +4596,7 @@
             cashier: document.getElementById('cashierName').value.trim(),
             openingBal: Number(openingBal),
             closingBal: Number(closingBal),
+            closingBalNote: document.getElementById('closingBalNote').value || '',
             grandTotal: Number(document.getElementById('sumGrand').innerText.replace('₹','')) || 0,
             totalSale: Number(document.getElementById('sumTotalSale').innerText.replace('₹','')) || 0,
             vasySale: Number(document.getElementById('vasySale').value) || 0,
@@ -4688,7 +4747,7 @@
         document.getElementById('a4PluxeePay').innerText = '₹0';
         document.getElementById('a4DigitalAddTable').innerHTML = '';
 
-        document.getElementById('a4TrayTable').innerHTML = `<tr><td>Opening Balance</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr><tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}</td></tr>`;
+        document.getElementById('a4TrayTable').innerHTML = `<tr><td>Opening Balance</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr><tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}${rec.closingBalNote ? '<br><span style="font-style:italic; font-weight:400; font-size:10px;">' + rec.closingBalNote + '</span>' : ''}</td></tr>`;
         document.getElementById('a4LblTotalDenom').innerText = '₹' + (rec.grandTotal || 0);
 
         let expH = '';
