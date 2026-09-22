@@ -4249,12 +4249,13 @@
 
         // Tray Balance section's own "Grand Total" (lblTotalDenom / dockTray):
         // denomination sum + digital payments - opening balance - cash added,
-        // per the user's requested formula. This is a physical-tray
-        // reconciliation figure and is intentionally kept separate from the
-        // Total Summary panel's "Grand Total" (sumGrand, below), whose
-        // existing formula (denomSum - openingVal + digital) is unchanged and
-        // still feeds Final Sale / Tally / Variance exactly as before.
-        let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - calcCashAddedTotal();
+        // per the user's requested formula. The Total Summary panel's
+        // "Grand Total" (sumGrand, below) now uses this identical formula
+        // (cash added is subtracted there too, per the user's follow-up
+        // confirmation), so both Grand Total labels are kept in sync and
+        // both feed Final Sale / Tally / Variance the same way.
+        let cashAddedTotal = calcCashAddedTotal();
+        let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - cashAddedTotal;
         document.getElementById('lblTotalDenom').innerText = '₹' + trayGrandTotal;
         document.getElementById('dockTray').innerText = '₹' + trayGrandTotal;
 
@@ -4271,7 +4272,7 @@
         let card = parseFloat(document.getElementById('cardPay').value) || 0;
         let upi = parseFloat(document.getElementById('upiPay').value) || 0;
         let plux = parseFloat(document.getElementById('pluxeePay').value) || 0;
-        let grandTotal = grandTotalDenom + (card + upi + plux);
+        let grandTotal = grandTotalDenom + (card + upi + plux) - cashAddedTotal;
 
         document.getElementById('sumGrand').innerText = '₹' + grandTotal;
         document.getElementById('sumExp').innerText = '₹' + expTotal;
