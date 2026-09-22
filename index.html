@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitleTag">Lalitha Naturals - Business Intelligence & Cloud Audit Register</title>
+    <meta name="theme-color" content="#15803d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Lalitha Register">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2315803d'/%3E%3Cpath d='M20 44c0-14 8-24 22-26-2 13-9 22-22 26z' fill='%23bbf7d0'/%3E%3Cpath d='M20 44c4-9 10-16 20-22' stroke='%23166534' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3Crect x='14' y='44' width='36' height='6' rx='2' fill='%23ffffff'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2315803d'/%3E%3Cpath d='M20 44c0-14 8-24 22-26-2 13-9 22-22 26z' fill='%23bbf7d0'/%3E%3Cpath d='M20 44c4-9 10-16 20-22' stroke='%23166534' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3Crect x='14' y='44' width='36' height='6' rx='2' fill='%23ffffff'/%3E%3C/svg%3E">
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiTGFsaXRoYSBOYXR1cmFscyAtIFNoaWZ0IFJlZ2lzdGVyIiwic2hvcnRfbmFtZSI6IkxhbGl0aGEgUmVnaXN0ZXIiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2Y4ZmFmYyIsInRoZW1lX2NvbG9yIjoiIzE1ODAzZCIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWwsJTNDc3ZnJTIweG1sbnMlM0QnaHR0cCUzQSUyRiUyRnd3dy53My5vcmclMkYyMDAwJTJGc3ZnJTI3JTIwdmlld0JveCUzRCcwJTIwMCUyMDY0JTIwNjQnJTNFJTNDcmVjdCUyMHdpZHRoJTNEJzY0JTIyJTIwaGVpZ2h0JTNEJzY0JTIyJTIwcnglM0QnMTQlMjIlMjBmaWxsJTNEJyUyMzE1ODAzZCclMkYlM0UlM0NwYXRoJTIwZCUzRCdNMjAlMjA0NGMwLTE0JTIwOC0yNCUyMDIyLTI2LTIlMjAxMy05JTIwMjItMjIlMjAyNnonJTIwZmlsbCUzRCclMjNiYmY3ZDAnJTJGJTNFJTNDcGF0aCUyMGQlM0QnTTIwJTIwNDRjNC05JTIwMTAtMTYlMjAyMC0yMiclMjBzdHJva2UlM0QnJTIzMTY2NTM0JyUyMHN0cm9rZS13aWR0aCUzRCcyLjInJTIwZmlsbCUzRCdub25lJyUyMHN0cm9rZS1saW5lY2FwJTNEJ3JvdW5kJyUyRiUzRSUzQ3JlY3QlMjB4JTNEJzE0JTIyJTIweSUzRCc0NCUyMiUyMHdpZHRoJTNEJzM2JTIyJTIwaGVpZ2h0JTNEJzYlMjIlMjByeCUzRCcyJTIyJTIwZmlsbCUzRCclMjNmZmZmZmYnJTJGJTNFJTNDJTJGc3ZnJTNFIiwic2l6ZXMiOiI2NHg2NCIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -415,8 +422,8 @@
                 <div class="field-group"><label for="regDate">Date</label><input type="date" id="regDate" onchange="onDateOrBranchChange()" onkeydown="handleEnter(event)"></div>
                 <div class="field-group"><label for="branchLocation">Branch</label>
                     <select id="branchLocation" onchange="onDateOrBranchChange()" onkeydown="handleEnter(event)">
-                        <option value="Branch 1" selected>Branch 1</option>
-                        <option value="Branch 2">Branch 2</option>
+                        <option value="Gajuwaka" selected>Gajuwaka</option>
+                        <option value="Kurmannapalem">Kurmannapalem</option>
                     </select>
                 </div>
                 <div class="field-group shift-field-group" id="shiftFieldGroup"><label for="shiftLabel">Shift</label>
@@ -444,6 +451,7 @@
                     <button class="btn-mini" onclick="toggleMoreMenu()" id="moreMenuBtn" style="height:34px; padding:0 12px; background:#334155; color:#fff; border-color:#0f172a;">⋯ More</button>
                     <div class="dropdown-menu" id="moreMenu">
                         <button onclick="closeMoreMenu(); openQuickEntryModal();">⚡ Quick Entry</button>
+                        <button onclick="closeMoreMenu(); openDamageLedgerModal();">⚠️ Damage/Expiry</button>
                         <button onclick="closeMoreMenu(); openOwnerInsights();">🔒 Owner Insights</button>
                         <button onclick="closeMoreMenu(); openSettingsModal();">⚙ Settings</button>
                     </div>
@@ -645,8 +653,8 @@
                 <label style="font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; display:block;">Branch</label>
                 <select id="searchBranch" onchange="executeArchiveSearch()">
                     <option value="">All Branches</option>
-                    <option value="Branch 1">Branch 1</option>
-                    <option value="Branch 2">Branch 2</option>
+                    <option value="Gajuwaka">Gajuwaka</option>
+                    <option value="Kurmannapalem">Kurmannapalem</option>
                 </select>
             </div>
             <div>
@@ -691,8 +699,8 @@
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <select id="closeMonthBranch" style="border:1px solid var(--border); padding:6px 10px; border-radius:6px; font-size:12px;">
-                            <option value="Branch 1">Branch 1</option>
-                            <option value="Branch 2">Branch 2</option>
+                            <option value="Gajuwaka">Gajuwaka</option>
+                            <option value="Kurmannapalem">Kurmannapalem</option>
                         </select>
                         <button class="btn-mini" style="background:#fee2e2; color:#dc2626; border-color:#fecaca;" onclick="closeMonthForBranch()">🔒 Close Month</button>
                     </div>
@@ -979,6 +987,22 @@
                         <button type="button" class="btn-mini" onclick="testCloudSyncConnection()">🔌 Test Connection</button>
                         <button type="button" class="btn-mini" onclick="syncNowFlushPending()">☁️ Sync Now</button>
                         <button type="button" class="btn-mini" id="syncCatalogNowBtn" onclick="syncCatalogNow()">☁️ Sync Catalog Now</button>
+                        <button type="button" class="btn-mini" id="cloudSyncInfoBtn" onclick="toggleCloudSyncInfo()">ℹ️ What is this?</button>
+                    </div>
+                    <div id="cloudSyncInfoBox" style="display:none; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-size:11.5px; color:#334155; line-height:1.6;">
+                        <b>First-time setup (once, ~5 min):</b>
+                        <ol style="margin:6px 0 8px 18px; padding:0;">
+                            <li><b>Create a Google Sheet</b> (sheets.new).</li>
+                            <li>Extensions &gt; Apps Script, delete any sample code, then <b>paste in the Code.gs</b> that came with this app.</li>
+                            <li>Deploy &gt; New deployment &gt; type "Web app" &gt; Who has access: <b>"Anyone"</b> &gt; <b>Deploy</b>, then authorize when prompted.</li>
+                            <li><b>Copy the Web App URL</b> (ends in <code>/exec</code>) and paste it above.</li>
+                        </ol>
+                        <b>Updating after a code change (2 steps):</b>
+                        <ol style="margin:6px 0 4px 18px; padding:0;">
+                            <li>Paste the new Code.gs over the old one in the same Apps Script project.</li>
+                            <li>Deploy &gt; Manage deployments &gt; Edit (pencil) &gt; Version: New version &gt; Deploy.</li>
+                        </ol>
+                        <p style="margin:4px 0 0; color:#64748b;">The URL stays the same when updating this way — only making a brand-new deployment changes it. Full instructions: "Cloud Sync Setup Instructions" that came with this app.</p>
                     </div>
                     <p id="cloudSyncPendingInfo" style="font-size:11.5px; color:#475569; font-weight:600; margin:0;"></p>
                     <p id="cloudSyncTestResult" style="font-size:11.5px; margin:0;"></p>
@@ -1114,6 +1138,74 @@
     </div>
 </div>
 
+<!-- DAMAGE / EXPIRY LEDGER MODAL: a simple, separate write-off log — does
+     NOT touch shift-register math (variance/totals). Reuses the POS item
+     catalog for name/MRP autocomplete only. -->
+<div class="modal-overlay" id="damageLedgerModal">
+    <div class="modal-box" style="width:95vw; max-width:900px; max-height:90vh; overflow:auto;">
+        <h3>⚠️ Damage / Expiry Ledger</h3>
+        <p style="margin-top:-8px;">A simple write-off log for damaged or expired stock. This is independent of the day's cash register — it does not affect variance or totals.</p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:10px;">
+            <div class="field-group" style="flex:1 1 200px;">
+                <label for="dmgItemName">Item Name / Barcode</label>
+                <input type="text" id="dmgItemName" placeholder="Scan barcode or type name" oninput="dmgLookupCatalog()" style="width:100%;">
+            </div>
+            <div class="field-group" style="flex:0 0 90px;">
+                <label for="dmgQty">Quantity</label>
+                <input type="number" id="dmgQty" min="0" value="1" oninput="dmgSuggestLoss()" style="width:100%;">
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="dmgReason">Reason</label>
+                <select id="dmgReason" style="width:100%;">
+                    <option value="Damaged">Damaged</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="field-group" style="flex:1 1 160px;">
+                <label for="dmgNote">Note (optional)</label>
+                <input type="text" id="dmgNote" placeholder="Optional short note" style="width:100%;">
+            </div>
+            <div class="field-group" style="flex:0 0 120px;">
+                <label for="dmgLoss">Est. Loss (₹)</label>
+                <input type="number" id="dmgLoss" min="0" step="0.01" style="width:100%;">
+            </div>
+            <div class="field-group" style="flex:0 0 150px;">
+                <label for="dmgDate">Date</label>
+                <input type="date" id="dmgDate" style="width:100%;">
+            </div>
+            <div class="field-group" style="flex:0 0 160px;">
+                <label for="dmgBranch">Branch</label>
+                <select id="dmgBranch" style="width:100%;"></select>
+            </div>
+            <div class="field-group" style="flex:0 0 auto;">
+                <button type="button" class="submit-btn" style="height:34px;" onclick="addDamageLedgerEntry()">+ Add to Ledger</button>
+            </div>
+        </div>
+        <p id="dmgCatalogMatchInfo" style="font-size:11.5px; color:#16a34a; font-weight:600; margin:6px 0 0; min-height:14px;"></p>
+
+        <div style="margin-top:16px; overflow-x:auto;">
+            <table class="cb-table-new" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Date</th><th>Item</th><th style="text-align:center;">Qty</th>
+                        <th>Reason</th><th style="text-align:right;">Loss Amount</th><th>Branch</th><th style="width:32px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="dmgLedgerBody"></tbody>
+            </table>
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:10px; font-weight:700; font-size:14px;">
+            Total Estimated Loss: <span id="dmgTotalLoss" style="font-family:'JetBrains Mono'; color:#dc2626; margin-left:8px;">₹0</span>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="btn-modal-cancel" onclick="closeDamageLedgerModal()">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- CASH BILL DETAILS (read-only itemized lookup) MODAL -->
 <div class="modal-overlay" id="cashBillDetailsModal">
     <div class="modal-box" style="width:480px; max-width:95vw;">
@@ -1235,8 +1327,8 @@
         <div style="display:flex; flex-direction:column; gap:8px;">
             <label style="font-size:12px; font-weight:700; color:#475569;">Target Group / Branch:</label>
             <select id="waBranchSelect" style="border:1px solid var(--border); padding:8px; border-radius:6px; font-family:'JetBrains Mono'; font-weight:700;">
-                <option value="Branch 1">Branch 1</option>
-                <option value="Branch 2">Branch 2</option>
+                <option value="Gajuwaka">Gajuwaka</option>
+                <option value="Kurmannapalem">Kurmannapalem</option>
             </select>
         </div>
         <div class="modal-buttons">
@@ -1386,9 +1478,23 @@
     let lastFilteredRecords = [];
     let lastMonthlySummary = null;
     let lastRangeSummary = null;
-    let appSettings = { lockedBranch: '', varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', branches: ['Branch 1', 'Branch 2'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Owner 1', 'Owner 2'], vendorNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: true, defaultPaymentMode: 'Cash', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true };
+    let appSettings = { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true };
     let activeLogoDataURI = '';
     const SETTINGS_KEY = 'lalitha_app_settings';
+    // Device-local branch lock. Deliberately NOT part of appSettings/SETTINGS_KEY so it
+    // is never included in Export Backup, never overwritten by Import Backup, and would
+    // never be carried by any future settings-sync — it is tied to this browser/PC only.
+    // Stored as a plain (non-JSON) string.
+    const DEVICE_LOCKED_BRANCH_KEY = 'lalitha_device_locked_branch';
+    function getDeviceLockedBranch() {
+        try { return localStorage.getItem(DEVICE_LOCKED_BRANCH_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setDeviceLockedBranch(branch) {
+        try {
+            if (branch) localStorage.setItem(DEVICE_LOCKED_BRANCH_KEY, branch);
+            else localStorage.removeItem(DEVICE_LOCKED_BRANCH_KEY);
+        } catch (e) {}
+    }
     const PIN_KEY = 'lalitha_cashier_pins';
     const LAST_BACKUP_KEY = 'lalitha_last_backup_at';
     const BACKUP_SNOOZE_KEY = 'lalitha_backup_snooze_until';
@@ -1707,19 +1813,209 @@
         });
     }
 
+    function toggleCloudSyncInfo() {
+        let box = document.getElementById('cloudSyncInfoBox');
+        if (!box) return;
+        box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+    }
+
     function testCloudSyncConnection() {
         let url = document.getElementById('settingsCloudSyncUrl').value.trim();
         let resultEl = document.getElementById('cloudSyncTestResult');
-        if (!url) { resultEl.style.color = '#dc2626'; resultEl.textContent = 'Enter a Web App URL first.'; return; }
+        if (!url) {
+            resultEl.style.color = '#dc2626';
+            resultEl.textContent = '✗ Enter a Web App URL first — copy it from Apps Script > Deploy > Manage deployments (ends in /exec).';
+            return;
+        }
+        if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) {
+            resultEl.style.color = '#dc2626';
+            resultEl.textContent = '✗ That doesn\'t look like a Web App URL — it should start with https://script.google.com/macros/s/ and end in /exec (not /dev).';
+            return;
+        }
         resultEl.style.color = '#475569';
         resultEl.textContent = 'Testing…';
         fetch(url, { method: 'GET', mode: 'no-cors' }).then(() => {
             resultEl.style.color = '#16a34a';
-            resultEl.textContent = '✓ Request sent without a network error. (mode:"no-cors" can\'t confirm the response — check your Sheet to be sure.)';
+            resultEl.textContent = '✓ Request sent without a network error. (mode:"no-cors" can\'t confirm the response — check your Sheet to be sure a new row/tab appears.)';
         }).catch(err => {
             resultEl.style.color = '#dc2626';
-            resultEl.textContent = '✗ Could not reach that URL: ' + err.message;
+            resultEl.textContent = '✗ Could not reach that URL (' + err.message + '). Most likely reasons: (1) no internet connection right now, (2) the URL is wrong/incomplete — re-copy it from Apps Script, or (3) the deployment\'s "Who has access" isn\'t set to "Anyone" — or you edited Code.gs since the last deploy and need to redeploy it (Deploy > Manage deployments > Edit > Version: New version > Deploy).';
         });
+    }
+
+    // ---- DAMAGE / EXPIRY LEDGER --------------------------------------------
+    // A simple, independent write-off log (damaged/expired stock). Deliberately
+    // NOT wired into shift-register math (variance/totals) — it's a record,
+    // not part of the day's cash reconciliation. Reuses the POS catalog
+    // (lalitha_pos_catalog) purely for name/MRP autocomplete convenience.
+    const DAMAGE_LEDGER_KEY = 'lalitha_damage_expiry_ledger';
+    const PENDING_DAMAGE_SYNC_KEY = 'lalitha_pending_damage_sync';
+
+    function getDamageLedger() {
+        try { return JSON.parse(localStorage.getItem(DAMAGE_LEDGER_KEY) || '[]'); } catch (e) { return []; }
+    }
+    function saveDamageLedger(list) {
+        try { localStorage.setItem(DAMAGE_LEDGER_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+
+    // Shared barcode-or-name catalog lookup, same matching rules as the Cash
+    // Bill scan input (handleBarcodeKey) — exact barcode key, else a
+    // case-insensitive match on item name.
+    function findCatalogMatch(code) {
+        code = (code || '').trim();
+        if (!code) return null;
+        let catalog = getPosCatalog();
+        if (catalog[code]) return catalog[code];
+        let nameMatchKey = Object.keys(catalog).find(k => (catalog[k].name || '').toLowerCase() === code.toLowerCase());
+        return nameMatchKey ? catalog[nameMatchKey] : null;
+    }
+
+    function dmgLookupCatalog() {
+        let raw = document.getElementById('dmgItemName').value;
+        let match = findCatalogMatch(raw);
+        let infoEl = document.getElementById('dmgCatalogMatchInfo');
+        if (match) {
+            infoEl.textContent = `Matched catalog item "${match.name}" (MRP ₹${match.mrp || 0}) — Item Name and Loss Amount pre-filled, edit freely.`;
+            document.getElementById('dmgItemName').value = match.name;
+        } else {
+            infoEl.textContent = '';
+        }
+        dmgSuggestLoss();
+    }
+
+    function dmgSuggestLoss() {
+        let raw = document.getElementById('dmgItemName').value;
+        let match = findCatalogMatch(raw);
+        let qty = parseFloat(document.getElementById('dmgQty').value) || 0;
+        if (match && match.mrp) {
+            document.getElementById('dmgLoss').value = (qty * (Number(match.mrp) || 0)).toFixed(2);
+        }
+    }
+
+    function openDamageLedgerModal() {
+        document.getElementById('dmgItemName').value = '';
+        document.getElementById('dmgQty').value = '1';
+        document.getElementById('dmgReason').value = 'Damaged';
+        document.getElementById('dmgNote').value = '';
+        document.getElementById('dmgLoss').value = '';
+        document.getElementById('dmgCatalogMatchInfo').textContent = '';
+        document.getElementById('dmgDate').value = new Date().toISOString().slice(0, 10);
+        let branchSel = document.getElementById('dmgBranch');
+        let currentBranch = (document.getElementById('branchLocation') || {}).value || (appSettings.branches || [])[0] || '';
+        branchSel.innerHTML = (appSettings.branches || []).map(b => `<option value="${b}"${b === currentBranch ? ' selected' : ''}>${b}</option>`).join('');
+        renderDamageLedger();
+        document.getElementById('damageLedgerModal').style.display = 'flex';
+    }
+    function closeDamageLedgerModal() {
+        document.getElementById('damageLedgerModal').style.display = 'none';
+    }
+
+    function addDamageLedgerEntry() {
+        let name = (document.getElementById('dmgItemName').value || '').trim();
+        let qty = parseFloat(document.getElementById('dmgQty').value) || 0;
+        let reason = document.getElementById('dmgReason').value || 'Damaged';
+        let note = (document.getElementById('dmgNote').value || '').trim();
+        let loss = parseFloat(document.getElementById('dmgLoss').value) || 0;
+        let date = document.getElementById('dmgDate').value || new Date().toISOString().slice(0, 10);
+        let branch = document.getElementById('dmgBranch').value || '';
+
+        if (!name) { alert('Enter an item name.'); return; }
+        if (!qty || qty <= 0) { alert('Enter a quantity greater than 0.'); return; }
+
+        let entry = {
+            id: 'dmg_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+            date, item: name, qty, reason, note, lossAmount: loss, branch,
+            updatedAt: Date.now()
+        };
+        let ledger = getDamageLedger();
+        ledger.push(entry);
+        saveDamageLedger(ledger);
+        syncDamageEntryToCloud(entry);
+
+        document.getElementById('dmgItemName').value = '';
+        document.getElementById('dmgQty').value = '1';
+        document.getElementById('dmgNote').value = '';
+        document.getElementById('dmgLoss').value = '';
+        document.getElementById('dmgCatalogMatchInfo').textContent = '';
+        document.getElementById('dmgItemName').focus();
+        renderDamageLedger();
+    }
+
+    function removeDamageLedgerEntry(id) {
+        let ledger = getDamageLedger().filter(e => e.id !== id);
+        saveDamageLedger(ledger);
+        renderDamageLedger();
+    }
+
+    function renderDamageLedger() {
+        let ledger = getDamageLedger().slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        let body = document.getElementById('dmgLedgerBody');
+        if (!body) return;
+        if (ledger.length === 0) {
+            body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:12px;">No entries logged yet.</td></tr>';
+        } else {
+            body.innerHTML = ledger.map(e => `
+                <tr>
+                    <td>${e.date}</td>
+                    <td>${e.item}${e.note ? ' <span style="color:var(--muted); font-size:10.5px;">(' + e.note + ')</span>' : ''}</td>
+                    <td style="text-align:center;">${e.qty}</td>
+                    <td>${e.reason}</td>
+                    <td style="text-align:right; font-family:'JetBrains Mono';">₹${(Number(e.lossAmount) || 0).toFixed(2)}</td>
+                    <td>${e.branch || ''}</td>
+                    <td style="text-align:center;"><button type="button" onclick="removeDamageLedgerEntry('${e.id}')" style="border:none; background:none; color:#dc2626; cursor:pointer; font-weight:700;">✕</button></td>
+                </tr>`).join('');
+        }
+        let total = ledger.reduce((sum, e) => sum + (Number(e.lossAmount) || 0), 0);
+        document.getElementById('dmgTotalLoss').textContent = '₹' + total.toFixed(2);
+    }
+
+    // ---- Damage ledger cloud sync — same fire-and-forget + retry-queue
+    // pattern as catalog sync. Push-only by design: once a write-off is
+    // logged it doesn't need multi-device pull/merge the way a shared
+    // product catalog does, so this keeps the sync path simple.
+    function getPendingDamageSyncQueue() {
+        try { return JSON.parse(localStorage.getItem(PENDING_DAMAGE_SYNC_KEY) || '[]'); } catch (e) { return []; }
+    }
+    function savePendingDamageSyncQueue(list) {
+        try { localStorage.setItem(PENDING_DAMAGE_SYNC_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+    function damageEntryToPayload(entry) {
+        return {
+            type: 'damage_entry',
+            id: entry.id,
+            date: entry.date,
+            item: entry.item,
+            qty: entry.qty,
+            reason: entry.reason,
+            note: entry.note,
+            lossAmount: entry.lossAmount,
+            branch: entry.branch,
+            updatedAt: entry.updatedAt || Date.now()
+        };
+    }
+    function syncDamageEntryToCloud(entry) {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return;
+        let payload = damageEntryToPayload(entry);
+        try {
+            postRecordToCloud(payload).then(() => {
+                console.log('Damage/expiry entry synced to Google Sheet.');
+            }).catch(err => {
+                console.error('Damage Ledger Sync Error:', err);
+                let q = getPendingDamageSyncQueue(); q.push(payload); savePendingDamageSyncQueue(q);
+            });
+        } catch (e) {
+            console.error('Damage Ledger Sync Error:', e);
+            let q = getPendingDamageSyncQueue(); q.push(payload); savePendingDamageSyncQueue(q);
+        }
+    }
+    function flushPendingDamageSync() {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return Promise.resolve();
+        let queue = getPendingDamageSyncQueue();
+        if (queue.length === 0) return Promise.resolve();
+        savePendingDamageSyncQueue([]);
+        let remaining = [];
+        let attempts = queue.map(payload => postRecordToCloud(payload).catch(() => { remaining.push(payload); }));
+        return Promise.all(attempts).then(() => { if (remaining.length > 0) savePendingDamageSyncQueue(remaining); });
     }
 
     // Records a sync attempt against the stored record so "Show Records" can
@@ -1754,6 +2050,16 @@
         try {
             let raw = localStorage.getItem(SETTINGS_KEY);
             if (raw) appSettings = Object.assign(appSettings, JSON.parse(raw));
+        } catch (e) {}
+        // One-time migration: older versions stored the branch lock inside
+        // appSettings.lockedBranch. If this device has no device-key value yet
+        // but an old-style lock exists in appSettings, carry it over once so
+        // existing users don't silently lose their current lock. We don't
+        // delete appSettings.lockedBranch — we just stop reading/writing it.
+        try {
+            if (!getDeviceLockedBranch() && appSettings.lockedBranch) {
+                setDeviceLockedBranch(appSettings.lockedBranch);
+            }
         } catch (e) {}
     }
 
@@ -1806,8 +2112,9 @@
 
     function applyBranchLock() {
         let sel = document.getElementById('branchLocation');
-        if (appSettings.lockedBranch) {
-            sel.value = appSettings.lockedBranch;
+        let lockedBranch = getDeviceLockedBranch();
+        if (lockedBranch) {
+            sel.value = lockedBranch;
             sel.disabled = true;
             sel.title = 'Branch is locked in Settings for this device.';
         } else {
@@ -1913,7 +2220,7 @@
 
     // ---- BRANCHES (fully configurable, so this file works for any business) --
     function getBranchList() {
-        return (appSettings.branches && appSettings.branches.length) ? appSettings.branches : ['Branch 1', 'Branch 2'];
+        return (appSettings.branches && appSettings.branches.length) ? appSettings.branches : ['Gajuwaka', 'Kurmannapalem'];
     }
 
     function renderBranchManageList() {
@@ -2034,7 +2341,8 @@
         let branches = getBranchList();
         sel.innerHTML = '<option value="">Not locked (choose branch each time)</option>' +
             branches.map(b => `<option value="${b}">${b}</option>`).join('');
-        sel.value = branches.includes(appSettings.lockedBranch) ? appSettings.lockedBranch : '';
+        let lockedBranch = getDeviceLockedBranch();
+        sel.value = branches.includes(lockedBranch) ? lockedBranch : '';
     }
 
     // ---- DEFAULT FIELD NAMES (expenses / owners / vendors / unbilled items) --
@@ -2051,7 +2359,7 @@
     const FIELD_NAME_MIN_ONE = { expenseNames: true, ownerNames: true, vendorNames: false, unbillNames: false };
     const FIELD_NAME_DEFAULTS = {
         expenseNames: ['Snacks', 'Water', 'Branch transport'],
-        ownerNames: ['Owner 1', 'Owner 2'],
+        ownerNames: ['Bhargav', 'Kanthi'],
         vendorNames: [],
         unbillNames: []
     };
@@ -2154,9 +2462,12 @@
         if (cleanedBranches.length === 0) cleanedBranches = getBranchList();
         appSettings.branches = cleanedBranches;
 
-        appSettings.lockedBranch = document.getElementById('settingsLockedBranch').value;
+        // Device-local branch lock — stored separately, not in appSettings (see
+        // DEVICE_LOCKED_BRANCH_KEY), so it never travels with Export/Import Backup.
+        let newLockedBranch = document.getElementById('settingsLockedBranch').value;
         // A branch that was just removed can no longer be the locked branch.
-        if (!appSettings.branches.includes(appSettings.lockedBranch)) appSettings.lockedBranch = '';
+        if (!appSettings.branches.includes(newLockedBranch)) newLockedBranch = '';
+        setDeviceLockedBranch(newLockedBranch);
 
         appSettings.varianceAlertThreshold = Math.abs(Number(document.getElementById('settingsVarianceThreshold').value) || 0);
         appSettings.businessName = document.getElementById('settingsBusinessName').value.trim() || 'Lalitha Naturals';
@@ -2330,8 +2641,7 @@
 
     function saveCashBillDraft() {
         let payload = currentCashBillDraftPayload();
-        let hasContent = (payload.cart && payload.cart.length > 0) || payload.salesman || payload.customerName ||
-            payload.customerNumber || payload.softwareBillNo || Number(payload.softwareBillAmount) > 0;
+        let hasContent = payload.cart && payload.cart.length > 0;
         if (!hasContent) { clearCashBillDraft(); return; }
         try { localStorage.setItem(CASH_BILL_DRAFT_KEY, JSON.stringify(payload)); } catch (e) {}
         updateCashBillDraftBanner();
@@ -3401,12 +3711,17 @@
 
     // ---- BACKUP & RESTORE ----------------------------------------------------
     function exportFullBackup() {
+        // Device-local branch lock is intentionally excluded from the exported
+        // settings — it belongs to this browser/PC only, not to the shared/exportable
+        // settings, so it must never travel via backup export/import.
+        let exportSettings = Object.assign({}, appSettings);
+        delete exportSettings.lockedBranch;
         let backup = {
             app: appSettings.businessName || 'Lalitha Naturals',
             version: 1,
             exportedAt: new Date().toISOString(),
             records: JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]'),
-            settings: appSettings,
+            settings: exportSettings,
             cashierPins: loadPins()
         };
         let dateStr = new Date().toISOString().split('T')[0];
@@ -3449,7 +3764,16 @@
             if (!proceed) { event.target.value = ''; return; }
 
             localStorage.setItem('lalitha_audit_register', JSON.stringify(data.records));
-            if (data.settings) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
+            if (data.settings) {
+                // Backward compatibility: an older-format backup may still carry a
+                // lockedBranch field inside settings. Ignore it on import — the
+                // device-local branch lock (DEVICE_LOCKED_BRANCH_KEY) must never be
+                // applied or overwritten by an import, so this device's own lock
+                // (if any) is left untouched.
+                let importedSettings = Object.assign({}, data.settings);
+                delete importedSettings.lockedBranch;
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(importedSettings));
+            }
             if (data.cashierPins) localStorage.setItem(PIN_KEY, JSON.stringify(data.cashierPins));
 
             alert('Backup restored successfully. The app will now reload.');
