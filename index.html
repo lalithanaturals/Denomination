@@ -783,6 +783,19 @@
                     <table id="vendorsBody"><tbody id="vendTableBody"></tbody></table>
                 </div>
                 <div>
+                    <div style="font-size:10px; font-weight:700; color:var(--muted); padding:4px 8px; background:var(--header-bg); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleCollapsible('staffBody', 'staffToggle')">
+                        <span style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <button type="button" class="btn-collapse-toggle" id="staffToggle" onclick="event.stopPropagation(); toggleCollapsible('staffBody', 'staffToggle')" title="Hide/show Staff Bills">▾</button>
+                            STAFF BILLS
+                        </span>
+                        <button class="btn-mini" onclick="event.stopPropagation(); addStaffRow()" style="padding:1px 6px; font-size:9.5px;">+Staff</button>
+                    </div>
+                    <table id="staffBody">
+                        <thead><tr style="font-size:9px; color:var(--muted);"><th style="text-align:left; font-weight:600; padding:2px 8px;">Staff</th><th style="text-align:left; font-weight:600;">Bill #</th><th style="text-align:right; font-weight:600; padding-right:8px;">Amt</th><th></th></tr></thead>
+                        <tbody id="staffTableBody"></tbody>
+                    </table>
+                </div>
+                <div>
                     <div style="font-size:10px; font-weight:700; color:var(--muted); padding:4px 8px; background:var(--header-bg); display:flex; justify-content:space-between; align-items:center;">
                         <span>UNBILLED</span>
                         <span style="display:flex; gap:4px;">
@@ -805,6 +818,7 @@
             <div class="summary-row"><span>Expn Total (+) :</span> <span id="sumExp" style="font-family:'JetBrains Mono';">₹0</span></div>
             <div class="summary-row"><span>Owner Bills (+) :</span> <span id="sumOwner" style="font-family:'JetBrains Mono'; color:#7c3aed;">₹0</span></div>
             <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="sumVend" style="font-family:'JetBrains Mono';">₹0</span></div>
+            <div class="summary-row"><span>Staff Bills (+) :</span> <span id="sumStaff" style="font-family:'JetBrains Mono';">₹0</span></div>
             <div class="summary-row bold" id="sumTotal1Row" style="background:var(--header-bg);"><span>Total :</span> <span id="sumTotal1" style="font-family:'JetBrains Mono';">₹0</span></div>
             <div style="height:2px;"></div>
             <div class="summary-row"><span>Software Sale:</span> <input type="number" id="vasySale" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:85px; border:1px solid var(--border); padding:2px 6px; border-radius:4px; text-align:right; font-size:15px;"></div>
@@ -1054,6 +1068,13 @@
                     </div>
 
                     <div style="margin-top:18px;">
+                        <label style="font-size:12px; font-weight:700; color:#475569;">Default Staff Names</label>
+                        <p style="font-size:11px; color:#94a3b8; margin:2px 0 6px;">Optional. These pre-fill the Staff Bills table on a fresh register — cashiers can still edit the name or add more rows. Leave empty for no rows to start.</p>
+                        <div id="staffNameManageList" style="display:flex; flex-direction:column; gap:8px;"></div>
+                        <button class="btn-mini" style="align-self:flex-start; margin-top:8px;" onclick="addFieldNameToSettings('staffNames')">+ Add Staff Name</button>
+                    </div>
+
+                    <div style="margin-top:18px;">
                         <label style="font-size:12px; font-weight:700; color:#475569;">Default Unbilled Item Names</label>
                         <p style="font-size:11px; color:#94a3b8; margin:2px 0 6px;">Optional. Pre-fills the Unbilled Sell table on a fresh register the same way. Leave empty for a single blank row.</p>
                         <div id="unbillNameManageList" style="display:flex; flex-direction:column; gap:8px;"></div>
@@ -1236,7 +1257,7 @@
                             (₹500+₹200+₹100+₹50+₹20+₹10+₹5+₹2+₹1 Denomination Total) + (Card Pay + UPI Pay + Pluxee) − Opening Balance − Cash Added − Extra Change Given + Change Left by Customer
                         </div>
                         <div>
-                            <b>Total (Total Summary panel)</b> = Grand Total + Expenses Total + Owner Bills Total + Vendor Payments Total
+                            <b>Total (Total Summary panel)</b> = Grand Total + Expenses Total + Owner Bills Total + Vendor Payments Total + Staff Bills Total
                         </div>
                         <div>
                             <b>Final Sale</b> = Software Sale (Vasy) + Unbilled Total
@@ -1248,7 +1269,10 @@
                             <b>Expense Total</b> = sum of every amount entered in the Expenses table.
                         </div>
                         <div>
-                            <b>Comb. Total (Owner/Vendor/Unbilled combined)</b> = Owner Bills Total + Vendor Payments Total + Unbilled Total.
+                            <b>Staff Bills Total</b> = sum of every amount entered in the Staff Bills table (items a staff member takes now and pays for later, by cash or salary deduction). Treated identically to Vendor Payments in every total below — it is added into Comb. Total and into the Total Summary's "Total" the same way. Each row's Bill # is a reference-only field (the original software/POS bill number this purchase corresponds to) and never affects any calculation.
+                        </div>
+                        <div>
+                            <b>Comb. Total (Owner/Vendor/Staff/Unbilled combined)</b> = Owner Bills Total + Vendor Payments Total + Staff Bills Total + Unbilled Total.
                         </div>
                         <div>
                             <b>Tray Balance total (denomination total)</b> = sum of (note/coin value × quantity) across all ₹500 down to ₹1 rows.
@@ -1268,9 +1292,9 @@
                         <h4>Section Defaults</h4>
                         <div class="settings-field" style="flex-direction:row; align-items:center; gap:8px; margin-top:8px;">
                             <input type="checkbox" id="settingsSectionsCollapsedByDefault" style="width:auto;">
-                            <label for="settingsSectionsCollapsedByDefault" style="margin:0;">Start "Cash Added" and "Vendor Payments" sections collapsed on a fresh page</label>
+                            <label for="settingsSectionsCollapsedByDefault" style="margin:0;">Start "Cash Added", "Vendor Payments" and "Staff Bills" sections collapsed on a fresh page</label>
                         </div>
-                        <p style="font-size:11.5px; color:#94a3b8; margin:6px 0 0;">Unchecking this makes both sections open by default instead. Either way, they can still be expanded/collapsed by hand at any time — this only sets the starting state.</p>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:6px 0 0;">Unchecking this makes all three sections open by default instead. Either way, they can still be expanded/collapsed by hand at any time — this only sets the starting state.</p>
                     </div>
 
                     <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
@@ -1876,6 +1900,8 @@
                 <table><tbody id="a4OwnerTable"></tbody></table>
                 <div style="font-size:14px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">VENDORS</div>
                 <table><tbody id="a4VendTable"></tbody></table>
+                <div style="font-size:14px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">STAFF BILLS</div>
+                <table><tbody id="a4StaffTable"></tbody></table>
                 <div style="font-size:14px; font-weight:800; color:#475569; padding:4px 10px; background:#f1f5f9;">UNBILLED</div>
                 <table><tbody id="a4UnbTable"></tbody></table>
             </div>
@@ -1891,6 +1917,7 @@
                 <div class="summary-row"><span>Expn Total (+) :</span> <span id="a4SumExp" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
                 <div class="summary-row"><span>Owner Bills (+) :</span> <span id="a4SumOwner" style="font-family:'JetBrains Mono'; color:#7c3aed; font-size:20px;">₹0</span></div>
                 <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="a4SumVend" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
+                <div class="summary-row"><span>Staff Bills (+) :</span> <span id="a4SumStaff" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
                 <div class="summary-row bold" id="a4SumTotal1Row" style="background:#f1f5f9;"><span>Total :</span> <span id="a4SumTotal1" style="font-family:'JetBrains Mono'; font-size:19px;">₹0</span></div>
                 <div class="summary-row"><span>Software Sale:</span> <span id="a4VasySale" style="font-family:'JetBrains Mono'; font-weight:800; font-size:19px;">₹0</span></div>
                 <div class="summary-row"><span>Unbill Total (+) :</span> <span id="a4SumUnb" style="font-family:'JetBrains Mono'; font-size:20px;">₹0</span></div>
@@ -1938,6 +1965,7 @@
     <div>Expenses: <span id="tExp" style="float:right;"></span></div>
     <div>Owner Bills: <span id="tOwner" style="float:right;"></span></div>
     <div>Vendors: <span id="tVend" style="float:right;"></span></div>
+    <div>Staff Bills: <span id="tStaff" style="float:right;"></span></div>
     <div>Unbilled: <span id="tUnb" style="float:right;"></span></div>
     <div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
     <div style="font-weight:bold;">Final Grand: <span id="tGrand" style="float:right;"></span></div>
@@ -1960,7 +1988,7 @@
     // fresh, independent object/array copy is produced each time (never a shared
     // reference that a later appSettings mutation could accidentally corrupt).
     function getDefaultAppSettings() {
-        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true };
+        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true };
     }
     let appSettings = getDefaultAppSettings();
     let activeLogoDataURI = '';
@@ -2045,7 +2073,7 @@
         let branchCompBtn = document.getElementById('branchComparisonMenuBtn');
         if (branchCompBtn) branchCompBtn.style.display = (appSettings.branches || []).length > 1 ? 'block' : 'none';
         applyShiftsEnabled();
-        // Cash Added and Vendor Payments start collapsed by default — they're
+        // Cash Added, Vendor Payments and Staff Bills start collapsed by default — they're
         // used far less often than the rest of the sheet, so keeping them
         // tucked away out of the box reduces clutter on first load.
         let startCollapsed = appSettings.sectionsCollapsedByDefault !== false;
@@ -2053,6 +2081,8 @@
         document.getElementById('cashAddedToggle').textContent = startCollapsed ? '▸' : '▾';
         document.getElementById('vendorsBody').style.display = startCollapsed ? 'none' : '';
         document.getElementById('vendorsToggle').textContent = startCollapsed ? '▸' : '▾';
+        document.getElementById('staffBody').style.display = startCollapsed ? 'none' : '';
+        document.getElementById('staffToggle').textContent = startCollapsed ? '▸' : '▾';
         removeActionButtonsFromTabOrder();
         applyBranchLock();
         applyBusinessProfile();
@@ -2704,6 +2734,7 @@
             expenseNames: getFieldNameList('expenseNames').slice(),
             ownerNames: getFieldNameList('ownerNames').slice(),
             vendorNames: getFieldNameList('vendorNames').slice(),
+            staffNames: getFieldNameList('staffNames').slice(),
             unbillNames: getFieldNameList('unbillNames').slice()
         };
         renderBranchManageList();
@@ -2711,6 +2742,7 @@
         renderFieldNameManageList('expenseNames');
         renderFieldNameManageList('ownerNames');
         renderFieldNameManageList('vendorNames');
+        renderFieldNameManageList('staffNames');
         renderFieldNameManageList('unbillNames');
         renderSettingsLockedBranchOptions();
         renderCashierPinList();
@@ -2894,13 +2926,15 @@
         expenseNames: 'expenseNameManageList',
         ownerNames: 'ownerNameManageList',
         vendorNames: 'vendorNameManageList',
+        staffNames: 'staffNameManageList',
         unbillNames: 'unbillNameManageList'
     };
-    const FIELD_NAME_MIN_ONE = { expenseNames: true, ownerNames: true, vendorNames: false, unbillNames: false };
+    const FIELD_NAME_MIN_ONE = { expenseNames: true, ownerNames: true, vendorNames: false, staffNames: false, unbillNames: false };
     const FIELD_NAME_DEFAULTS = {
         expenseNames: ['Snacks', 'Water', 'Branch transport'],
         ownerNames: ['Bhargav', 'Kanthi'],
         vendorNames: [],
+        staffNames: [],
         unbillNames: []
     };
 
@@ -2929,7 +2963,7 @@
 
     function addFieldNameToSettings(key) {
         let list = pendingFieldNames[key];
-        let label = key === 'expenseNames' ? 'Expense' : key === 'ownerNames' ? 'Owner' : key === 'vendorNames' ? 'Vendor' : 'Item';
+        let label = key === 'expenseNames' ? 'Expense' : key === 'ownerNames' ? 'Owner' : key === 'vendorNames' ? 'Vendor' : key === 'staffNames' ? 'Staff' : 'Item';
         list.push(`${label} ${list.length + 1}`);
         renderFieldNameManageList(key);
     }
@@ -3034,7 +3068,7 @@
         // unbilled names are allowed to be empty (a fresh register then just
         // shows a single blank row, as before).
         if (pendingFieldNames) {
-            ['expenseNames', 'ownerNames', 'vendorNames', 'unbillNames'].forEach(key => {
+            ['expenseNames', 'ownerNames', 'vendorNames', 'staffNames', 'unbillNames'].forEach(key => {
                 let cleaned = [];
                 (pendingFieldNames[key] || []).forEach(name => {
                     let trimmed = (name || '').trim();
@@ -3754,6 +3788,7 @@
             <html>
             <head>
                 <title>Cash Bill #${billNo}</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
                 <style>
                     /* NOTE ON THE PRINTED-PAGE-HEIGHT FIX (2nd attempt):
                        The previous fix declared "@page { size: 80mm auto; }",
@@ -3775,9 +3810,46 @@
                        rendered body height and injects a concrete
                        "@page { size: 80mm <height>mm; margin:0; }" rule
                        sized exactly to that content, then prints. */
+                    /* NOTE ON THE REAL-PRINTER FOLLOW-UP (3rd attempt):
+                       A real thermal printer still printed several inches of
+                       blank paper below a correctly-sized receipt after the
+                       2nd fix above (which is otherwise correct and still
+                       necessary). Root cause, confirmed by testing: on a lot
+                       of real thermal printer setups (Android "print to
+                       thermal printer" apps via the system print dialog in
+                       particular) the PRINTER DRIVER — not the web page —
+                       decides the physical cut length, using its own
+                       "Paper Size"/"Cutting" setting (often a fixed
+                       continuous-roll length, or a generic A4/Letter
+                       fallback), and it can simply ignore the page's
+                       "@page { size }" rule entirely. That is a limitation
+                       of printing through a generic browser print dialog to
+                       a thermal printer (vs. a dedicated ESC/POS library,
+                       which this app does not use) — no amount of CSS here
+                       can force a driver that ignores @page to respect it.
+                       What IS fixable from the page, and is fixed here:
+                       1) margin:0 is now set on html/body/every container,
+                          not just @page, so there is no page-side padding
+                          contributing extra blank length.
+                       2) The height used to size @page is now measured only
+                          after document.fonts.ready AND a double
+                          requestAnimationFrame, instead of a flat 500ms
+                          timeout — on a mobile/Android Chrome print flow the
+                          webfont can still be loading/reflowing at 500ms,
+                          which under-measures scrollHeight and (on drivers
+                          that DO honour @page) under-sizes the cut point.
+                       3) Trailing footer padding is trimmed to the minimum
+                          needed for legibility (was already small, tightened
+                          further) so there's no avoidable blank tail.
+                       If excess blank paper still appears after this fix,
+                       it is the printer/OS driver's own paper-length setting
+                       overriding the browser — check the thermal printer
+                       app/driver's "Paper Size"/"Cutting" setting and set it
+                       to "Auto" or the exact mm length instead of a fixed
+                       page size. */
                     * { box-sizing: border-box; }
-                    html, body { height: auto; }
-                    body { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: ${bodyWidthMm}; margin: 0 auto; padding: 8px 6px 6px; color: #000; -webkit-print-color-adjust: exact; }
+                    html, body { height: auto; margin: 0; padding: 0; }
+                    body { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: ${bodyWidthMm}; max-width: 100%; margin: 0 auto; padding: 6px 6px 0; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow-x: hidden; }
                     .center { text-align: center; }
                     .bold { font-weight: bold; }
                     .biz-name { font-size: 14px; font-weight: 800; letter-spacing: 0.5px; }
@@ -3789,7 +3861,7 @@
                     .items-table { margin: 4px 0 0; font-size: ${itemsFontSize}; line-height: 1.55; white-space: pre; }
                     .totals { margin-top: 2px; }
                     .total-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; padding: 3px 0; }
-                    .footer { text-align: center; font-size: 9.5px; margin-top: 8px; line-height: 1.5; }
+                    .footer { text-align: center; font-size: 9.5px; margin: 6px 0 0; line-height: 1.4; padding-bottom: 0; }
                     .footer .thanks { font-weight: 700; font-size: 10.5px; letter-spacing: 0.5px; }
                 </style>
             </head>
@@ -3817,10 +3889,40 @@
         `);
         printWin.document.close();
         printWin.focus();
-        setTimeout(() => {
-            applyComputedThermalPageSize(printWin, paperWidthMm);
-            printWin.print();
-        }, 500);
+        printAfterThermalContentSettles(printWin, paperWidthMm);
+    }
+
+    // Waits for the print window's fonts to finish loading AND for a double
+    // requestAnimationFrame (so layout has actually painted at least once)
+    // before measuring/printing, instead of a flat setTimeout. A flat delay
+    // (the previous approach) can fire before a webfont has finished
+    // loading/reflowing — especially on mobile Chrome/Android, which is what
+    // real-device testing pointed at — so scrollHeight gets read too early
+    // and @page ends up sized too short (or, on drivers that ignore @page
+    // anyway, doesn't matter — see the long comment in printCashBillReceipt).
+    // Falls back to a short timeout if document.fonts isn't available.
+    function printAfterThermalContentSettles(win, paperWidthMm) {
+        let fired = false;
+        function settleAndPrint() {
+            if (fired) return;
+            fired = true;
+            win.requestAnimationFrame(() => {
+                win.requestAnimationFrame(() => {
+                    applyComputedThermalPageSize(win, paperWidthMm);
+                    win.print();
+                });
+            });
+        }
+        try {
+            if (win.document.fonts && win.document.fonts.ready) {
+                win.document.fonts.ready.then(settleAndPrint).catch(settleAndPrint);
+                // Safety net: some Android WebViews resolve fonts.ready late
+                // or never — never let the receipt sit unprinted forever.
+                setTimeout(settleAndPrint, 900);
+                return;
+            }
+        } catch (e) { /* fall through to timeout */ }
+        setTimeout(settleAndPrint, 500);
     }
 
     // Measures the print window's actual rendered content height and
@@ -4500,6 +4602,7 @@
             exp: Array.from(document.querySelectorAll('#expTableBody tr')).map(tr => ({ name: tr.querySelector('.exp-name').value, amt: tr.querySelector('.exp-amt').value, photo: tr.dataset.photo || '' })),
             owner: Array.from(document.querySelectorAll('#ownerTableBody tr')).map(tr => ({ name: tr.querySelector('.owner-name').value, amt: tr.querySelector('.owner-amt').value })),
             vend: Array.from(document.querySelectorAll('#vendTableBody tr')).map(tr => ({ name: tr.querySelector('.vend-name').value, amt: tr.querySelector('.vend-amt').value, photo: tr.dataset.photo || '' })),
+            staff: Array.from(document.querySelectorAll('#staffTableBody tr')).map(tr => ({ name: tr.querySelector('.staff-name').value, amt: tr.querySelector('.staff-amt').value, billNo: tr.querySelector('.staff-billno').value })),
             unb: Array.from(document.querySelectorAll('#unbTableBody tr')).map(tr => ({ name: tr.querySelector('.unb-name').value, amt: tr.querySelector('.unb-amt').value }))
         };
     }
@@ -4532,6 +4635,7 @@
             (state.exp || []).some(e => e.amt) ||
             (state.owner || []).some(o => o.amt) ||
             (state.vend || []).some(v => v.amt || v.name) ||
+            (state.staff || []).some(s => s.amt || s.name) ||
             (state.unb || []).some(u => u.amt || u.name);
         if (!hasContent) return;
 
@@ -4572,6 +4676,9 @@
 
         document.getElementById('vendTableBody').innerHTML = '';
         (state.vend && state.vend.length ? state.vend : defaultVendUnbRows('vendorNames')).forEach(r => addRow('vend', r.name, r.amt, r.photo));
+
+        document.getElementById('staffTableBody').innerHTML = '';
+        (state.staff || []).forEach(r => addStaffRow(r.name, r.amt, r.billNo));
 
         document.getElementById('unbTableBody').innerHTML = '';
         (state.unb && state.unb.length ? state.unb : defaultVendUnbRows('unbillNames')).forEach(r => addRow('unb', r.name, r.amt));
@@ -4677,6 +4784,25 @@
         removeActionButtonsFromTabOrder();
     }
 
+    // Staff Bills: items a staff member takes now and pays for later (cash
+    // later, or salary deduction). Structurally parallel to addRow('vend', ...)
+    // — free-text name, fully editable, feeds the totals the same way a
+    // Vendor Payment does — but with one extra field: Bill # (billNo), a
+    // free-text/number reference to the ORIGINAL software/POS bill number
+    // this purchase corresponds to. billNo is purely for the owner's own
+    // cross-reference later — it is never used in any calculation.
+    function addStaffRow(name = '', amt = '', billNo = '') {
+        let tb = document.getElementById('staffTableBody');
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="text" class="staff-name" value="${name}" placeholder="Staff name" onkeydown="handleEnter(event)"></td>` +
+            `<td><input type="text" class="staff-billno" value="${billNo}" placeholder="Bill #" onkeydown="handleEnter(event)" style="width:70px;"></td>` +
+            `<td><input type="number" class="staff-amt" value="${amt}" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td>` +
+            `<td style="width:28px; text-align:center; white-space:nowrap;"><button class="btn-del" onclick="this.closest('tr').remove(); recalcRegister();">✕</button></td>`;
+        tb.appendChild(tr);
+        recalcRegister();
+        removeActionButtonsFromTabOrder();
+    }
+
     // Builds the default rows for a fresh/cleared register from whatever
     // names are configured in Settings > Default Fields, so a new business
     // sees their own categories instead of ours. Expense/owner rows are
@@ -4686,6 +4812,12 @@
         getFieldNameList('expenseNames').forEach(name => addLockedRow('exp', name, ''));
         getFieldNameList('ownerNames').forEach(name => addLockedRow('owner', name, ''));
         defaultVendUnbRows('vendorNames').forEach(r => addRow('vend', r.name, r.amt));
+        // Staff Bills is a lightly-used, off-by-default section (see
+        // sectionsCollapsedByDefault) — unlike Vendors/Unbilled it starts
+        // with NO rows at all when no default staff names are configured,
+        // rather than forcing one blank row, so a fresh register doesn't
+        // show an empty Staff Bills row nobody asked for.
+        (appSettings.staffNames || []).forEach(name => addStaffRow(name, ''));
         defaultVendUnbRows('unbillNames').forEach(r => addRow('unb', r.name, r.amt));
     }
 
@@ -4797,7 +4929,7 @@
         } else if (cat === 'exp') {
             document.querySelectorAll('.exp-amt').forEach(i => i.value = '');
         } else if (cat === 'owner_vend') {
-            document.querySelectorAll('.owner-amt, .vend-amt, .unb-amt').forEach(i => i.value = '');
+            document.querySelectorAll('.owner-amt, .vend-amt, .staff-amt, .unb-amt').forEach(i => i.value = '');
         } else if (cat === 'unb') {
             document.querySelectorAll('.unb-amt').forEach(i => i.value = '');
         }
@@ -4854,6 +4986,7 @@
         document.getElementById('expTableBody').innerHTML = '';
         document.getElementById('ownerTableBody').innerHTML = '';
         document.getElementById('vendTableBody').innerHTML = '';
+        document.getElementById('staffTableBody').innerHTML = '';
         document.getElementById('unbTableBody').innerHTML = '';
 
         seedDefaultRegisterRows();
@@ -4951,10 +5084,11 @@
 
         let ownerTotal = 0; document.querySelectorAll('.owner-amt').forEach(i => ownerTotal += parseFloat(i.value) || 0);
         let vendTotal = 0; document.querySelectorAll('.vend-amt').forEach(i => vendTotal += parseFloat(i.value) || 0);
+        let staffTotal = 0; document.querySelectorAll('.staff-amt').forEach(i => staffTotal += parseFloat(i.value) || 0);
         let unbTotal = 0; document.querySelectorAll('.unb-amt').forEach(i => unbTotal += parseFloat(i.value) || 0);
 
-        document.getElementById('lblCombinedOutflow').innerText = '₹' + (ownerTotal + vendTotal + unbTotal);
-        document.getElementById('dockOutflow').innerText = '₹' + (expTotal + ownerTotal + vendTotal);
+        document.getElementById('lblCombinedOutflow').innerText = '₹' + (ownerTotal + vendTotal + staffTotal + unbTotal);
+        document.getElementById('dockOutflow').innerText = '₹' + (expTotal + ownerTotal + vendTotal + staffTotal);
 
         let card = parseFloat(document.getElementById('cardPay').value) || 0;
         let upi = parseFloat(document.getElementById('upiPay').value) || 0;
@@ -4965,8 +5099,9 @@
         document.getElementById('sumExp').innerText = '₹' + expTotal;
         document.getElementById('sumOwner').innerText = '₹' + ownerTotal;
         document.getElementById('sumVend').innerText = '₹' + vendTotal;
+        document.getElementById('sumStaff').innerText = '₹' + staffTotal;
 
-        let total1 = grandTotal + expTotal + ownerTotal + vendTotal;
+        let total1 = grandTotal + expTotal + ownerTotal + vendTotal + staffTotal;
         document.getElementById('sumTotal1').innerText = '₹' + total1;
         applySignHighlight(document.getElementById('sumTotal1Row'), document.getElementById('sumTotal1'), total1);
 
@@ -5283,18 +5418,21 @@
             let regPaperWidthMm = regIs58 ? '58mm' : '80mm';
             let regBodyWidthPx = regIs58 ? 203 : 280;
             let regFontSize = regIs58 ? '11px' : '12px';
-            printWin.document.write(`<!DOCTYPE html><html><head><style>
+            // See printCashBillReceipt's long style comment for why margin
+            // is zeroed everywhere (not just @page) and why height is
+            // measured after fonts.ready + double rAF instead of a flat
+            // timeout — same real-printer fix applied here.
+            printWin.document.write(`<!DOCTYPE html><html><head>
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+                <style>
                 * { box-sizing: border-box; }
-                html, body { height: auto; }
-                body { font-family: 'JetBrains Mono', monospace; font-size: ${regFontSize}; width: ${regBodyWidthPx}px; margin: 0 auto; padding: 10px; }
+                html, body { height: auto; margin: 0; padding: 0; }
+                body { font-family: 'JetBrains Mono', monospace; font-size: ${regFontSize}; width: ${regBodyWidthPx}px; max-width: 100%; margin: 0 auto; padding: 10px 10px 0; overflow-x: hidden; }
             </style></head><body>${thermalContent}</body></html>`);
             printWin.document.close();
             printWin.focus();
-            setTimeout(() => {
-                applyComputedThermalPageSize(printWin, regPaperWidthMm);
-                printWin.print();
-                closeModalOnly();
-            }, 500);
+            printAfterThermalContentSettles(printWin, regPaperWidthMm);
+            closeModalOnly();
         }
     }
 
@@ -5322,7 +5460,7 @@
             locked: true,
             syncedAt: null,
             lastSyncAttemptAt: null,
-            expenses: [], owners: [], vendors: [], unbills: []
+            expenses: [], owners: [], vendors: [], staffBills: [], unbills: []
         };
 
         document.querySelectorAll('#expTableBody tr').forEach(tr => {
@@ -5337,6 +5475,12 @@
         document.querySelectorAll('#vendTableBody tr').forEach(tr => {
             let name = tr.querySelector('.vend-name').value; let amt = Number(tr.querySelector('.vend-amt').value) || 0;
             if(name || amt) record.vendors.push({name, amt, photo: tr.dataset.photo || null});
+        });
+        document.querySelectorAll('#staffTableBody tr').forEach(tr => {
+            let name = tr.querySelector('.staff-name').value;
+            let amt = Number(tr.querySelector('.staff-amt').value) || 0;
+            let billNo = tr.querySelector('.staff-billno').value;
+            if(name || amt || billNo) record.staffBills.push({name, amt, billNo});
         });
         document.querySelectorAll('#unbTableBody tr').forEach(tr => {
             let name = tr.querySelector('.unb-name').value; let amt = Number(tr.querySelector('.unb-amt').value) || 0;
@@ -5437,6 +5581,15 @@
         });
         document.getElementById('a4VendTable').innerHTML = vendHtml || '<tr><td colspan="2" style="color:#94a3b8; text-align:center;">None</td></tr>';
 
+        let staffHtml = '';
+        document.querySelectorAll('#staffTableBody tr').forEach(tr => {
+            let name = tr.querySelector('.staff-name').value || '';
+            let billNo = tr.querySelector('.staff-billno').value || '';
+            let amt = tr.querySelector('.staff-amt').value || 0;
+            if(name || amt || billNo) staffHtml += `<tr><td>${name}${billNo ? ' (Bill #' + billNo + ')' : ''}</td><td class="cell-val">₹${amt}</td></tr>`;
+        });
+        document.getElementById('a4StaffTable').innerHTML = staffHtml || '<tr><td colspan="2" style="color:#94a3b8; text-align:center;">None</td></tr>';
+
         let unbHtml = '';
         document.querySelectorAll('#unbTableBody tr').forEach(tr => {
             let name = tr.querySelector('.unb-name').value || '';
@@ -5450,6 +5603,7 @@
         document.getElementById('a4SumExp').innerText = document.getElementById('sumExp').innerText;
         document.getElementById('a4SumOwner').innerText = document.getElementById('sumOwner').innerText;
         document.getElementById('a4SumVend').innerText = document.getElementById('sumVend').innerText;
+        document.getElementById('a4SumStaff').innerText = document.getElementById('sumStaff').innerText;
         document.getElementById('a4SumTotal1').innerText = document.getElementById('sumTotal1').innerText;
         applySignHighlight(document.getElementById('a4SumTotal1Row'), document.getElementById('a4SumTotal1'), Number(document.getElementById('sumTotal1').innerText.replace('₹','')) || 0);
         document.getElementById('a4VasySale').innerText = '₹' + (document.getElementById('vasySale').value || 0);
@@ -5496,6 +5650,10 @@
         if(rec.vendors) rec.vendors.forEach(v => vendH += `<tr><td>${v.name}</td><td class="cell-val">₹${v.amt}</td></tr>`);
         document.getElementById('a4VendTable').innerHTML = vendH || '<tr><td colspan="2">None</td></tr>';
 
+        let staffH = '';
+        if(rec.staffBills) rec.staffBills.forEach(s => staffH += `<tr><td>${s.name}${s.billNo ? ' (Bill #' + s.billNo + ')' : ''}</td><td class="cell-val">₹${s.amt}</td></tr>`);
+        document.getElementById('a4StaffTable').innerHTML = staffH || '<tr><td colspan="2">None</td></tr>';
+
         let unbH = '';
         let totUnb = 0;
         if(rec.unbills) rec.unbills.forEach(u => {
@@ -5507,6 +5665,7 @@
         let combOut = totalExp;
         if(rec.owners) rec.owners.forEach(o => combOut += o.amt);
         if(rec.vendors) rec.vendors.forEach(v => combOut += v.amt);
+        if(rec.staffBills) rec.staffBills.forEach(s => combOut += s.amt);
         if(rec.unbills) rec.unbills.forEach(u => combOut += u.amt);
         document.getElementById('a4LblCombined').innerText = '₹' + combOut;
 
@@ -5516,6 +5675,8 @@
         document.getElementById('a4SumOwner').innerText = '₹' + totOwn;
         let totVend = 0; if(rec.vendors) rec.vendors.forEach(v => totVend += v.amt);
         document.getElementById('a4SumVend').innerText = '₹' + totVend;
+        let totStaff = 0; if(rec.staffBills) rec.staffBills.forEach(s => totStaff += s.amt);
+        document.getElementById('a4SumStaff').innerText = '₹' + totStaff;
         let recTotal1 = Number(rec.finalTotal || rec.grandTotal || 0);
         document.getElementById('a4SumTotal1').innerText = '₹' + recTotal1;
         applySignHighlight(document.getElementById('a4SumTotal1Row'), document.getElementById('a4SumTotal1'), recTotal1);
@@ -5545,6 +5706,7 @@
         document.getElementById('tExp').innerText = document.getElementById('lblExpTotal').innerText;
         document.getElementById('tOwner').innerText = document.getElementById('sumOwner').innerText;
         document.getElementById('tVend').innerText = document.getElementById('sumVend').innerText;
+        document.getElementById('tStaff').innerText = document.getElementById('sumStaff').innerText;
         document.getElementById('tUnb').innerText = document.getElementById('sumUnb').innerText;
         document.getElementById('tGrand').innerText = document.getElementById('finalGrandDisplay').innerText;
         document.getElementById('tSale').innerText = document.getElementById('sumTotalSale').innerText;
@@ -5573,6 +5735,8 @@
         document.getElementById('tOwner').innerText = '₹' + totOwn;
         let totVend = 0; if(rec.vendors) rec.vendors.forEach(v => totVend += v.amt);
         document.getElementById('tVend').innerText = '₹' + totVend;
+        let totStaffT = 0; if(rec.staffBills) rec.staffBills.forEach(s => totStaffT += s.amt);
+        document.getElementById('tStaff').innerText = '₹' + totStaffT;
         let totUnb = 0; if(rec.unbills) rec.unbills.forEach(u => totUnb += u.amt);
         document.getElementById('tUnb').innerText = '₹' + totUnb;
         document.getElementById('tGrand').innerText = '₹' + (rec.finalTotal || rec.grandTotal || 0);
@@ -6281,7 +6445,7 @@
     // can be viewed/copied from inside Settings > Cloud Sync, not just as a
     // separate downloaded file. Never executed or edited here — purely for
     // display + clipboard copy, to paste into script.google.com yourself.
-    const APPS_SCRIPT_SOURCE = "/**\n * Lalitha Naturals \u2014 Shift Register \u2014 Google Sheets Cloud Sync\n * =============================================================\n *\n * WHAT THIS IS\n * A tiny free \"Google Apps Script Web App\" that receives shift records\n * posted by the Shift Register HTML app and appends/updates them as rows\n * in a Google Sheet named \"ShiftRegister\" (created automatically the first\n * time it runs). This is what makes your shift data reachable from any\n * device \u2014 the Sheet lives in your own Google account.\n *\n * ONE-TIME SETUP (do this once; takes about 3 minutes):\n *   1. Go to https://sheets.google.com and create a new, blank Google Sheet\n *      (or open an existing one you want to use for this).\n *   2. In the menu, click Extensions > Apps Script. A code editor opens in\n *      a new tab, with a default empty \"Code.gs\" file.\n *   3. Select all the placeholder code in that editor and delete it. Paste\n *      in the ENTIRE contents of this file instead.\n *   4. Click the disk/Save icon (or Ctrl/Cmd+S).\n *   5. Click \"Deploy\" (top-right) > \"New deployment\".\n *   6. Next to \"Select type\", click the gear icon and choose \"Web app\".\n *   7. Fill in:\n *        Description:      Shift Register Sync (or anything you like)\n *        Execute as:        Me (your own Google account)\n *        Who has access:    Anyone with the link\n *      (These exact choices matter \u2014 \"Execute as: Me\" lets the script write\n *      to your Sheet on the app's behalf even though the app itself never\n *      logs into Google, and \"Anyone with the link\" lets the offline app\n *      call the URL without you having to log in from inside it.)\n *   8. Click \"Deploy\". The first time, Google will ask you to authorize the\n *      script \u2014 click through \"Review permissions\" > pick your account >\n *      \"Advanced\" > \"Go to (project name) (unsafe)\" > \"Allow\". This warning\n *      is expected and normal for a script you wrote/pasted yourself.\n *   9. Copy the \"Web app URL\" it gives you (ends in /exec). That is the URL\n *      you paste into the Shift Register app's Settings > Cloud Sync panel.\n *\n * If you ever edit this script again, you must create a NEW deployment (or\n * use \"Manage deployments\" > edit > \"New version\") for the changes to take\n * effect on the same URL.\n *\n * WHAT IT STORES\n * Every time a shift is saved in the app (with Cloud Sync turned on), it\n * POSTs the shift's data as JSON here. This script appends one row per\n * shift into a sheet tab named \"ShiftRegister\", creating that tab and its\n * header row automatically if they don't exist yet. If a row already\n * exists for the same Date + Branch + Shift, it's updated in place instead\n * of duplicated (an \"upsert\").\n *\n * The display columns cover the most useful fields at a glance. A final\n * \"Full Record (JSON)\" column also stores the ENTIRE record exactly as\n * received, so nothing is ever lost even if a future version of the app\n * adds fields this script doesn't explicitly list yet.\n *\n * This script also creates two more tabs automatically, the first time each\n * kind of item is synced:\n *   - \"ItemCatalog\": the Cash Bill's barcode/item catalog (name, MRP, price).\n *   - \"DamageExpiryLedger\": the Damage/Expiry write-off log (date, item,\n *     qty, reason, loss amount, branch) \u2014 a simple record, push-only from\n *     the app, upserted by its own id so re-syncs never duplicate a row.\n */\n\nvar SHEET_NAME = 'ShiftRegister';\nvar CATALOG_SHEET_NAME = 'ItemCatalog';\nvar CATALOG_HEADERS = ['barcode', 'name', 'mrp', 'sellingPrice', 'discount', 'discountMode', 'updatedAt'];\n\nfunction getOrCreateCatalogSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(CATALOG_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(CATALOG_SHEET_NAME);\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one catalog item row, keyed on barcode.\n */\nfunction upsertCatalogItem_(item) {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    item.barcode || '',\n    item.name || '',\n    item.mrp != null ? item.mrp : '',\n    item.sellingPrice != null ? item.sellingPrice : '',\n    item.discount != null ? item.discount : '',\n    item.discountMode || '',\n    item.updatedAt != null ? item.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(item.barcode)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all ItemCatalog rows as an array of plain objects.\n */\nfunction getCatalogRecords_() {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.barcode) rows.push(obj);\n  }\n  return rows;\n}\n\nvar DAMAGE_SHEET_NAME = 'DamageExpiryLedger';\nvar DAMAGE_HEADERS = ['id', 'date', 'item', 'qty', 'reason', 'note', 'lossAmount', 'branch', 'updatedAt'];\n\nfunction getOrCreateDamageSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(DAMAGE_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(DAMAGE_SHEET_NAME);\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one damage/expiry ledger row, keyed on its unique id\n * (last-write-wins by updatedAt, same pattern as the item catalog).\n */\nfunction upsertDamageEntry_(entry) {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    entry.id || '',\n    entry.date || '',\n    entry.item || '',\n    entry.qty != null ? entry.qty : '',\n    entry.reason || '',\n    entry.note || '',\n    entry.lossAmount != null ? entry.lossAmount : '',\n    entry.branch || '',\n    entry.updatedAt != null ? entry.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(entry.id)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all DamageExpiryLedger rows as plain objects \u2014 supports the\n * optional ?type=damage pull-merge path on doGet for symmetry with the\n * catalog sync, even though the app itself currently only pushes entries\n * (a logged write-off rarely needs to be pulled back and re-merged the way\n * a shared product catalog does, but the endpoint supports it either way).\n */\nfunction getDamageRecords_() {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.id) rows.push(obj);\n  }\n  return rows;\n}\n\nvar HEADERS = [\n  'Date', 'Branch', 'Shift', 'Cashier',\n  'Grand Total', 'Tray Balance (Closing Bal)', 'Total Outflows',\n  'Software Sale', 'Variance', 'Opening Bal', 'Closing Bal',\n  'Extra Change Given', 'Change Left by Customer',\n  'Notes', 'Synced At', 'Full Record (JSON)'\n];\n\nfunction getOrCreateSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(SHEET_NAME);\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\nfunction sumField_(list, key) {\n  var total = 0;\n  (list || []).forEach(function (item) {\n    total += Number(item && item[key]) || 0;\n  });\n  return total;\n}\n\nfunction recordToRow_(record) {\n  var totalOutflows =\n    sumField_(record.expenses, 'amt') +\n    sumField_(record.owners, 'amt') +\n    sumField_(record.vendors, 'amt');\n\n  return [\n    record.date || '',\n    record.branch || '',\n    record.shift || 'Full Day',\n    record.cashier || '',\n    record.grandTotal != null ? record.grandTotal : '',\n    record.closingBal != null ? record.closingBal : '', // \"Tray Balance\" note field\n    totalOutflows,\n    record.vasySale != null ? record.vasySale : '',\n    record.variance != null ? record.variance : '',\n    record.openingBal != null ? record.openingBal : '',\n    record.closingBal != null ? record.closingBal : '',\n    record.extraChangeGiven != null ? record.extraChangeGiven : '',\n    record.changeLeftByCustomer != null ? record.changeLeftByCustomer : '',\n    record.notes || '',\n    new Date().toISOString(),\n    JSON.stringify(record)\n  ];\n}\n\n/**\n * Receives a POST from the Shift Register app. Body is JSON for a single\n * shift record. Upserts a row keyed on Date + Branch + Shift.\n */\nfunction doPost(e) {\n  try {\n    var body = JSON.parse(e.postData.contents);\n\n    // A catalog-item post is additive, new behavior \u2014 the existing shift-\n    // record behavior below (no \"type\", or type: \"shift\") is unchanged.\n    if (body && body.type === 'catalog_item') {\n      upsertCatalogItem_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'catalog_item' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // A damage/expiry ledger entry \u2014 also additive, separate sheet tab.\n    if (body && body.type === 'damage_entry') {\n      upsertDamageEntry_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'damage_entry' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n\n    // Accept either a single record, or a { records: [...] } batch.\n    var records = Array.isArray(body) ? body\n      : (body.records ? body.records : [body]);\n\n    var data = sheet.getDataRange().getValues();\n    records.forEach(function (record) {\n      var rowValues = recordToRow_(record);\n      var matchRow = -1;\n      for (var i = 1; i < data.length; i++) {\n        if (data[i][0] === record.date && data[i][1] === record.branch &&\n            (data[i][2] || 'Full Day') === (record.shift || 'Full Day')) {\n          matchRow = i + 1; // 1-indexed sheet row\n          break;\n        }\n      }\n      if (matchRow > -1) {\n        sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n      } else {\n        sheet.appendRow(rowValues);\n        data.push(rowValues); // keep local copy in sync for subsequent records in this batch\n      }\n    });\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: records.length })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\n/**\n * Health check / fetch-existing-records. Called with a plain GET (e.g. the\n * app's \"Test Connection\" button, or a future \"Restore from Cloud\" feature).\n * Optional query param ?since=YYYY-MM-DD filters to rows on/after that date.\n */\nfunction doGet(e) {\n  try {\n    var type = e && e.parameter && e.parameter.type;\n\n    // New, additive behavior: ?type=catalog returns the ItemCatalog sheet\n    // instead of shift records. Existing behavior (no type, or type=shifts)\n    // is unchanged below.\n    if (type === 'catalog') {\n      var catalogRecords = getCatalogRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: catalogRecords.length, records: catalogRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // ?type=damage \u2014 symmetry with the catalog pull, for a future/manual\n    // pull-merge of the damage/expiry ledger. The app itself only pushes\n    // today (see notes above getDamageRecords_).\n    if (type === 'damage') {\n      var damageRecords = getDamageRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: damageRecords.length, records: damageRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n    var data = sheet.getDataRange().getValues();\n    var headers = data[0];\n    var since = e && e.parameter && e.parameter.since;\n\n    var rows = [];\n    for (var i = 1; i < data.length; i++) {\n      var rowDate = data[i][0];\n      if (since && String(rowDate) < since) continue;\n      var obj = {};\n      headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n      rows.push(obj);\n    }\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: rows.length, records: rows })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n";
+    const APPS_SCRIPT_SOURCE = "/**\n * Lalitha Naturals \u2014 Shift Register \u2014 Google Sheets Cloud Sync\n * =============================================================\n *\n * WHAT THIS IS\n * A tiny free \"Google Apps Script Web App\" that receives shift records\n * posted by the Shift Register HTML app and appends/updates them as rows\n * in a Google Sheet named \"ShiftRegister\" (created automatically the first\n * time it runs). This is what makes your shift data reachable from any\n * device \u2014 the Sheet lives in your own Google account.\n *\n * ONE-TIME SETUP (do this once; takes about 3 minutes):\n *   1. Go to https://sheets.google.com and create a new, blank Google Sheet\n *      (or open an existing one you want to use for this).\n *   2. In the menu, click Extensions > Apps Script. A code editor opens in\n *      a new tab, with a default empty \"Code.gs\" file.\n *   3. Select all the placeholder code in that editor and delete it. Paste\n *      in the ENTIRE contents of this file instead.\n *   4. Click the disk/Save icon (or Ctrl/Cmd+S).\n *   5. Click \"Deploy\" (top-right) > \"New deployment\".\n *   6. Next to \"Select type\", click the gear icon and choose \"Web app\".\n *   7. Fill in:\n *        Description:      Shift Register Sync (or anything you like)\n *        Execute as:        Me (your own Google account)\n *        Who has access:    Anyone with the link\n *      (These exact choices matter \u2014 \"Execute as: Me\" lets the script write\n *      to your Sheet on the app's behalf even though the app itself never\n *      logs into Google, and \"Anyone with the link\" lets the offline app\n *      call the URL without you having to log in from inside it.)\n *   8. Click \"Deploy\". The first time, Google will ask you to authorize the\n *      script \u2014 click through \"Review permissions\" > pick your account >\n *      \"Advanced\" > \"Go to (project name) (unsafe)\" > \"Allow\". This warning\n *      is expected and normal for a script you wrote/pasted yourself.\n *   9. Copy the \"Web app URL\" it gives you (ends in /exec). That is the URL\n *      you paste into the Shift Register app's Settings > Cloud Sync panel.\n *\n * If you ever edit this script again, you must create a NEW deployment (or\n * use \"Manage deployments\" > edit > \"New version\") for the changes to take\n * effect on the same URL.\n *\n * WHAT IT STORES\n * Every time a shift is saved in the app (with Cloud Sync turned on), it\n * POSTs the shift's data as JSON here. This script appends one row per\n * shift into a sheet tab named \"ShiftRegister\", creating that tab and its\n * header row automatically if they don't exist yet. If a row already\n * exists for the same Date + Branch + Shift, it's updated in place instead\n * of duplicated (an \"upsert\").\n *\n * The display columns cover the most useful fields at a glance. A final\n * \"Full Record (JSON)\" column also stores the ENTIRE record exactly as\n * received, so nothing is ever lost even if a future version of the app\n * adds fields this script doesn't explicitly list yet.\n *\n * This script also creates two more tabs automatically, the first time each\n * kind of item is synced:\n *   - \"ItemCatalog\": the Cash Bill's barcode/item catalog (name, MRP, price).\n *   - \"DamageExpiryLedger\": the Damage/Expiry write-off log (date, item,\n *     qty, reason, loss amount, branch) \u2014 a simple record, push-only from\n *     the app, upserted by its own id so re-syncs never duplicate a row.\n */\n\nvar SHEET_NAME = 'ShiftRegister';\nvar CATALOG_SHEET_NAME = 'ItemCatalog';\nvar CATALOG_HEADERS = ['barcode', 'name', 'mrp', 'sellingPrice', 'discount', 'discountMode', 'updatedAt'];\n\nfunction getOrCreateCatalogSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(CATALOG_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(CATALOG_SHEET_NAME);\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one catalog item row, keyed on barcode.\n */\nfunction upsertCatalogItem_(item) {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    item.barcode || '',\n    item.name || '',\n    item.mrp != null ? item.mrp : '',\n    item.sellingPrice != null ? item.sellingPrice : '',\n    item.discount != null ? item.discount : '',\n    item.discountMode || '',\n    item.updatedAt != null ? item.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(item.barcode)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all ItemCatalog rows as an array of plain objects.\n */\nfunction getCatalogRecords_() {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.barcode) rows.push(obj);\n  }\n  return rows;\n}\n\nvar DAMAGE_SHEET_NAME = 'DamageExpiryLedger';\nvar DAMAGE_HEADERS = ['id', 'date', 'item', 'qty', 'reason', 'note', 'lossAmount', 'branch', 'updatedAt'];\n\nfunction getOrCreateDamageSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(DAMAGE_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(DAMAGE_SHEET_NAME);\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one damage/expiry ledger row, keyed on its unique id\n * (last-write-wins by updatedAt, same pattern as the item catalog).\n */\nfunction upsertDamageEntry_(entry) {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    entry.id || '',\n    entry.date || '',\n    entry.item || '',\n    entry.qty != null ? entry.qty : '',\n    entry.reason || '',\n    entry.note || '',\n    entry.lossAmount != null ? entry.lossAmount : '',\n    entry.branch || '',\n    entry.updatedAt != null ? entry.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(entry.id)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all DamageExpiryLedger rows as plain objects \u2014 supports the\n * optional ?type=damage pull-merge path on doGet for symmetry with the\n * catalog sync, even though the app itself currently only pushes entries\n * (a logged write-off rarely needs to be pulled back and re-merged the way\n * a shared product catalog does, but the endpoint supports it either way).\n */\nfunction getDamageRecords_() {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.id) rows.push(obj);\n  }\n  return rows;\n}\n\nvar HEADERS = [\n  'Date', 'Branch', 'Shift', 'Cashier',\n  'Grand Total', 'Tray Balance (Closing Bal)', 'Total Outflows',\n  'Software Sale', 'Variance', 'Opening Bal', 'Closing Bal',\n  'Extra Change Given', 'Change Left by Customer', 'Staff Bills Total',\n  'Notes', 'Synced At', 'Full Record (JSON)'\n];\n\nfunction getOrCreateSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(SHEET_NAME);\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\nfunction sumField_(list, key) {\n  var total = 0;\n  (list || []).forEach(function (item) {\n    total += Number(item && item[key]) || 0;\n  });\n  return total;\n}\n\nfunction recordToRow_(record) {\n  // Staff Bills (items a staff member takes now and pays for later, by cash\n  // or salary deduction) are folded into Total Outflows the same way Owner\n  // Bills and Vendor Payments already are, matching how the app's own\n  // Grand Total / \"Total\" formula treats them (see the app's Settings >\n  // Formulas & Advanced panel).\n  var staffBillsTotal = sumField_(record.staffBills, 'amt');\n  var totalOutflows =\n    sumField_(record.expenses, 'amt') +\n    sumField_(record.owners, 'amt') +\n    sumField_(record.vendors, 'amt') +\n    staffBillsTotal;\n\n  return [\n    record.date || '',\n    record.branch || '',\n    record.shift || 'Full Day',\n    record.cashier || '',\n    record.grandTotal != null ? record.grandTotal : '',\n    record.closingBal != null ? record.closingBal : '', // \"Tray Balance\" note field\n    totalOutflows,\n    record.vasySale != null ? record.vasySale : '',\n    record.variance != null ? record.variance : '',\n    record.openingBal != null ? record.openingBal : '',\n    record.closingBal != null ? record.closingBal : '',\n    record.extraChangeGiven != null ? record.extraChangeGiven : '',\n    record.changeLeftByCustomer != null ? record.changeLeftByCustomer : '',\n    staffBillsTotal,\n    record.notes || '',\n    new Date().toISOString(),\n    JSON.stringify(record)\n  ];\n}\n\n/**\n * Receives a POST from the Shift Register app. Body is JSON for a single\n * shift record. Upserts a row keyed on Date + Branch + Shift.\n */\nfunction doPost(e) {\n  try {\n    var body = JSON.parse(e.postData.contents);\n\n    // A catalog-item post is additive, new behavior \u2014 the existing shift-\n    // record behavior below (no \"type\", or type: \"shift\") is unchanged.\n    if (body && body.type === 'catalog_item') {\n      upsertCatalogItem_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'catalog_item' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // A damage/expiry ledger entry \u2014 also additive, separate sheet tab.\n    if (body && body.type === 'damage_entry') {\n      upsertDamageEntry_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'damage_entry' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n\n    // Accept either a single record, or a { records: [...] } batch.\n    var records = Array.isArray(body) ? body\n      : (body.records ? body.records : [body]);\n\n    var data = sheet.getDataRange().getValues();\n    records.forEach(function (record) {\n      var rowValues = recordToRow_(record);\n      var matchRow = -1;\n      for (var i = 1; i < data.length; i++) {\n        if (data[i][0] === record.date && data[i][1] === record.branch &&\n            (data[i][2] || 'Full Day') === (record.shift || 'Full Day')) {\n          matchRow = i + 1; // 1-indexed sheet row\n          break;\n        }\n      }\n      if (matchRow > -1) {\n        sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n      } else {\n        sheet.appendRow(rowValues);\n        data.push(rowValues); // keep local copy in sync for subsequent records in this batch\n      }\n    });\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: records.length })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\n/**\n * Health check / fetch-existing-records. Called with a plain GET (e.g. the\n * app's \"Test Connection\" button, or a future \"Restore from Cloud\" feature).\n * Optional query param ?since=YYYY-MM-DD filters to rows on/after that date.\n */\nfunction doGet(e) {\n  try {\n    var type = e && e.parameter && e.parameter.type;\n\n    // New, additive behavior: ?type=catalog returns the ItemCatalog sheet\n    // instead of shift records. Existing behavior (no type, or type=shifts)\n    // is unchanged below.\n    if (type === 'catalog') {\n      var catalogRecords = getCatalogRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: catalogRecords.length, records: catalogRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // ?type=damage \u2014 symmetry with the catalog pull, for a future/manual\n    // pull-merge of the damage/expiry ledger. The app itself only pushes\n    // today (see notes above getDamageRecords_).\n    if (type === 'damage') {\n      var damageRecords = getDamageRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: damageRecords.length, records: damageRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n    var data = sheet.getDataRange().getValues();\n    var headers = data[0];\n    var since = e && e.parameter && e.parameter.since;\n\n    var rows = [];\n    for (var i = 1; i < data.length; i++) {\n      var rowDate = data[i][0];\n      if (since && String(rowDate) < since) continue;\n      var obj = {};\n      headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n      rows.push(obj);\n    }\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: rows.length, records: rows })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n";
 
     function openAppsScriptCodeModal() {
         document.getElementById('appsScriptCodeTextarea').value = APPS_SCRIPT_SOURCE;
