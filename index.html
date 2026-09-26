@@ -91,6 +91,39 @@
         html[data-theme="dark"] .summary-row.sign-positive { background: #0f2350; }
         html[data-theme="dark"] .summary-row.sign-positive span,
         html[data-theme="dark"] .summary-row.sign-positive strong { color: #60a5fa !important; }
+        /* Tally/± banner (task: near-Final-Grand-Total prominence) in dark
+           mode — deeper, richer sign-tinted gradients than the light theme so
+           the banner still reads as saturated/vivid against the dark card
+           instead of the light-mode pastel gradients looking washed out. */
+        html[data-theme="dark"] .summary-row.variance-banner.sign-negative { background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); border-color: #f87171; }
+        html[data-theme="dark"] .summary-row.variance-banner.sign-negative span,
+        html[data-theme="dark"] .summary-row.variance-banner.sign-negative strong { color: #fecaca !important; }
+        html[data-theme="dark"] .summary-row.variance-banner.sign-zero { background: linear-gradient(135deg, #14532d 0%, #166534 100%); border-color: #4ade80; }
+        html[data-theme="dark"] .summary-row.variance-banner.sign-zero span,
+        html[data-theme="dark"] .summary-row.variance-banner.sign-zero strong { color: #bbf7d0 !important; }
+        html[data-theme="dark"] .summary-row.variance-banner.sign-positive { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%); border-color: #60a5fa; }
+        html[data-theme="dark"] .summary-row.variance-banner.sign-positive span,
+        html[data-theme="dark"] .summary-row.variance-banner.sign-positive strong { color: #bfdbfe !important; }
+        /* Dark-mode header tuning: the 5 section-header accent colors were
+           the same fixed hex in both themes, which read a touch glaring
+           against the dark card background. Deepen them slightly for dark
+           mode so they stay vivid/on-brand without glaring. */
+        html[data-theme="dark"] .section-header.header-blue { background: #1d4ed8; }
+        html[data-theme="dark"] .section-header.header-amber { background: #b45309; }
+        html[data-theme="dark"] .section-header.header-rose { background: #b91c1c; }
+        html[data-theme="dark"] .section-header.owner-header { background: #6d28d9; }
+        /* Small hardcoded-light-background strips (tray balances, owner-bills
+           chip) stayed a fixed pale color in both themes, which read as a
+           mismatched light patch dropped into an otherwise dark card. Give
+           them a dark-tuned equivalent that keeps their inline text colors
+           legible while blending with the rest of the dark UI. */
+        html[data-theme="dark"] .balances-strip { background: #2b220d !important; }
+        html[data-theme="dark"] .balances-strip label[style*="color:#854d0e"] { color: #fcd34d !important; }
+        html[data-theme="dark"] .balances-strip label[style*="color:#0f172a"] { color: #e2e8f0 !important; }
+        html[data-theme="dark"] .balances-strip input#openingBalInput { border-color: #78350f !important; }
+        html[data-theme="dark"] [style*="background:#f5f3ff"] { background: #2e1065 !important; color: #ddd6fe !important; }
+        html[data-theme="dark"] [style*="background:#f5f3ff"][style*="border-color:#ddd6fe"] { border-color: #5b21b6 !important; }
+        html[data-theme="dark"] #backupReminderBanner { background: #2b220d !important; border-color: #78350f !important; }
         #themeToggleBtn { font-size: 16px; line-height: 1; }
         /* Printed output must always stay light/white regardless of the
            on-screen theme, so print-relevant containers get the light
@@ -196,10 +229,24 @@
         .table-scroll { overflow-y: auto; max-height: calc(100vh - 280px); flex-grow: 1; }
 
         /* Summary Card Column */
-        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 5px; font-size: 15.5px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; overflow-y: auto; }
+        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 0; font-size: 17px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; overflow-y: auto; }
+        /* Fixed-rhythm block for the scorecard rows (task: "over-stretched"
+           fix). Previously the card had no explicit justify-content, so it
+           relied solely on .grand-display's margin-top:auto to soak up the
+           leftover height once the grid stretched this column to match its
+           tallest neighbor (usually the Owner/Vendor/Staff column) — that
+           worked, but put ALL of the slack in one gap and made the column
+           read as loosely/unevenly spread out. Now the rows live in their
+           own fixed-gap block, a dedicated flexible spacer absorbs any
+           leftover height, and the Notes box + Final Grand Total banner are
+           pinned together at the bottom with their own small fixed gap —
+           so row-to-row spacing never changes regardless of column height. */
+        .summary-rows-fixed { display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; }
+        .summary-spacer { flex: 1 1 auto; min-height: 10px; }
+        .summary-bottom-pin { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
         .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 6px; border-bottom: 1px dashed var(--border); font-weight: 700; gap: 6px; }
         .summary-row span, .summary-row strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .summary-row.bold { font-weight: 800; color: var(--primary); font-size: 16.5px; }
+        .summary-row.bold { font-weight: 800; color: var(--primary); font-size: 18.5px; }
         /* Tally/Total sign-coloring (task: red = negative/shortage, green =
            zero/tallied, blue = positive/surplus) — a background tint on the
            whole row plus bold colored text so the state reads at a glance,
@@ -211,13 +258,31 @@
         .summary-row.sign-positive { background: #dbeafe; border-radius: 6px; }
         .summary-row.sign-positive span, .summary-row.sign-positive strong { color: #2563eb !important; font-weight: 800; }
 
+        /* Tally / ± banner — task: make it nearly as prominent as the Final
+           Grand Total banner (.grand-display below), while keeping its
+           existing sign-based red/green/blue coloring instead of a fixed
+           yellow. Same weight of treatment (bordered card, centered, big
+           bold mono figure) but the background/border color swaps by sign,
+           using saturated versions of the existing red/green/blue instead
+           of yellow, so it reads as "second most important number" without
+           being confused with the always-yellow Final Grand Total. */
+        .summary-row.variance-banner { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px; padding: 12px 10px; margin: 6px 0 2px; border-radius: 10px; border: 2px solid transparent; box-shadow: 0 4px 10px -2px rgba(0,0,0,0.08); }
+        .summary-row.variance-banner span:first-child { font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 800; opacity: 0.85; }
+        .summary-row.variance-banner strong, .summary-row.variance-banner span#sumVariance { font-size: 30px !important; font-weight: 900 !important; }
+        .summary-row.variance-banner.sign-negative { background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%); border-color: #dc2626; }
+        .summary-row.variance-banner.sign-negative span, .summary-row.variance-banner.sign-negative strong { color: #7f1d1d !important; }
+        .summary-row.variance-banner.sign-zero { background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%); border-color: #16a34a; }
+        .summary-row.variance-banner.sign-zero span, .summary-row.variance-banner.sign-zero strong { color: #14532d !important; }
+        .summary-row.variance-banner.sign-positive { background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%); border-color: #2563eb; }
+        .summary-row.variance-banner.sign-positive span, .summary-row.variance-banner.sign-positive strong { color: #1e3a8a !important; }
+
         /* Notes Input Area */
-        .notes-box { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+        .notes-box { margin-top: 0; display: flex; flex-direction: column; gap: 3px; }
         .notes-box label { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
         .notes-box textarea { border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15.5px; resize: none; height: 48px; background: #fff; color: var(--primary); outline: none; }
         .notes-box textarea:focus { border-color: var(--border-focus); background: #eef2ff; }
 
-        .grand-display { background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); border: 2px solid #eab308; padding: 6px; text-align: center; border-radius: 8px; margin-top: auto; flex-shrink: 0; }
+        .grand-display { background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); border: 2px solid #eab308; padding: 6px; text-align: center; border-radius: 8px; flex-shrink: 0; }
         .grand-display span { display: block; font-size: 11px; color: #713f12; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
         .grand-display strong { font-size: 22px; color: #713f12; font-family: 'JetBrains Mono', monospace; font-weight: 800; }
 
@@ -295,7 +360,7 @@
         .badge-branch { background: #eef2ff; color: #4f46e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
 
         /* Bottom Footer Dock */
-        .pos-dock { background: #0f172a; color: white; padding: 12px 24px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); }
+        .pos-dock { background: #0f172a; color: white; padding: 14px 28px; border-radius: 10px; display: flex; justify-content: flex-end; align-items: center; flex-shrink: 0; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); }
         .dock-stat span { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
         .dock-stat strong { font-size: 18px; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
         .submit-btn { background: #22c55e; color: white; border: none; padding: 10px 26px; border-radius: 6px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.5px; }
@@ -389,7 +454,18 @@
         #a4ExportContainer table { width: 100%; border-collapse: collapse; }
         #a4ExportContainer tr:nth-child(even) td { background: #f8fafc; }
         #a4ExportContainer th, #a4ExportContainer td { padding: 6px 12px; border-bottom: 1px solid #eef2f6; font-size: 17px; font-weight: 600; }
-        #a4ExportContainer .cell-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; font-size: 18px; }
+        #a4ExportContainer .cell-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; font-size: 18px; white-space: nowrap; }
+        /* Tray Balance's denomination rows ("Qty | Amount") can run wider than
+           other cards' single amounts (e.g. "20 | ₹10000" for ₹500 notes) —
+           without a fixed column split, that width squeeze wrapped the label
+           column ("Closing Bal…") onto two lines and threw off row heights,
+           which is exactly the "not aligned in order" look. A fixed layout
+           with a dedicated value-column width, a smaller mono value size and
+           tighter padding keeps every row single-line and right-aligned to
+           the same edge. */
+        #a4ExportContainer table.tray-table { table-layout: fixed; }
+        #a4ExportContainer table.tray-table td:first-child { width: 62%; white-space: normal; }
+        #a4ExportContainer table.tray-table td.cell-val { width: 38%; font-size: 15px; padding-left: 4px; }
         #a4ExportContainer .summary-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 5px; font-size: 18px; height: 100%; justify-content: space-between; box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
         #a4ExportContainer .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px dashed #e2e8f0; font-weight: 700; border-radius: 4px; }
         #a4ExportContainer .summary-row.bold { font-weight: 800; color: #0f172a; font-size: 19px; background: #f1f5f9; }
@@ -654,7 +730,7 @@
                      that should affect the day's reconciliation, that's a real gap;
                      if it's just a log of change added to the tray for record-keeping,
                      it's working as intended. Worth confirming which one you meant. -->
-                <div class="sub-header" style="background:#f1f5f9; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); border-bottom:1px solid var(--border); cursor:pointer;" onclick="toggleCollapsible('cashAddedWrap', 'cashAddedToggle')">
+                <div class="sub-header" style="background:var(--header-bg); padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); border-bottom:1px solid var(--border); cursor:pointer;" onclick="toggleCollapsible('cashAddedWrap', 'cashAddedToggle')">
                     <span style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; display:flex; align-items:center; gap:6px; cursor:pointer;">
                         <button type="button" class="btn-collapse-toggle" id="cashAddedToggle" onclick="event.stopPropagation(); toggleCollapsible('cashAddedWrap', 'cashAddedToggle')" title="Hide/show Cash Added">▾</button>
                         Cash Added
@@ -813,19 +889,23 @@
 
         <!-- Column 5: Total Summary Card -->
         <div class="summary-card accent-green">
-            <div style="font-weight:800; font-size:15px; border-bottom:2px solid var(--primary); padding-bottom:5px; margin-bottom:4px; text-transform:uppercase; flex-shrink:0;">Total Summary</div>
-            <div class="summary-row"><span>Grand Total:</span> <strong id="sumGrand" style="font-family:'JetBrains Mono';">₹0</strong></div>
-            <div class="summary-row"><span>Expn Total (+) :</span> <span id="sumExp" style="font-family:'JetBrains Mono';">₹0</span></div>
+            <div class="summary-rows-fixed">
+            <div style="font-weight:800; font-size:16px; border-bottom:2px solid var(--primary); padding-bottom:5px; margin-bottom:2px; text-transform:uppercase; flex-shrink:0;">Total Summary</div>
+            <div class="summary-row"><span>Grand Total:</span> <strong id="sumGrand" style="font-family:'JetBrains Mono'; color:#065f46;">₹0</strong></div>
+            <div class="summary-row"><span>Expn Total (+) :</span> <span id="sumExp" style="font-family:'JetBrains Mono'; color:#b45309;">₹0</span></div>
             <div class="summary-row"><span>Owner Bills (+) :</span> <span id="sumOwner" style="font-family:'JetBrains Mono'; color:#7c3aed;">₹0</span></div>
-            <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="sumVend" style="font-family:'JetBrains Mono';">₹0</span></div>
-            <div class="summary-row"><span>Staff Bills (+) :</span> <span id="sumStaff" style="font-family:'JetBrains Mono';">₹0</span></div>
+            <div class="summary-row"><span>Vendor Pay (+) :</span> <span id="sumVend" style="font-family:'JetBrains Mono'; color:#b45309;">₹0</span></div>
+            <div class="summary-row"><span>Staff Bills (+) :</span> <span id="sumStaff" style="font-family:'JetBrains Mono'; color:#b45309;">₹0</span></div>
             <div class="summary-row bold" id="sumTotal1Row" style="background:var(--header-bg);"><span>Total :</span> <span id="sumTotal1" style="font-family:'JetBrains Mono';">₹0</span></div>
-            <div style="height:2px;"></div>
-            <div class="summary-row"><span>Software Sale:</span> <input type="number" id="vasySale" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:85px; border:1px solid var(--border); padding:2px 6px; border-radius:4px; text-align:right; font-size:15px;"></div>
+            <div class="summary-row"><span>Software Sale:</span> <input type="number" id="vasySale" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" style="width:85px; border:1px solid var(--border); padding:2px 6px; border-radius:4px; text-align:right; font-size:16px;"></div>
             <div class="summary-row"><span>Unbill Total (+) :</span> <span id="sumUnb" style="font-family:'JetBrains Mono';">₹0</span></div>
-            <div class="summary-row bold" style="background:#f1f5f9;"><span>Final Sale :</span> <span id="sumTotalSale" style="font-family:'JetBrains Mono';">₹0</span></div>
-            <div class="summary-row" id="sumVarianceRow" style="font-weight:800; padding:10px 8px; margin:4px 0;"><span style="font-size:18px;">Tally / ± :</span> <span id="sumVariance" style="font-family:'JetBrains Mono'; font-size:26px; font-weight:900;">₹0</span></div>
+            <div class="summary-row bold" style="background:var(--header-bg);"><span>Final Sale :</span> <span id="sumTotalSale" style="font-family:'JetBrains Mono';">₹0</span></div>
+            <div class="summary-row variance-banner" id="sumVarianceRow"><span>Tally / ± :</span> <span id="sumVariance" style="font-family:'JetBrains Mono';">₹0</span></div>
+            </div>
 
+            <div class="summary-spacer"></div>
+
+            <div class="summary-bottom-pin">
             <!-- Notes Section Above Final Grand Total -->
             <div class="notes-box">
                 <label for="registerNotes">Notes / Remarks:</label>
@@ -835,6 +915,7 @@
             <div class="grand-display">
                 <span>Final Grand Total</span>
                 <strong id="finalGrandDisplay">₹0</strong>
+            </div>
             </div>
         </div>
     </div>
@@ -950,14 +1031,13 @@
     </div>
 
     <!-- Bottom Dock (Only Visible in Register Mode) -->
+    <!-- Duplicate Tray Balance/Outflows/Software Sale/Variance stat strip removed
+         per user feedback (already shown in the Total Summary panel); action
+         buttons kept. -->
     <div class="pos-dock" id="mainDock">
-        <div class="dock-stat"><span>Tray Balance</span><strong id="dockTray">₹0</strong></div>
-        <div class="dock-stat"><span>Total Outflows</span><strong id="dockOutflow">₹0</strong></div>
-        <div class="dock-stat"><span>Software Sale</span><strong id="dockVasy">₹0</strong></div>
-        <div class="dock-stat"><span>Variance</span><strong id="dockVariance">₹0</strong></div>
-        <div style="display:flex; gap:10px;">
-            <button class="submit-btn" style="background:#ef4444;" onclick="promptClearPage()">CLEAR PAGE</button>
-            <button class="submit-btn" onclick="confirmAndCommitEntry()">SAVE & COMMIT ENTRY</button>
+        <div style="display:flex; gap:14px; justify-content:flex-end;">
+            <button class="submit-btn" style="background:#ef4444; min-width:170px;" onclick="promptClearPage()">CLEAR PAGE</button>
+            <button class="submit-btn" style="min-width:210px;" onclick="confirmAndCommitEntry()">SAVE & COMMIT ENTRY</button>
         </div>
     </div>
 
@@ -1870,7 +1950,7 @@
             <div class="section-header header-amber">Tray Balance</div>
             <div class="sub-header"><span>Denom / Field</span><span>Qty | Amount</span></div>
             <div style="flex-grow:1; overflow:hidden;">
-                <table>
+                <table class="tray-table">
                     <tbody id="a4TrayTable"></tbody>
                 </table>
             </div>
@@ -4678,7 +4758,8 @@
         (state.vend && state.vend.length ? state.vend : defaultVendUnbRows('vendorNames')).forEach(r => addRow('vend', r.name, r.amt, r.photo));
 
         document.getElementById('staffTableBody').innerHTML = '';
-        (state.staff || []).forEach(r => addStaffRow(r.name, r.amt, r.billNo));
+        (state.staff && state.staff.length ? state.staff : [{ name: '', amt: '', billNo: '' }])
+            .forEach(r => addStaffRow(r.name, r.amt, r.billNo));
 
         document.getElementById('unbTableBody').innerHTML = '';
         (state.unb && state.unb.length ? state.unb : defaultVendUnbRows('unbillNames')).forEach(r => addRow('unb', r.name, r.amt));
@@ -4776,12 +4857,38 @@
         let tb = document.getElementById(tbId);
         let tr = document.createElement('tr');
         let nameOnInput = type === 'unb' ? ' oninput="refreshCashBillLookupButtons()"' : '';
-        tr.innerHTML = `<td><input type="text" class="${type}-name" value="${name}" placeholder="Description" onkeydown="handleEnter(event)"${nameOnInput}></td><td><input type="number" class="${type}-amt" value="${amt}" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td style="width:${(type === 'exp' || type === 'vend') ? '52px' : '28px'}; text-align:center; white-space:nowrap;">${photoCellHTML(type)}<button class="btn-del" onclick="this.closest('tr').remove(); recalcRegister(); refreshCashBillLookupButtons();">✕</button></td>`;
+        // Unbilled rows use a guarded delete handler (removeUnbRow) instead of
+        // the plain instant-remove used by every other row type: a row that
+        // was auto-created by the Cash Bill flow must never be removable with
+        // a plain click — see removeUnbRow() below.
+        let delBtnOnclick = type === 'unb'
+            ? 'removeUnbRow(this.closest(\'tr\'))'
+            : "this.closest('tr').remove(); recalcRegister(); refreshCashBillLookupButtons();";
+        tr.innerHTML = `<td><input type="text" class="${type}-name" value="${name}" placeholder="Description" onkeydown="handleEnter(event)"${nameOnInput}></td><td><input type="number" class="${type}-amt" value="${amt}" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td style="width:${(type === 'exp' || type === 'vend') ? '52px' : '28px'}; text-align:center; white-space:nowrap;">${photoCellHTML(type)}<button class="btn-del" onclick="${delBtnOnclick}">✕</button></td>`;
         if (photo) { tr.dataset.photo = photo; markRowPhotoAttached(tr); }
         tb.appendChild(tr);
         recalcRegister();
         if (type === 'unb') refreshCashBillLookupButtons();
         removeActionButtonsFromTabOrder();
+    }
+
+    // Guarded delete for an Unbilled row's plain ✕ button. A row whose
+    // description matches "Cash Bill #N" was auto-created by the Cash Bill
+    // flow and must go through the owner-password + mandatory-reason gate
+    // (deleteCashBillFromUnbilled) — the same 🗑 flow the lookup buttons use
+    // — so cash bill records can never be silently erased. A manually-typed
+    // Unbilled row (no such match) still gets instant removal, unchanged.
+    function removeUnbRow(tr) {
+        if (!tr) return;
+        let nameInput = tr.querySelector('.unb-name');
+        let match = (nameInput && nameInput.value || '').match(/Cash Bill #(\d+)/);
+        if (match) {
+            deleteCashBillFromUnbilled(match[1], tr);
+            return;
+        }
+        tr.remove();
+        recalcRegister();
+        refreshCashBillLookupButtons();
     }
 
     // Staff Bills: items a staff member takes now and pays for later (cash
@@ -4812,12 +4919,16 @@
         getFieldNameList('expenseNames').forEach(name => addLockedRow('exp', name, ''));
         getFieldNameList('ownerNames').forEach(name => addLockedRow('owner', name, ''));
         defaultVendUnbRows('vendorNames').forEach(r => addRow('vend', r.name, r.amt));
-        // Staff Bills is a lightly-used, off-by-default section (see
-        // sectionsCollapsedByDefault) — unlike Vendors/Unbilled it starts
-        // with NO rows at all when no default staff names are configured,
-        // rather than forcing one blank row, so a fresh register doesn't
-        // show an empty Staff Bills row nobody asked for.
-        (appSettings.staffNames || []).forEach(name => addStaffRow(name, ''));
+        // Staff Bills: same pattern as Vendor Payments/Unbilled — pre-fill from
+        // configured default staff names when present, otherwise still start
+        // with one blank, ready-to-type row so the section is never empty
+        // with nothing to type into.
+        let staffNames = appSettings.staffNames || [];
+        if (staffNames.length) {
+            staffNames.forEach(name => addStaffRow(name, ''));
+        } else {
+            addStaffRow('', '');
+        }
         defaultVendUnbRows('unbillNames').forEach(r => addRow('unb', r.name, r.amt));
     }
 
@@ -5077,7 +5188,6 @@
         let cashAddedTotal = calcCashAddedTotal();
         let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - cashAddedTotal - extraChangeGiven + changeLeftByCustomer;
         document.getElementById('lblTotalDenom').innerText = '₹' + trayGrandTotal;
-        document.getElementById('dockTray').innerText = '₹' + trayGrandTotal;
 
         let expTotal = 0; document.querySelectorAll('.exp-amt').forEach(i => expTotal += parseFloat(i.value) || 0);
         document.getElementById('lblExpTotal').innerText = '₹' + expTotal;
@@ -5088,7 +5198,6 @@
         let unbTotal = 0; document.querySelectorAll('.unb-amt').forEach(i => unbTotal += parseFloat(i.value) || 0);
 
         document.getElementById('lblCombinedOutflow').innerText = '₹' + (ownerTotal + vendTotal + staffTotal + unbTotal);
-        document.getElementById('dockOutflow').innerText = '₹' + (expTotal + ownerTotal + vendTotal + staffTotal);
 
         let card = parseFloat(document.getElementById('cardPay').value) || 0;
         let upi = parseFloat(document.getElementById('upiPay').value) || 0;
@@ -5106,7 +5215,6 @@
         applySignHighlight(document.getElementById('sumTotal1Row'), document.getElementById('sumTotal1'), total1);
 
         let vasySale = parseFloat(document.getElementById('vasySale').value) || 0;
-        document.getElementById('dockVasy').innerText = '₹' + vasySale;
         document.getElementById('sumUnb').innerText = '₹' + unbTotal;
         let totalSale = vasySale + unbTotal;
         document.getElementById('sumTotalSale').innerText = '₹' + totalSale;
@@ -5118,9 +5226,6 @@
         // tallied (zero), blue = surplus (positive) — a quick glance tells a
         // hurried cashier exactly which state they're in, not just pass/fail.
         applySignHighlight(document.getElementById('sumVarianceRow'), varLbl, variance);
-        let dockVarianceEl = document.getElementById('dockVariance');
-        dockVarianceEl.innerText = '₹' + variance;
-        dockVarianceEl.style.color = variance === 0 ? '#4ade80' : (variance < 0 ? '#fca5a5' : '#93c5fd');
         document.getElementById('finalGrandDisplay').innerText = '₹' + total1;
 
         updateBalanceCheckIndicator();
@@ -5460,6 +5565,10 @@
             locked: true,
             syncedAt: null,
             lastSyncAttemptAt: null,
+            // Full ₹500-to-₹1 denomination breakdown, saved so a reprinted/
+            // re-exported A4 sheet for this record (populateA4DataFromRecord)
+            // can show the same itemized Tray Balance table the live print does.
+            denoms: Array.from(document.querySelectorAll('#trayTable .d-count')).map(i => ({ val: i.getAttribute('data-val'), qty: Number(i.value) || 0 })),
             expenses: [], owners: [], vendors: [], staffBills: [], unbills: []
         };
 
@@ -5535,8 +5644,11 @@
         document.getElementById('a4DigitalAddTable').innerHTML = digitalAddHtml;
 
         let trayHtml = `<tr><td>Opening Balance (-)</td><td class="cell-val">₹${document.getElementById('openingBalInput').value || 0}</td></tr>`;
-        document.querySelectorAll('#trayTable tr').forEach((tr, index) => {
-            if (index === 0) return;
+        // #trayTable's tbody has NO header row — every <tr> in it (₹500 down to
+        // ₹1) is a real denomination row, so all of them must be included here.
+        // (A previous `if (index === 0) return;` incorrectly treated the ₹500
+        // row as a header and silently dropped it from every A4/print export.)
+        document.querySelectorAll('#trayTable tr').forEach((tr) => {
             let denom = tr.cells[0].innerText;
             let qty = tr.querySelector('.d-count').value || 0;
             let sub = tr.querySelector('.d-sub').innerText;
@@ -5626,7 +5738,15 @@
         document.getElementById('a4PluxeePay').innerText = '₹0';
         document.getElementById('a4DigitalAddTable').innerHTML = '';
 
-        let recTrayHtml = `<tr><td>Opening Balance</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr><tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}</td></tr>`;
+        let recTrayHtml = `<tr><td>Opening Balance (-)</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr>`;
+        // Older records saved before `denoms` existed simply won't have it —
+        // those still print Opening/Closing only, same as before this fix.
+        if (Array.isArray(rec.denoms)) {
+            rec.denoms.forEach(d => {
+                recTrayHtml += `<tr><td>₹${d.val}</td><td class="cell-val">${d.qty || 0} | ₹${(Number(d.val) || 0) * (Number(d.qty) || 0)}</td></tr>`;
+            });
+        }
+        recTrayHtml += `<tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}</td></tr>`;
         if (Number(rec.extraChangeGiven || 0) > 0) {
             recTrayHtml += `<tr><td>Extra Change Given (-)</td><td class="cell-val">₹${rec.extraChangeGiven}</td></tr>`;
         }
