@@ -1329,22 +1329,17 @@
                 <div class="settings-panel" id="settingsPanelFormulas">
                     <div>
                         <h4>How The Numbers Are Calculated</h4>
-                        <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 0;">Read-only — shown so you can see exactly how every figure on screen is derived. This is financial logic, so it isn't editable here; changing it would mean editing the app itself.</p>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 0;">Customize which pieces feed into each total below, and whether each one adds or subtracts. You choose only Include + / − for each named piece — you can't type a formula or change what a ₹500 note or ₹1 coin is worth.</p>
+                    </div>
+                    <div style="background:#fff7ed; border:1px solid #fdba74; border-radius:8px; padding:10px 12px; font-size:11.5px; color:#7c2d12; line-height:1.6;">
+                        ⚠️ Changing these affects how your Grand Total and other totals are calculated. Only change this if you understand what each component means. Your existing saved records are NOT recalculated — this only affects new entries going forward (and any not-yet-saved entry currently on screen).
+                    </div>
+                    <div id="formulaEditorContainer" style="display:flex; flex-direction:column; gap:14px; margin-top:12px;"></div>
+                    <div style="margin-top:16px;">
+                        <h4 style="margin-bottom:4px;">Other Calculations (fixed, not editable)</h4>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:0 0 8px;">These feed the editable formulas above but aren't themselves configurable — they're just sums of table rows or fixed note/coin values.</p>
                     </div>
                     <div id="formulasInfoBox" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; font-size:12px; color:#334155; line-height:1.85; display:flex; flex-direction:column; gap:12px;">
-                        <div>
-                            <b>Grand Total</b> (Tray Balance's "Grand Total" and the Total Summary's "Grand Total" are kept identical) =<br>
-                            (₹500+₹200+₹100+₹50+₹20+₹10+₹5+₹2+₹1 Denomination Total) + (Card Pay + UPI Pay + Pluxee) − Opening Balance − Cash Added − Extra Change Given + Change Left by Customer
-                        </div>
-                        <div>
-                            <b>Total (Total Summary panel)</b> = Grand Total + Expenses Total + Owner Bills Total + Vendor Payments Total + Staff Bills Total
-                        </div>
-                        <div>
-                            <b>Final Sale</b> = Software Sale (Vasy) + Unbilled Total
-                        </div>
-                        <div>
-                            <b>Tally / Variance</b> = Total (Total Summary) − Final Sale. Zero means a perfect tally (shown in green); any other amount is shown in red.
-                        </div>
                         <div>
                             <b>Expense Total</b> = sum of every amount entered in the Expenses table.
                         </div>
@@ -2068,7 +2063,7 @@
     // fresh, independent object/array copy is produced each time (never a shared
     // reference that a later appSettings mutation could accidentally corrupt).
     function getDefaultAppSettings() {
-        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true };
+        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true, formulaConfig: getDefaultFormulaConfig() };
     }
     let appSettings = getDefaultAppSettings();
     let activeLogoDataURI = '';
@@ -2832,6 +2827,7 @@
         document.getElementById('cloudSyncTestResult').textContent = '';
         updatePendingSyncIndicator();
         updateStorageUsageDisplay();
+        renderFormulaEditor();
         switchSettingsTab('branding');
         document.getElementById('settingsModal').style.display = 'flex';
     }
@@ -3064,6 +3060,97 @@
         Object.values(panelIdMap).forEach(id => document.getElementById(id).classList.remove('active'));
         let activeId = panelIdMap[name];
         if (activeId) document.getElementById(activeId).classList.add('active');
+    }
+
+    // Builds the checkbox + / − table for every editable formula inside
+    // #formulaEditorContainer, with a live plain-English preview line under
+    // each. Re-run on every toggle so the preview and the on-screen register
+    // (via recalcRegister) both update immediately, with no page reload.
+    function renderFormulaEditor() {
+        let container = document.getElementById('formulaEditorContainer');
+        if (!container) return;
+        let defs = getFormulaComponentDefs();
+        container.innerHTML = '';
+        Object.keys(defs).forEach(formulaName => {
+            let cfg = getFormulaConfigFor(formulaName);
+            let section = document.createElement('div');
+            section.style.cssText = 'background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px;';
+
+            let title = document.createElement('div');
+            title.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;';
+            title.innerHTML = '<b style="font-size:13px;">' + (FORMULA_LABELS[formulaName] || formulaName) + '</b>';
+            let resetBtn = document.createElement('button');
+            resetBtn.type = 'button';
+            resetBtn.textContent = '↺ Reset This Formula to Default';
+            resetBtn.style.cssText = 'font-size:10.5px; padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer;';
+            resetBtn.onclick = function () { resetFormulaToDefault(formulaName); };
+            title.appendChild(resetBtn);
+            section.appendChild(title);
+
+            let table = document.createElement('div');
+            table.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+            defs[formulaName].forEach(d => {
+                let c = cfg[d.key] || { enabled: true, sign: 1 };
+                let row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:center; gap:10px; font-size:12px; color:#334155;';
+
+                let chkId = 'fc_' + formulaName + '_' + d.key + '_enabled';
+                let posId = 'fc_' + formulaName + '_' + d.key + '_pos';
+                let negId = 'fc_' + formulaName + '_' + d.key + '_neg';
+
+                row.innerHTML =
+                    '<label style="display:flex; align-items:center; gap:6px; flex:1; min-width:0;">' +
+                    '<input type="checkbox" id="' + chkId + '" ' + (c.enabled ? 'checked' : '') + ' style="width:auto;">' +
+                    '<span style="overflow-wrap:anywhere;">' + d.label + '</span></label>' +
+                    '<label style="display:flex; align-items:center; gap:3px; white-space:nowrap;">' +
+                    '<input type="radio" name="' + formulaName + '_' + d.key + '_sign" id="' + posId + '" ' + (c.sign >= 0 ? 'checked' : '') + ' ' + (c.enabled ? '' : 'disabled') + ' style="width:auto;"> +</label>' +
+                    '<label style="display:flex; align-items:center; gap:3px; white-space:nowrap;">' +
+                    '<input type="radio" name="' + formulaName + '_' + d.key + '_sign" id="' + negId + '" ' + (c.sign < 0 ? 'checked' : '') + ' ' + (c.enabled ? '' : 'disabled') + ' style="width:auto;"> −</label>';
+
+                table.appendChild(row);
+
+                row.querySelector('#' + chkId).addEventListener('change', function () {
+                    updateFormulaComponent(formulaName, d.key, { enabled: this.checked });
+                });
+                row.querySelector('#' + posId).addEventListener('change', function () {
+                    if (this.checked) updateFormulaComponent(formulaName, d.key, { sign: 1 });
+                });
+                row.querySelector('#' + negId).addEventListener('change', function () {
+                    if (this.checked) updateFormulaComponent(formulaName, d.key, { sign: -1 });
+                });
+            });
+            section.appendChild(table);
+
+            let preview = document.createElement('div');
+            preview.id = 'formulaPreview_' + formulaName;
+            preview.style.cssText = 'margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:11.5px; color:#475569; font-style:italic;';
+            preview.textContent = describeFormula(formulaName);
+            section.appendChild(preview);
+
+            container.appendChild(section);
+        });
+    }
+
+    // Applies one component's toggle/sign change to appSettings, saves it,
+    // and refreshes both the editor's live preview and the on-screen
+    // register — no page reload needed, and saved historical records are
+    // untouched (they display their own stored figures, not a recompute).
+    function updateFormulaComponent(formulaName, key, patch) {
+        if (!appSettings.formulaConfig) appSettings.formulaConfig = getDefaultFormulaConfig();
+        if (!appSettings.formulaConfig[formulaName]) appSettings.formulaConfig[formulaName] = {};
+        let current = getFormulaConfigFor(formulaName)[key] || { enabled: true, sign: 1 };
+        appSettings.formulaConfig[formulaName][key] = Object.assign({}, current, patch);
+        saveSettings();
+        renderFormulaEditor();
+        recalcRegister();
+    }
+
+    function resetFormulaToDefault(formulaName) {
+        if (!appSettings.formulaConfig) appSettings.formulaConfig = getDefaultFormulaConfig();
+        appSettings.formulaConfig[formulaName] = getDefaultFormulaConfig()[formulaName];
+        saveSettings();
+        renderFormulaEditor();
+        recalcRegister();
     }
 
     function closeSettingsModal() {
@@ -4985,6 +5072,7 @@
         pendingFieldNames = null;
         openSettingsModal();
         switchSettingsTab('formulas');
+        renderFormulaEditor();
         alert('All settings have been reset to their defaults.');
     }
 
@@ -5133,6 +5221,139 @@
         return card + upi + plux;
     }
 
+    // ---- FORMULA CONFIG (Settings > 🧮 Formulas & Advanced) ---------------
+    // A safe, constrained "formula builder": for each named total below, the
+    // user can toggle whether each component participates and whether it
+    // adds (+) or subtracts (-). There is deliberately no free-text/expression
+    // editing and no editable coefficients — a component is either fully
+    // included with a fixed sign, or excluded. This keeps it simple for a
+    // non-technical shop owner while still being genuinely editable.
+    //
+    // getDefaultFormulaConfig() reproduces EXACTLY the previous hardcoded
+    // formulas, so existing users see zero change unless they actively
+    // customize something in Settings.
+    function getFormulaComponentDefs() {
+        return {
+            grandTotal: [
+                { key: 'denomTotal', label: 'Denomination Total (₹500 down to ₹1)' },
+                { key: 'cardPay', label: 'Card Pay' },
+                { key: 'upiPay', label: 'UPI Pay' },
+                { key: 'pluxeePay', label: 'Pluxee (Sodexo)' },
+                { key: 'openingBal', label: 'Opening Balance' },
+                { key: 'cashAdded', label: 'Cash Added' },
+                { key: 'extraChangeGiven', label: 'Extra Change Given' },
+                { key: 'changeLeftByCustomer', label: 'Change Left by Customer' }
+            ],
+            total: [
+                { key: 'grandTotal', label: 'Grand Total' },
+                { key: 'expTotal', label: 'Expenses Total' },
+                { key: 'ownerTotal', label: 'Owner Bills Total' },
+                { key: 'vendTotal', label: 'Vendor Payments Total' },
+                { key: 'staffTotal', label: 'Staff Bills Total' }
+            ],
+            finalSale: [
+                { key: 'vasySale', label: 'Software Sale (Vasy)' },
+                { key: 'unbTotal', label: 'Unbilled Total' }
+            ],
+            tally: [
+                { key: 'total', label: 'Total (Total Summary)' },
+                { key: 'finalSale', label: 'Final Sale' }
+            ]
+        };
+    }
+
+    const FORMULA_LABELS = {
+        grandTotal: 'Grand Total',
+        total: 'Total (Total Summary panel)',
+        finalSale: 'Final Sale',
+        tally: 'Tally / Variance'
+    };
+
+    function getDefaultFormulaConfig() {
+        return {
+            grandTotal: {
+                denomTotal: { enabled: true, sign: 1 },
+                cardPay: { enabled: true, sign: 1 },
+                upiPay: { enabled: true, sign: 1 },
+                pluxeePay: { enabled: true, sign: 1 },
+                openingBal: { enabled: true, sign: -1 },
+                cashAdded: { enabled: true, sign: -1 },
+                extraChangeGiven: { enabled: true, sign: -1 },
+                changeLeftByCustomer: { enabled: true, sign: 1 }
+            },
+            total: {
+                grandTotal: { enabled: true, sign: 1 },
+                expTotal: { enabled: true, sign: 1 },
+                ownerTotal: { enabled: true, sign: 1 },
+                vendTotal: { enabled: true, sign: 1 },
+                staffTotal: { enabled: true, sign: 1 }
+            },
+            finalSale: {
+                vasySale: { enabled: true, sign: 1 },
+                unbTotal: { enabled: true, sign: 1 }
+            },
+            tally: {
+                total: { enabled: true, sign: 1 },
+                finalSale: { enabled: true, sign: -1 }
+            }
+        };
+    }
+
+    // Returns this formula's config, filling in any component missing from
+    // appSettings (e.g. an older saved settings blob, or a future new
+    // component) with its default entry, so a partial/legacy config never
+    // silently drops a component from the sum.
+    function getFormulaConfigFor(formulaName) {
+        let defaults = getDefaultFormulaConfig()[formulaName] || {};
+        let saved = (appSettings.formulaConfig && appSettings.formulaConfig[formulaName]) || {};
+        let merged = {};
+        Object.keys(defaults).forEach(key => {
+            let c = saved[key];
+            merged[key] = (c && typeof c.enabled === 'boolean')
+                ? { enabled: c.enabled, sign: (Number(c.sign) < 0 ? -1 : 1) }
+                : defaults[key];
+        });
+        return merged;
+    }
+
+    // Computes one named formula's value from a plain object of component
+    // values (e.g. { denomTotal: 4321, cardPay: 100, ... }), honoring each
+    // component's Include/sign toggle from Settings. Unchecking every
+    // component in a formula simply yields 0 — never an error.
+    function computeFormulaTotal(formulaName, values) {
+        let defs = getFormulaComponentDefs()[formulaName] || [];
+        let cfg = getFormulaConfigFor(formulaName);
+        let sum = 0;
+        defs.forEach(d => {
+            let c = cfg[d.key];
+            if (!c || !c.enabled) return;
+            let sign = c.sign < 0 ? -1 : 1;
+            sum += sign * (Number(values[d.key]) || 0);
+        });
+        return sum;
+    }
+
+    // Plain-English rebuild of a formula's description from its current
+    // toggle state, e.g. "Grand Total = Denomination Total + Card Pay − Opening Balance".
+    // Skips disabled components; an all-disabled formula reads as "= 0".
+    function describeFormula(formulaName) {
+        let defs = getFormulaComponentDefs()[formulaName] || [];
+        let cfg = getFormulaConfigFor(formulaName);
+        let parts = [];
+        defs.forEach(d => {
+            let c = cfg[d.key];
+            if (!c || !c.enabled) return;
+            let sign = c.sign < 0 ? -1 : 1;
+            if (parts.length === 0) {
+                parts.push((sign < 0 ? '−' : '') + d.label);
+            } else {
+                parts.push((sign < 0 ? '− ' : '+ ') + d.label);
+            }
+        });
+        let label = FORMULA_LABELS[formulaName] || formulaName;
+        return label + ' = ' + (parts.length ? parts.join(' ') : '0');
+    }
+
     // Applies the red/green/blue sign-highlight (negative/zero/positive) to
     // a Total Summary row + its value element. Shared by the Tally row and
     // the Total row (and the A4 export equivalents) so both are colored by
@@ -5176,18 +5397,30 @@
         let extraChangeGiven = parseFloat(document.getElementById('extraChangeGivenInput').value) || 0;
         let changeLeftByCustomer = parseFloat(document.getElementById('changeLeftByCustomerInput').value) || 0;
 
-        let grandTotalDenom = denomSum - openingVal;
-
-        // Tray Balance section's own "Grand Total" (lblTotalDenom / dockTray):
+        // Tray Balance section's own "Grand Total" (lblTotalDenom / dockTray)
+        // and the Total Summary panel's "Grand Total" (sumGrand, below) are
+        // kept identical, and both are now driven by the user-editable
+        // Settings > Formulas & Advanced config (appSettings.formulaConfig),
+        // instead of a hardcoded sign chain — see computeFormulaTotal() and
+        // getDefaultFormulaConfig(). With the default config this produces
+        // exactly the same result as the old hardcoded formula:
         // denomination sum + digital payments - opening balance - cash added
-        // - extra change given + change left by customer, per the user's
-        // requested formula. The Total Summary panel's "Grand Total"
-        // (sumGrand, below) now uses this identical formula, so both Grand
-        // Total labels are kept in sync and both feed Final Sale / Tally /
-        // Variance the same way.
+        // - extra change given + change left by customer.
         let cashAddedTotal = calcCashAddedTotal();
-        let trayGrandTotal = denomSum + calcDigitalPaymentsTotal() - openingVal - cashAddedTotal - extraChangeGiven + changeLeftByCustomer;
-        document.getElementById('lblTotalDenom').innerText = '₹' + trayGrandTotal;
+        let card = parseFloat(document.getElementById('cardPay').value) || 0;
+        let upi = parseFloat(document.getElementById('upiPay').value) || 0;
+        let plux = parseFloat(document.getElementById('pluxeePay').value) || 0;
+        let grandTotal = computeFormulaTotal('grandTotal', {
+            denomTotal: denomSum,
+            cardPay: card,
+            upiPay: upi,
+            pluxeePay: plux,
+            openingBal: openingVal,
+            cashAdded: cashAddedTotal,
+            extraChangeGiven: extraChangeGiven,
+            changeLeftByCustomer: changeLeftByCustomer
+        });
+        document.getElementById('lblTotalDenom').innerText = '₹' + grandTotal;
 
         let expTotal = 0; document.querySelectorAll('.exp-amt').forEach(i => expTotal += parseFloat(i.value) || 0);
         document.getElementById('lblExpTotal').innerText = '₹' + expTotal;
@@ -5199,27 +5432,34 @@
 
         document.getElementById('lblCombinedOutflow').innerText = '₹' + (ownerTotal + vendTotal + staffTotal + unbTotal);
 
-        let card = parseFloat(document.getElementById('cardPay').value) || 0;
-        let upi = parseFloat(document.getElementById('upiPay').value) || 0;
-        let plux = parseFloat(document.getElementById('pluxeePay').value) || 0;
-        let grandTotal = grandTotalDenom + (card + upi + plux) - cashAddedTotal - extraChangeGiven + changeLeftByCustomer;
-
         document.getElementById('sumGrand').innerText = '₹' + grandTotal;
         document.getElementById('sumExp').innerText = '₹' + expTotal;
         document.getElementById('sumOwner').innerText = '₹' + ownerTotal;
         document.getElementById('sumVend').innerText = '₹' + vendTotal;
         document.getElementById('sumStaff').innerText = '₹' + staffTotal;
 
-        let total1 = grandTotal + expTotal + ownerTotal + vendTotal + staffTotal;
+        let total1 = computeFormulaTotal('total', {
+            grandTotal: grandTotal,
+            expTotal: expTotal,
+            ownerTotal: ownerTotal,
+            vendTotal: vendTotal,
+            staffTotal: staffTotal
+        });
         document.getElementById('sumTotal1').innerText = '₹' + total1;
         applySignHighlight(document.getElementById('sumTotal1Row'), document.getElementById('sumTotal1'), total1);
 
         let vasySale = parseFloat(document.getElementById('vasySale').value) || 0;
         document.getElementById('sumUnb').innerText = '₹' + unbTotal;
-        let totalSale = vasySale + unbTotal;
+        let totalSale = computeFormulaTotal('finalSale', {
+            vasySale: vasySale,
+            unbTotal: unbTotal
+        });
         document.getElementById('sumTotalSale').innerText = '₹' + totalSale;
 
-        let variance = total1 - totalSale;
+        let variance = computeFormulaTotal('tally', {
+            total: total1,
+            finalSale: totalSale
+        });
         let varLbl = document.getElementById('sumVariance');
         varLbl.innerText = (variance > 0 ? '+' : '') + '₹' + variance;
         // Sign-based highlight: red = shortage (negative), green = perfectly
