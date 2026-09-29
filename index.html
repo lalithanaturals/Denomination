@@ -1445,8 +1445,9 @@
             <table class="cb-table-new">
                 <thead>
                     <tr>
-                        <th style="width:32px;">#</th>
-                        <th>Item Name</th>
+                        <th style="width:32px;">S.No</th>
+                        <th style="width:110px;">Barcode</th>
+                        <th>Product</th>
                         <th style="width:120px; text-align:center;">Qty</th>
                         <th style="width:90px; text-align:right;">MRP</th>
                         <th style="width:100px; text-align:right;">Selling Price</th>
@@ -1456,7 +1457,7 @@
                     </tr>
                 </thead>
                 <tbody id="cbCartBody">
-                    <tr id="cbCartEmptyRow"><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>
+                    <tr id="cbCartEmptyRow"><td colspan="9" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -2052,6 +2053,50 @@
 </div>
 
 <script>
+    // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
+    // Every date/time shown to the user anywhere in the app (on-screen, print,
+    // thermal receipt, WhatsApp text, report modals, history/archive views) goes
+    // through these three helpers so the format is identical everywhere:
+    //   formatDateDMY      -> "05/09/2026"            (zero-padded DD/MM/YYYY)
+    //   formatTime12h      -> "8:27 PM"                (12-hour clock, AM/PM)
+    //   formatDateTimeDMY  -> "05/09/2026, 8:27 PM"    (combined, comma-separated)
+    // Each accepts a Date object, a "YYYY-MM-DD" string (as saved by <input
+    // type="date">), an ISO timestamp string, or a millisecond number — and
+    // never throws: an unparseable/missing input yields ''. This intentionally
+    // does NOT touch native <input type="date">/<input type="month"> controls,
+    // whose own picker UI is browser/OS-rendered and can't be restyled via JS —
+    // it only standardizes how a date/time is later DISPLAYED as text.
+    function _toDateSafe(dateInput) {
+        if (dateInput === null || dateInput === undefined || dateInput === '') return null;
+        let d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    function formatDateDMY(dateInput) {
+        let d = _toDateSafe(dateInput);
+        if (!d) return '';
+        let dd = String(d.getDate()).padStart(2, '0');
+        let mm = String(d.getMonth() + 1).padStart(2, '0');
+        let yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+    function formatTime12h(dateInput) {
+        let d = _toDateSafe(dateInput);
+        if (!d) return '';
+        let h = d.getHours();
+        let m = String(d.getMinutes()).padStart(2, '0');
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h === 0) h = 12;
+        return `${h}:${m} ${ampm}`;
+    }
+    function formatDateTimeDMY(dateInput) {
+        let d = _toDateSafe(dateInput);
+        if (!d) return '';
+        let dmy = formatDateDMY(d);
+        let t = formatTime12h(d);
+        return dmy && t ? `${dmy}, ${t}` : (dmy || t);
+    }
+
     document.getElementById('regDate').valueAsDate = new Date();
     let currentSelectedArchiveRecord = null;
     let lastFilteredRecords = [];
@@ -2582,7 +2627,7 @@
         } else {
             body.innerHTML = ledger.map(e => `
                 <tr>
-                    <td>${e.date}</td>
+                    <td>${formatDateDMY(e.date)}</td>
                     <td>${e.item}${e.note ? ' <span style="color:var(--muted); font-size:10.5px;">(' + e.note + ')</span>' : ''}</td>
                     <td style="text-align:center;">${e.qty}</td>
                     <td>${e.reason}</td>
@@ -3277,6 +3322,12 @@
         syncFieldRowsWithSettings();
         document.getElementById('settingsOwnerPassword').value = '';
         closeSettingsModal();
+        // Everything just saved (formula toggles, business name/branch labels,
+        // default payment mode, etc.) must be reflected on the live register
+        // page immediately — no reload required — so recompute every total
+        // right away, exactly like updateFormulaComponent() already does for
+        // an individual formula toggle.
+        recalcRegister();
     }
 
     // Adds rows for any newly-configured expense/owner names straight into
@@ -3306,6 +3357,15 @@
     // existing register math exactly like any other unbilled entry — and a
     // thermal receipt prints automatically.
     const POS_CATALOG_KEY = 'lalitha_pos_catalog';
+    // Secondary, LOCAL-ONLY catalog for items entered by NAME only (no
+    // barcode) — e.g. typed straight into the scan box when nothing matches
+    // a known barcode. Keyed by normalized (trimmed + lowercased) name so
+    // "Coconut Oil" and "coconut oil " re-use the same remembered entry.
+    // Deliberately NOT cloud-synced: the Sheets side (upsertCatalogItem_)
+    // matches rows by barcode, and a blank barcode would collide across
+    // different name-only items, so this stays local-only for fast re-entry
+    // on this device — see cbRememberNameItem() below.
+    const POS_NAME_CATALOG_KEY = 'lalitha_pos_catalog_names';
     const CASH_BILL_COUNTER_KEY = 'lalitha_cash_bill_counter';
     const POS_LAST_SALESMAN_KEY = 'lalitha_pos_last_salesman';
     const POS_LAST_PAYMENT_MODE_KEY = 'lalitha_pos_last_payment_mode';
@@ -3322,6 +3382,18 @@
 
     function savePosCatalog(catalog) {
         localStorage.setItem(POS_CATALOG_KEY, JSON.stringify(catalog));
+    }
+
+    function normalizeItemName(name) {
+        return (name || '').trim().toLowerCase();
+    }
+
+    function getPosNameCatalog() {
+        try { return JSON.parse(localStorage.getItem(POS_NAME_CATALOG_KEY) || '{}'); } catch (e) { return {}; }
+    }
+
+    function savePosNameCatalog(catalog) {
+        localStorage.setItem(POS_NAME_CATALOG_KEY, JSON.stringify(catalog));
     }
 
     function openCashBillModal() {
@@ -3510,9 +3582,10 @@
         let known = catalog[code];
         let lookupKey = code;
 
-        // If it's not a known barcode key, the cashier may have typed an
-        // item NAME instead of scanning a barcode — check the catalog's
-        // item names (case-insensitively) before treating it as brand new.
+        // Matching priority: (a) exact barcode match [above], (b) a name
+        // match against ANY catalog entry — barcode-keyed OR name-only —
+        // case-insensitive/trimmed, (c) otherwise fall through and create a
+        // brand-new blank row with the typed text as the name.
         if (!known) {
             let nameMatchKey = Object.keys(catalog).find(k => (catalog[k].name || '').toLowerCase() === code.toLowerCase());
             if (nameMatchKey) {
@@ -3521,15 +3594,31 @@
             }
         }
 
+        let nameEntry = null;
+        if (!known) {
+            let nameCatalog = getPosNameCatalog();
+            nameEntry = nameCatalog[normalizeItemName(code)] || null;
+        }
+
         let item = known
             ? { barcode: lookupKey, name: known.name, mrp: known.mrp, sellingPrice: known.sellingPrice, discount: known.discount || 0, discountMode: known.discountMode || '₹', qty: 1 }
-            : { barcode: code, name: code, mrp: 0, sellingPrice: 0, discount: 0, discountMode: (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹'), qty: 1, isNew: true };
+            : nameEntry
+            // A previously-entered NAME-ONLY item (no barcode) — prefill its
+            // remembered pricing, same as a barcode match, but keep barcode
+            // blank since none is known.
+            ? { barcode: '', name: nameEntry.name, mrp: nameEntry.mrp, sellingPrice: nameEntry.sellingPrice, discount: nameEntry.discount || 0, discountMode: nameEntry.discountMode || '₹', qty: 1 }
+            // Not a known barcode or catalog name — treat the typed text as
+            // the new row's PRODUCT NAME directly. No real barcode value
+            // exists yet, so it's left blank (the cashier can fill one in
+            // via the row's Barcode cell later if they want) rather than
+            // duplicating the typed name into the barcode field.
+            : { barcode: '', name: code, mrp: 0, sellingPrice: 0, discount: 0, discountMode: (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹'), qty: 1, isNew: true };
 
         cashBillCart.push(item);
         let newIndex = cashBillCart.length - 1;
         renderCashBillCart();
 
-        if (known) {
+        if (known || nameEntry) {
             barcodeEl.value = '';
             barcodeEl.focus();
         } else {
@@ -3550,12 +3639,16 @@
         if (!item) return;
         let name = (event.target.value || '').trim();
         item.name = name;
+        delete item.isNew;
         if (item.barcode && name) {
             let catalog = getPosCatalog();
             catalog[item.barcode] = { barcode: item.barcode, name: item.name, mrp: item.mrp, sellingPrice: item.sellingPrice, discount: item.discount, discountMode: item.discountMode };
             savePosCatalog(catalog);
+        } else if (!item.barcode && name) {
+            // Name-only item (no barcode) — remember it under its normalized
+            // name instead, local-only (see POS_NAME_CATALOG_KEY above).
+            cbRememberNameItem(item);
         }
-        delete item.isNew;
         renderCashBillCart();
         let barcodeEl = document.getElementById('cbBarcodeInput');
         if (barcodeEl) barcodeEl.focus();
@@ -3567,12 +3660,30 @@
     // barcode picks up whatever was last corrected here, not just what was
     // true at the moment the name was first typed in.
     function cbRememberItem(item) {
-        if (!item || !item.barcode || item.isNew) return;
+        if (!item || item.isNew) return;
+        if (!item.barcode) {
+            // No barcode to key on — remember by name instead (local-only).
+            cbRememberNameItem(item);
+            return;
+        }
         let catalog = getPosCatalog();
         let entry = { barcode: item.barcode, name: item.name, mrp: item.mrp, sellingPrice: item.sellingPrice, discount: item.discount, discountMode: item.discountMode, updatedAt: Date.now() };
         catalog[item.barcode] = entry;
         savePosCatalog(catalog);
         syncCatalogItemToCloud(entry);
+    }
+
+    // Remembers a NAME-ONLY item (no barcode) so typing the same name again
+    // later re-fills its MRP/Selling Price/Discount, mirroring cbRememberItem
+    // above but keyed by normalized name and kept purely local — see
+    // POS_NAME_CATALOG_KEY for why this isn't cloud-synced.
+    function cbRememberNameItem(item) {
+        if (!item || item.isNew) return;
+        let name = (item.name || '').trim();
+        if (!name) return;
+        let nameCatalog = getPosNameCatalog();
+        nameCatalog[normalizeItemName(name)] = { name: name, mrp: item.mrp, sellingPrice: item.sellingPrice, discount: item.discount, discountMode: item.discountMode, updatedAt: Date.now() };
+        savePosNameCatalog(nameCatalog);
     }
 
     function cbUpdateItemField(index, field, value) {
@@ -3707,11 +3818,12 @@
     function renderCashBillCart() {
         let tbody = document.getElementById('cbCartBody');
         if (cashBillCart.length === 0) {
-            tbody.innerHTML = '<tr id="cbCartEmptyRow"><td colspan="8" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>';
+            tbody.innerHTML = '<tr id="cbCartEmptyRow"><td colspan="9" style="text-align:center; color:var(--muted); padding:16px;">No items added yet — scan a barcode to begin.</td></tr>';
         } else {
             tbody.innerHTML = cashBillCart.map((item, i) => `
                 <tr data-cart-index="${i}">
                     <td class="cb-cell-num">${i + 1}</td>
+                    <td class="cb-cell-barcode"><input type="text" class="cb-cell-input cb-barcode-input" data-role="barcode" data-cart-index="${i}" value="${(item.barcode || '').replace(/"/g, '&quot;')}" placeholder="—" onchange="cbUpdateItemField(${i}, 'barcode', this.value.trim())"></td>
                     <td class="cb-cell-name">${item.isNew
                         ? `<input type="text" class="cb-cell-input cb-name-input" data-role="name" data-cart-index="${i}" value="${(item.name || '').replace(/"/g, '&quot;')}" placeholder="Item name..." onkeydown="cbCommitNewItemName(event, ${i})" onchange="cbUpdateItemField(${i}, 'name', this.value)">`
                         : `<input type="text" class="cb-cell-input cb-name-input" data-role="name" data-cart-index="${i}" value="${(item.name || '').replace(/"/g, '&quot;')}" onchange="cbUpdateItemField(${i}, 'name', this.value)">`}
@@ -3823,7 +3935,7 @@
             ${headingHTML}
             <div style="text-align:center; font-size:9px; margin-bottom:4px;">CASH BILL</div>
             <div style="text-align:center; font-size:9px;">Bill #${nextBillNo} | Branch: ${branch}</div>
-            <div style="text-align:center; font-size:9px;">${now.toLocaleString('en-IN')}</div>
+            <div style="text-align:center; font-size:9px;">${formatDateTimeDMY(now)}</div>
             <div style="text-align:center; font-size:9px;">${salesman ? 'Salesman: ' + salesman + ' | ' : ''}Payment: ${paymentMode}</div>
             ${custLine}
             <div style="border-bottom:1px dashed #000; margin:6px 0;"></div>
@@ -4037,7 +4149,7 @@
                 <div class="meta">
                     CASH BILL &middot; Bill #${billNo} &middot; Branch: ${branch}<br>
                     ${salesman ? 'Salesman: ' + salesman + ' &middot; ' : ''}Payment: ${paymentMode}<br>
-                    ${new Date().toLocaleString('en-IN')}
+                    ${formatDateTimeDMY(new Date())}
                 </div>
                 ${custLine}
                 <hr class="divider">
@@ -4103,7 +4215,28 @@
     function applyComputedThermalPageSize(win, paperWidthMm) {
         paperWidthMm = paperWidthMm || '80mm';
         try {
-            let heightPx = Math.max(win.document.body.scrollHeight, win.document.documentElement.scrollHeight);
+            // NOTE ON A 4th BLANK-SPACE SOURCE (found while re-verifying this
+            // for the "avoid empty spacing" follow-up): both print windows
+            // here are opened with a fixed popup height ('...,height=600' /
+            // 'width=350,height=600'). document.body.scrollHeight and
+            // document.documentElement.scrollHeight are each the LARGER of
+            // the real content height and the viewport height — so on a
+            // short receipt (well under 600px of content) they report the
+            // popup's 600px window height, not the actual content height,
+            // and @page ends up sized to ~163mm no matter how short the
+            // receipt actually is. That's a huge trailing blank tail on any
+            // real print, independent of the fonts/rAF timing fixed earlier.
+            // Fixed by measuring the bottom edge of the content itself
+            // (every direct child of <body>) instead of the scrollHeight
+            // properties, which is unaffected by how tall the popup window
+            // happens to be.
+            let heightPx = 0;
+            let bodyEl = win.document.body;
+            for (let i = 0; i < bodyEl.children.length; i++) {
+                let rect = bodyEl.children[i].getBoundingClientRect();
+                if (rect.bottom > heightPx) heightPx = rect.bottom;
+            }
+            if (!heightPx) heightPx = Math.max(bodyEl.scrollHeight, win.document.documentElement.scrollHeight);
             let heightMm = Math.ceil((heightPx * 25.4 / 96) + 4); // +4mm safety margin
             let styleEl = win.document.createElement('style');
             styleEl.id = 'computedPageSize';
@@ -4130,7 +4263,7 @@
         } else {
             let deletedBanner = bill.deleted
                 ? `<p style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; border-radius:6px; padding:8px; font-size:12px; margin:0 0 8px;">
-                     ⚠️ This bill was deleted${bill.deletedAt ? ' on ' + new Date(bill.deletedAt).toLocaleString('en-IN') : ''}.<br>
+                     ⚠️ This bill was deleted${bill.deletedAt ? ' on ' + formatDateTimeDMY(bill.deletedAt) : ''}.<br>
                      Reason: ${bill.deletedReason || '—'}
                    </p>` : '';
             let rows = (bill.items || []).map(item => `
@@ -4143,7 +4276,7 @@
                 </tr>`).join('');
             body.innerHTML = `
                 ${deletedBanner}
-                <p style="font-size:12px; margin:0 0 8px;">Salesman: <strong>${bill.salesman || '—'}</strong> · Payment: <strong>${bill.paymentMode}</strong> · ${bill.date ? new Date(bill.date).toLocaleString('en-IN') : ''}</p>
+                <p style="font-size:12px; margin:0 0 8px;">Salesman: <strong>${bill.salesman || '—'}</strong> · Payment: <strong>${bill.paymentMode}</strong> · ${bill.date ? formatDateTimeDMY(bill.date) : ''}</p>
                 <table style="width:100%; border-collapse:collapse; font-size:12px; border:1px solid var(--border);">
                     <thead><tr style="background:var(--header-bg);"><th style="text-align:left; padding:4px 6px;">Item</th><th style="padding:4px 6px;">Qty</th><th style="text-align:right; padding:4px 6px;">Price</th><th style="text-align:right; padding:4px 6px;">Disc</th><th style="text-align:right; padding:4px 6px;">Total</th></tr></thead>
                     <tbody>${rows}</tbody>
@@ -4446,8 +4579,8 @@
                 <div class="analytics-card" style="border-left-color:#eab308;"><span>Combined Variance</span><strong style="color:#fef08a;">${(data.combined.variance > 0 ? '+' : '') + fmt(data.combined.variance)}</strong></div>
                 <div class="analytics-card"><span>Mismatched Shifts</span><strong>${mismatched.length} / ${records.length}</strong></div>
             </div>
-            <div style="margin-bottom:8px;">Largest single-day variance: <strong>${worst ? `${fmt(worst.variance)} — ${worst.branch}, ${worst.date}` : 'None'}</strong></div>
-            ${renderBranchComparisonHTML(data, `${fromVal} to ${toVal}`)}
+            <div style="margin-bottom:8px;">Largest single-day variance: <strong>${worst ? `${fmt(worst.variance)} — ${worst.branch}, ${formatDateDMY(worst.date)}` : 'None'}</strong></div>
+            ${renderBranchComparisonHTML(data, `${formatDateDMY(fromVal)} to ${formatDateDMY(toVal)}`)}
         `;
     }
 
@@ -4523,7 +4656,7 @@
             let typed = prompt(`This entry is in a month that was already CLOSED for ${branch}. Unlocking it re-opens a closed month's books.\n\nType UNLOCK (in capitals) to confirm you really want to do this:`);
             if (typed !== 'UNLOCK') { alert('Not unlocked — the confirmation text did not match.'); return; }
         } else {
-            let proceed = confirm(`Unlock the entry for ${branch} on ${date} (${shift}) so it can be edited? You'll need to re-enter that date, branch & shift in the register, make your changes, and click "Save & Commit Entry" again.`);
+            let proceed = confirm(`Unlock the entry for ${branch} on ${formatDateDMY(date)} (${shift}) so it can be edited? You'll need to re-enter that date, branch & shift in the register, make your changes, and click "Save & Commit Entry" again.`);
             if (!proceed) return;
         }
 
@@ -4547,7 +4680,7 @@
         let rec = store[idx];
         let oldVal = Number(rec.closingBal || 0);
 
-        let typed = prompt(`Edit Closing Balance for ${branch} — ${date} (${shift}).\n\nCurrent Closing Balance: ₹${oldVal}\n\nEnter the corrected Closing Balance:`, oldVal);
+        let typed = prompt(`Edit Closing Balance for ${branch} — ${formatDateDMY(date)} (${shift}).\n\nCurrent Closing Balance: ₹${oldVal}\n\nEnter the corrected Closing Balance:`, oldVal);
         if (typed === null) return; // cancelled
         let newVal = Number(typed);
         if (isNaN(newVal) || newVal < 0) { alert('Please enter a valid, non-negative number.'); return; }
@@ -4578,11 +4711,11 @@
             alert('No earlier versions recorded for this entry.');
             return;
         }
-        document.getElementById('historyModalDesc').innerText = `${branch} — ${date} (${shift}). Current Closing Balance: ₹${rec.closingBal || 0}. ${rec.history.length} earlier version${rec.history.length === 1 ? '' : 's'} before the current one.`;
+        document.getElementById('historyModalDesc').innerText = `${branch} — ${formatDateDMY(date)} (${shift}). Current Closing Balance: ₹${rec.closingBal || 0}. ${rec.history.length} earlier version${rec.history.length === 1 ? '' : 's'} before the current one.`;
         let versions = rec.history.slice().reverse(); // most recent edit first
         let html = versions.map((v, i) => `
             <div style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px;">
-                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">Version replaced ${v.editedAt ? new Date(v.editedAt).toLocaleString('en-IN') : 'at unknown time'}</div>
+                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">Version replaced ${v.editedAt ? formatDateTimeDMY(v.editedAt) : 'at unknown time'}</div>
                 ${v.editNote ? `<div style="background:#fef9c3; border:1px solid #fde047; border-radius:6px; padding:6px 8px; margin-bottom:6px; font-weight:700; color:#854d0e;">📝 ${v.editNote}</div>` : ''}
                 <div>Cashier: <strong>${v.cashier || ''}</strong></div>
                 <div>Closing Bal: <strong>₹${v.closingBal || 0}</strong> · Final Sale: <strong>₹${v.totalSale || 0}</strong> · Variance: <strong>${(v.variance > 0 ? '+' : '')}₹${v.variance || 0}</strong></div>
@@ -4677,7 +4810,7 @@
                 event.target.value = '';
                 return;
             }
-            let whenText = data.exportedAt ? new Date(data.exportedAt).toLocaleString('en-IN') : 'an unknown time';
+            let whenText = data.exportedAt ? formatDateTimeDMY(data.exportedAt) : 'an unknown time';
             let proceed = confirm(`This backup has ${data.records.length} shift record(s) from ${whenText}.\n\nRestoring will REPLACE all shift records currently stored on this device. This cannot be undone. Continue?`);
             if (!proceed) { event.target.value = ''; return; }
 
@@ -4714,7 +4847,7 @@
             if (daysSince > 7) {
                 let banner = document.getElementById('backupReminderBanner');
                 document.getElementById('backupReminderText').innerText = lastBackup
-                    ? `It's been over a week since your last backup (${new Date(lastBackup).toLocaleDateString('en-IN')}). Download a fresh one to keep your records safe.`
+                    ? `It's been over a week since your last backup (${formatDateDMY(lastBackup)}). Download a fresh one to keep your records safe.`
                     : `You haven't downloaded a backup of your shift records yet. It only takes a second.`;
                 banner.style.display = 'flex';
             }
@@ -4787,6 +4920,26 @@
         try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
     }
 
+    // recalcRegister() (and therefore saveDraft()) already fires on every
+    // numeric field that affects a total, but several fields don't affect
+    // any total and so never used to trigger a recalc — the cashier name,
+    // shift notes, staff/vendor/unbilled row names, and the staff Bill #
+    // column. Typing ONLY into one of those (e.g. filling in the cashier's
+    // name first) previously wouldn't be captured by the draft until some
+    // other field also changed. A single delegated, debounced listener on
+    // the whole document catches every text/number input on the register
+    // page (harmless no-op for fields outside it, e.g. inside Settings or
+    // the Cash Bill modal, since serializeDraftState() only reads the
+    // specific register elements above) without having to wire an
+    // oninput handler onto each individual field.
+    let draftSaveTimer = null;
+    function scheduleDraftSave() {
+        if (isInitializing) return;
+        clearTimeout(draftSaveTimer);
+        draftSaveTimer = setTimeout(saveDraft, 400);
+    }
+    document.addEventListener('input', scheduleDraftSave);
+
     function restoreDraftIfPresent() {
         let raw;
         try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
@@ -4806,9 +4959,11 @@
             (state.unb || []).some(u => u.amt || u.name);
         if (!hasContent) return;
 
-        let proceed = confirm('An unsaved entry from earlier was found (page closed or refreshed before it was committed). Restore it?');
-        if (!proceed) { clearDraft(); return; }
-
+        // Restore silently and automatically — a refresh or a closed/reopened
+        // tab must never lose or change what was typed, and must not require
+        // an extra confirmation click to get it back. The draft is only ever
+        // cleared by an explicit "CLEAR PAGE" or a successful "SAVE & COMMIT
+        // ENTRY" (see clearDraft() callers).
         if (state.date) document.getElementById('regDate').value = state.date;
         if (state.branch) document.getElementById('branchLocation').value = state.branch;
         if (state.shift) document.getElementById('shiftLabel').value = state.shift;
@@ -5278,8 +5433,8 @@
                 pluxeePay: { enabled: true, sign: 1 },
                 openingBal: { enabled: true, sign: -1 },
                 cashAdded: { enabled: true, sign: -1 },
-                extraChangeGiven: { enabled: true, sign: -1 },
-                changeLeftByCustomer: { enabled: true, sign: 1 }
+                extraChangeGiven: { enabled: true, sign: 1 },
+                changeLeftByCustomer: { enabled: true, sign: -1 }
             },
             total: {
                 grandTotal: { enabled: true, sign: 1 },
@@ -5565,10 +5720,10 @@
         let existingRecord = existingStore.find(r => r.date === date && r.branch === branch && (r.shift || 'Full Day') === shift);
         if (existingRecord) {
             if (existingRecord.locked !== false) {
-                alert(`This entry for ${branch} on ${date} (${shift}) is already committed and locked. Open "Show Records", find it, and click "Unlock to Edit" first if it genuinely needs a change.`);
+                alert(`This entry for ${branch} on ${formatDateDMY(date)} (${shift}) is already committed and locked. Open "Show Records", find it, and click "Unlock to Edit" first if it genuinely needs a change.`);
                 return;
             }
-            let proceed = confirm(`A saved entry already exists for ${branch} on ${date} (${shift}).\n\nContinue to REPLACE that entry with this one? (Cancel to go back without saving.)`);
+            let proceed = confirm(`A saved entry already exists for ${branch} on ${formatDateDMY(date)} (${shift}).\n\nContinue to REPLACE that entry with this one? (Cancel to go back without saving.)`);
             if (!proceed) return;
         }
 
@@ -5582,7 +5737,7 @@
 
         document.getElementById('verifyBranch').innerText = branch;
         document.getElementById('verifyCashier').innerText = cashier;
-        document.getElementById('verifyDate').innerText = document.getElementById('regDate').value;
+        document.getElementById('verifyDate').innerText = formatDateDMY(document.getElementById('regDate').value);
         document.getElementById('verifyOpening').innerText = '₹' + document.getElementById('openingBalInput').value;
         document.getElementById('verifyClosing').innerText = '₹' + document.getElementById('closingBalInput').value;
         document.getElementById('verifyTray').innerText = document.getElementById('lblTotalDenom').innerText;
@@ -5603,7 +5758,7 @@
 
     function openPrintModalForArchiveRecord(recordStr) {
         currentSelectedArchiveRecord = JSON.parse(decodeURIComponent(recordStr));
-        document.getElementById('modalTitle').innerText = `Export Report (${currentSelectedArchiveRecord.date})`;
+        document.getElementById('modalTitle').innerText = `Export Report (${formatDateDMY(currentSelectedArchiveRecord.date)})`;
         document.getElementById('modalDesc').innerText = `Branch: ${currentSelectedArchiveRecord.branch} | Cashier: ${currentSelectedArchiveRecord.cashier}. Select format:`;
         document.getElementById('confirmModal').style.display = 'flex';
     }
@@ -5677,7 +5832,7 @@
 
         let msg = `📊 *${(appSettings.businessName || 'Lalitha Naturals').toUpperCase()} - DETAILED AUDIT REPORT* 📊\n` +
                   `📍 Branch / Group: ${targetGroup} (${branch})\n` +
-                  `📅 Date: ${date} | 👤 Cashier: ${cashier}\n` +
+                  `📅 Date: ${formatDateDMY(date)} | 👤 Cashier: ${cashier}\n` +
                   `----------------------------------\n` +
                   `💰 *Opening Balance:* ${opening}\n` +
                   `💵 *Closing Balance (₹200-₹1):* ${closing}\n` +
@@ -5865,7 +6020,7 @@
     }
 
     function populateA4Data() {
-        document.getElementById('a4Date').innerText = document.getElementById('regDate').value;
+        document.getElementById('a4Date').innerText = formatDateDMY(document.getElementById('regDate').value);
         document.getElementById('a4Branch').innerText = document.getElementById('branchLocation').value;
         document.getElementById('a4Cashier').innerText = document.getElementById('cashierName').value.trim();
 
@@ -5969,7 +6124,7 @@
     }
 
     function populateA4DataFromRecord(rec) {
-        document.getElementById('a4Date').innerText = rec.date;
+        document.getElementById('a4Date').innerText = formatDateDMY(rec.date);
         document.getElementById('a4Branch').innerText = rec.branch;
         document.getElementById('a4Cashier').innerText = rec.cashier;
 
@@ -6053,7 +6208,7 @@
 
     function populateThermalData() {
         document.getElementById('tBranch').innerText = document.getElementById('branchLocation').value;
-        document.getElementById('tDate').innerText = document.getElementById('regDate').value;
+        document.getElementById('tDate').innerText = formatDateDMY(document.getElementById('regDate').value);
         document.getElementById('tCashier').innerText = document.getElementById('cashierName').value.trim();
         document.getElementById('tOpening').innerText = '₹' + document.getElementById('openingBalInput').value;
         document.getElementById('tClosing').innerText = '₹' + document.getElementById('closingBalInput').value;
@@ -6083,7 +6238,7 @@
 
     function populateThermalDataFromRecord(rec) {
         document.getElementById('tBranch').innerText = rec.branch;
-        document.getElementById('tDate').innerText = rec.date;
+        document.getElementById('tDate').innerText = formatDateDMY(rec.date);
         document.getElementById('tCashier').innerText = rec.cashier;
         document.getElementById('tOpening').innerText = '₹' + (rec.openingBal || 0);
         document.getElementById('tClosing').innerText = '₹' + (rec.closingBal || 0);
@@ -6233,7 +6388,7 @@
                 let itemShift = item.shift || 'Full Day';
 
                 let syncCell = item.syncedAt
-                    ? `<span style="color:#16a34a; font-size:11px;" title="Last sent ${new Date(item.syncedAt).toLocaleString('en-IN')}">✓ Sent</span>`
+                    ? `<span style="color:#16a34a; font-size:11px;" title="Last sent ${formatDateTimeDMY(item.syncedAt)}">✓ Sent</span>`
                     : `<span style="color:#dc2626; font-size:11px;">Not sent</span>`;
                 syncCell += ` <button class="btn-clear-mini" style="margin-left:4px;" onclick="retrySync('${item.date}','${item.branch}','${itemShift}')">Retry</button>`;
 
@@ -6248,7 +6403,7 @@
                 let editBalBtn = `<button class="btn-clear-mini" title="Correct just the Closing Balance without unlocking the whole shift" onclick="editClosingBalance('${item.date}','${item.branch}','${itemShift}')">✏️ Bal</button>`;
 
                 html += `<tr${overThresh ? ' style="background:#fef2f2;"' : ''}>
-                    <td>${item.date}${item.monthClosed ? ' <span title="This month is closed" style="font-size:10px;">🔒</span>' : ''}</td>
+                    <td>${formatDateDMY(item.date)}${item.monthClosed ? ' <span title="This month is closed" style="font-size:10px;">🔒</span>' : ''}</td>
                     <td><span class="badge-branch">${item.branch}</span></td>
                     <td>${itemShift}</td>
                     <td>${item.cashier}</td>
@@ -6304,7 +6459,7 @@
             let html = '';
             subList.forEach((row, idx) => {
                 html += `<tr>
-                    <td>${row.date}</td>
+                    <td>${formatDateDMY(row.date)}</td>
                     <td><span class="badge-branch">${row.branch}</span></td>
                     <td>${row.cashier}</td>
                     <td><strong>${row.name || 'Unnamed'}</strong></td>
@@ -6515,7 +6670,7 @@
 
         let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
         let rangeRecords = store.filter(r => r.date && r.date >= fromVal && r.date <= toVal);
-        let label = `${fromVal} to ${toVal}`;
+        let label = `${formatDateDMY(fromVal)} to ${formatDateDMY(toVal)}`;
 
         let data = computeBranchTotals(rangeRecords);
         contentEl.innerHTML = renderBranchComparisonHTML(data, label);
@@ -6579,7 +6734,7 @@
         let cashier = document.getElementById('searchCashier').value || 'All Cashiers';
         let reportType = document.getElementById('searchReportType').options[document.getElementById('searchReportType').selectedIndex].text;
 
-        document.getElementById('dashExportMeta').innerText = `Period: ${fromDate} to ${toDate} | Branch: ${branch} | Cashier: ${cashier} | View: ${reportType}`;
+        document.getElementById('dashExportMeta').innerText = `Period: ${formatDateDMY(fromDate)} to ${formatDateDMY(toDate)} | Branch: ${branch} | Cashier: ${cashier} | View: ${reportType}`;
 
         let totalSales = document.getElementById('statTotalSales').innerText;
         let totalSoft = document.getElementById('statTotalSoftware').innerText;
@@ -6636,7 +6791,7 @@
             let entryCount = document.getElementById('statEntryCount').innerText;
 
             let msg = `📊 *${(appSettings.businessName || 'Lalitha Naturals').toUpperCase()} - AUDIT SUMMARY REPORT* 📊\n` +
-                      `📅 Period: ${fromDate} to ${toDate}\n` +
+                      `📅 Period: ${formatDateDMY(fromDate)} to ${formatDateDMY(toDate)}\n` +
                       `📍 Branch: ${branch}\n` +
                       `----------------------------------\n` +
                       `💰 *Final Sale:* ${totalSales}\n` +
@@ -6682,7 +6837,7 @@
             <body>
                 <div class="center bold" style="font-size: 13px;">${(appSettings.businessName || 'Lalitha Naturals').toUpperCase()}</div>
                 <div class="center" style="font-size: 9px; margin-bottom: 4px;">AUDIT SUMMARY REPORT</div>
-                <div class="center" style="font-size: 9px; margin-bottom: 4px;">From: ${fromDate} To ${toDate}</div>
+                <div class="center" style="font-size: 9px; margin-bottom: 4px;">From: ${formatDateDMY(fromDate)} To ${formatDateDMY(toDate)}</div>
                 <div class="center" style="font-size: 9px; margin-bottom: 6px;">Branch: ${branch}</div>
                 <div class="line"></div>
                 <div class="row"><span>Final Sale:</span><span class="bold">${totalSales}</span></div>
@@ -6747,7 +6902,7 @@
             <body>
                 <img src="${activeLogoDataURI}" alt="${appSettings.businessName || 'Lalitha Naturals'} logo" style="height:56px; width:auto; display:block; margin-bottom:6px;">
                 <div style="font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:#64748b; font-weight:700; margin-bottom:12px;">Audit & Analytics Dashboard</div>
-                <div class="meta">Filter Applied: From ${fromDate} To ${toDate} | Branch: ${branch} | Cashier: ${cashier} | Printed On: ${new Date().toLocaleString()}</div>
+                <div class="meta">Filter Applied: From ${formatDateDMY(fromDate)} To ${formatDateDMY(toDate)} | Branch: ${branch} | Cashier: ${cashier} | Printed On: ${formatDateTimeDMY(new Date())}</div>
 
                 <div class="summary-grid">
                     <div class="card"><span>Final Sale</span><strong>${totalSales}</strong></div>
@@ -6879,7 +7034,7 @@
 
         let lines = [
             `🌿 ${(appSettings.businessName || 'Lalitha Naturals')} — Daily Summary`,
-            `📍 ${branch} | 📅 ${date} | ${shift} Shift`,
+            `📍 ${branch} | 📅 ${formatDateDMY(date)} | ${shift} Shift`,
             ``,
             `Opening Balance: ₹${opening}`,
             `Digital Payments: ₹${digitalTotal}`,
@@ -7028,7 +7183,7 @@
             let rowColor = v === 0 ? '#dcfce7' : (v < 0 ? '#fee2e2' : '#fef3c7');
             let textColor = v === 0 ? '#15803d' : (v < 0 ? '#dc2626' : '#b45309');
             return `<tr style="background:${rowColor};">
-                <td>${r.date}</td><td>${r.branch || ''}</td><td>${r.shift || 'Full Day'}</td>
+                <td>${formatDateDMY(r.date)}</td><td>${r.branch || ''}</td><td>${r.shift || 'Full Day'}</td>
                 <td style="text-align:right;">${fmtINR(r.grandTotal)}</td>
                 <td style="text-align:right; font-weight:700; color:${textColor};">${(v > 0 ? '+' : '') + fmtINR(v)}</td>
             </tr>`;
@@ -7238,7 +7393,7 @@
             let v = Number(r.variance || 0);
             let vColor = v === 0 ? '#16a34a' : (v < 0 ? '#dc2626' : '#b45309');
             return `<tr>
-                <td>${r.date}</td><td>${r.shift || 'Full Day'}</td><td>${r.branch || ''}</td>
+                <td>${formatDateDMY(r.date)}</td><td>${r.shift || 'Full Day'}</td><td>${r.branch || ''}</td>
                 <td style="text-align:right;">${fmtINR(r.grandTotal)}</td>
                 <td style="text-align:right;">${fmtINR(expTotal)}</td>
                 <td style="text-align:right; color:${vColor}; font-weight:700;">${(v > 0 ? '+' : '') + fmtINR(v)}</td>
@@ -7275,7 +7430,7 @@
             <body>
                 <div style="font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:#64748b; font-weight:700; margin-bottom:4px;">${appSettings.businessName || 'Lalitha Naturals'}</div>
                 <h2>Month-End Report — ${monthLabel}</h2>
-                <div class="meta">Branch: ${branch || 'All Branches'} | Shifts: ${rows.length} | Printed On: ${new Date().toLocaleString()}</div>
+                <div class="meta">Branch: ${branch || 'All Branches'} | Shifts: ${rows.length} | Printed On: ${formatDateTimeDMY(new Date())}</div>
 
                 <div class="summary-grid">
                     <div class="card"><span>Total Cash Counted (Closing Bal)</span><strong>${fmtINR(totalCash)}</strong></div>
@@ -7316,7 +7471,7 @@
         // helpers the existing Monthly Summary / Custom Range comparison
         // panel uses, so figures stay consistent with that panel.
         let data = computeBranchTotals(records);
-        document.getElementById('bcContent').innerHTML = renderBranchComparisonHTML(data, `${from || 'Start'} to ${to || 'Today'}`, null);
+        document.getElementById('bcContent').innerHTML = renderBranchComparisonHTML(data, `${from ? formatDateDMY(from) : 'Start'} to ${to ? formatDateDMY(to) : 'Today'}`, null);
     }
 </script>
 
