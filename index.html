@@ -644,7 +644,7 @@
         </div>
         <div class="meta-group">
             <div id="registerMetaInputs" class="header-fields">
-                <div class="field-group"><label for="regDate">Date</label><input type="date" id="regDate" onchange="onDateOrBranchChange()" onkeydown="handleEnter(event)"></div>
+                <div class="field-group"><label for="regDate">Date</label><input type="date" id="regDate" onchange="onDateFieldChange()" onkeydown="handleEnter(event)"></div>
                 <div class="field-group"><label for="branchLocation">Branch</label>
                     <select id="branchLocation" onchange="onDateOrBranchChange()" onkeydown="handleEnter(event)">
                         <option value="Gajuwaka" selected>Gajuwaka</option>
@@ -1263,6 +1263,37 @@
                         <label style="font-size:12px; font-weight:700; color:#dc2626;">Danger Zone</label>
                         <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 10px;">Used the app with sample numbers while trying it out? This permanently deletes every saved shift record on this device (all the numbers entered so far) so you can start clean. Business profile, branches, default field names, cashier PINs and other settings are kept.</p>
                         <button class="btn-mini" style="background:#fee2e2; color:#dc2626; border-color:#fecaca;" onclick="eraseAllTestData()">🧹 Erase All Test Data</button>
+                    </div>
+                    <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
+                        <label style="font-size:12px; font-weight:700; color:#dc2626;">🗑️ Delete Past Entries</label>
+                        <p style="font-size:11.5px; color:#94a3b8; margin:4px 0 10px;">Delete only what was entered for a SPECIFIC past date range — either abandoned in-progress drafts, or actual saved/committed shift records, or both. This is a targeted delete, unlike "Erase All Test Data" above which wipes everything. Only available here in Settings.</p>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:10px;">
+                            <div class="settings-field" style="min-width:130px;">
+                                <label for="delPastFrom">From date</label>
+                                <input type="date" id="delPastFrom">
+                            </div>
+                            <div class="settings-field" style="min-width:130px;">
+                                <label for="delPastTo">To date</label>
+                                <input type="date" id="delPastTo">
+                            </div>
+                            <div class="settings-field" style="min-width:150px;">
+                                <label for="delPastBranch">Branch</label>
+                                <select id="delPastBranch"><option value="">All branches</option></select>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
+                            <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:#334155;">
+                                <input type="checkbox" id="delPastDraftsChk" checked style="width:auto;"> Delete draft (unsaved) entries in this range
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:#334155;">
+                                <input type="checkbox" id="delPastRecordsChk" style="width:auto;"> Delete saved/committed shift records in this range
+                            </label>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <button class="btn-mini" onclick="previewDeletePastEntries()">🔍 Preview</button>
+                            <button class="btn-mini" style="background:#fee2e2; color:#dc2626; border-color:#fecaca;" onclick="executeDeletePastEntries()">🗑️ Delete Now</button>
+                            <span id="delPastPreviewResult" style="font-size:11.5px; font-weight:700; color:#475569;"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -2216,8 +2247,18 @@
         // which would appear mixed in with genuine entries in "Show Records".
         loadOpeningBalance();
 
+        // #regDate.valueAsDate was already set to "new Date()" above (real
+        // page load / refresh always defaults to TODAY, never whatever date
+        // was last selected before the refresh — see the per-date draft
+        // system's comments near DRAFT_KEY_PREFIX). currentDraftDate tracks
+        // that as the form's starting date so a later date-field change
+        // knows which date's draft to flush.
+        currentDraftDate = document.getElementById('regDate').value;
+
         // Recover an in-progress entry if the page was closed/refreshed before
-        // it was saved — useful when staff are rushing at closing time.
+        // it was saved — useful when staff are rushing at closing time. Only
+        // TODAY's own draft (keyed by date) is restored here; other dates'
+        // drafts stay untouched in storage until their date is selected.
         restoreDraftIfPresent();
 
         // Initial template setup is done — real autosave starts from here.
@@ -2964,6 +3005,13 @@
 
         let waBranchSel = document.getElementById('waBranchSelect');
         waBranchSel.innerHTML = optionsHTML;
+
+        let delPastBranchSel = document.getElementById('delPastBranch');
+        if (delPastBranchSel) {
+            let prevDelVal = delPastBranchSel.value;
+            delPastBranchSel.innerHTML = '<option value="">All branches</option>' + optionsHTML;
+            delPastBranchSel.value = branches.includes(prevDelVal) ? prevDelVal : '';
+        }
     }
 
     // ---- SHIFTS (fully configurable, same "add/remove" pattern as branches) --
@@ -3787,9 +3835,18 @@
     // that the grand TOTAL line (a flex row that DOES span the full content
     // width) reaches. TOTAL was widened 7->12 chars (on top of the 3-char #
     // column) to a 43-char row that fills the measured content width.
+    // 58mm TOTAL widened 9->13 chars (fresh re-measurement fix): the previous
+    // 32-char row (sno2+item8+qty3+mrp5+disc5+total9) rendered NARROWER than
+    // the 58mm receipt's actual content box — measured (Playwright, real
+    // rendered <pre> at the 58mm body width/font-size) at ~173px of text
+    // inside a ~192px box, an ~19px gap — so the printed item table's TOTAL
+    // column stopped short of where the grand TOTAL line's right-aligned
+    // amount sits (that line is a flex row that DOES span the full content
+    // width). The 80mm row (43 chars) was already correctly sized flush to
+    // its box (verified: <2mm gap) and is unchanged.
     const CB_TABLE_COLS = {
         '80mm': { sno: 3, item: 12, qty: 4, mrp: 6, disc: 6, total: 12 },
-        '58mm': { sno: 2, item: 8, qty: 3, mrp: 5, disc: 5, total: 9 }
+        '58mm': { sno: 2, item: 8, qty: 3, mrp: 5, disc: 5, total: 13 }
     };
     function cbTableCols() {
         return CB_TABLE_COLS[appSettings.thermalPaperWidth === '58mm' ? '58mm' : '80mm'];
@@ -4874,7 +4931,18 @@
     // Saves whatever is currently typed (not yet committed) so a hurried
     // cashier doesn't lose everything if the tab is closed, the browser
     // refreshes, or the device loses power before "Save & Commit" is clicked.
-    const DRAFT_KEY = 'lalitha_register_draft';
+    // Drafts are keyed PER DATE (e.g. "lalitha_register_draft_2026-09-29") so
+    // that switching the date field mid-entry preserves what was typed for
+    // the date you switch away from, and switching back restores it. See
+    // onDateFieldChange()/completeDateSwitch() below for the date-switch
+    // flow that reads/writes these per-date keys.
+    const DRAFT_KEY_PREFIX = 'lalitha_register_draft_';
+    function draftKeyFor(dateStr) { return DRAFT_KEY_PREFIX + dateStr; }
+    // Tracks whichever date the on-screen form currently represents, so a
+    // date-field change can flush the OUTGOING date's in-progress typing to
+    // its own key before switching. Set once on page load (to today, see
+    // DOMContentLoaded) and kept in sync on every successful date switch.
+    let currentDraftDate = null;
     // While the page is still building its default template rows on load,
     // recalcRegister() runs many times and must NOT treat that as "the
     // cashier typed something" — otherwise every fresh load would immediately
@@ -4907,17 +4975,31 @@
         };
     }
 
-    function saveDraft() {
+    // dateOverride lets the date-switch flow flush the OUTGOING date's
+    // in-progress typing to ITS OWN key at the moment of switching (the form
+    // fields, including #regDate, may already reflect the NEW date by the
+    // time this fires, so serializeDraftState()'s own .date can't be trusted
+    // for that flush — the explicit override is used instead).
+    function saveDraft(dateOverride) {
         if (isInitializing) return;
         try {
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(serializeDraftState()));
+            let state = serializeDraftState();
+            let date = dateOverride || state.date;
+            if (!date) return;
+            localStorage.setItem(draftKeyFor(date), JSON.stringify(state));
         } catch (e) {
             // Storage full or unavailable — not fatal, just skip autosave.
         }
     }
 
-    function clearDraft() {
-        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    // Clears the draft for ONE date only (defaults to whatever #regDate
+    // currently shows) — never all dates' drafts, so clearing/committing
+    // today's entry can never wipe out an in-progress draft for another date.
+    function clearDraft(dateOverride) {
+        try {
+            let date = dateOverride || document.getElementById('regDate').value;
+            if (date) localStorage.removeItem(draftKeyFor(date));
+        } catch (e) {}
     }
 
     // recalcRegister() (and therefore saveDraft()) already fires on every
@@ -4940,9 +5022,10 @@
     }
     document.addEventListener('input', scheduleDraftSave);
 
-    function restoreDraftIfPresent() {
+    function restoreDraftIfPresent(dateOverride) {
+        let date = dateOverride || document.getElementById('regDate').value;
         let raw;
-        try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+        try { raw = localStorage.getItem(draftKeyFor(date)); } catch (e) { return; }
         if (!raw) return;
 
         let state;
@@ -5007,6 +5090,91 @@
         (state.unb && state.unb.length ? state.unb : defaultVendUnbRows('unbillNames')).forEach(r => addRow('unb', r.name, r.amt));
 
         recalcRegister();
+    }
+
+    // ---- PER-DATE DRAFT SWITCHING (date field changed) ---------------------
+    // Resets every register field/table back to a fresh, empty template for
+    // whichever date is now selected — WITHOUT touching that date's saved
+    // draft (unlike resetRegisterForm(), which is the "CLEAR PAGE" button and
+    // deliberately deletes the draft too). Used as the baseline before
+    // overlaying a draft (if one exists) when switching dates, so a date with
+    // no draft always starts blank instead of showing the previous date's
+    // leftover values.
+    function blankRegisterFormForNewDate() {
+        isInitializing = true;
+        document.querySelectorAll('input[type="number"], input[type="text"]').forEach(input => {
+            if (input.id !== 'regDate' && input.id !== 'cashierName') {
+                input.value = '';
+            }
+        });
+        document.getElementById('cashierName').value = '';
+        document.getElementById('registerNotes').value = '';
+
+        document.getElementById('expTableBody').innerHTML = '';
+        document.getElementById('ownerTableBody').innerHTML = '';
+        document.getElementById('vendTableBody').innerHTML = '';
+        document.getElementById('staffTableBody').innerHTML = '';
+        document.getElementById('unbTableBody').innerHTML = '';
+
+        seedDefaultRegisterRows();
+
+        loadOpeningBalance();
+        isInitializing = false;
+    }
+
+    // A "past" date is compared by CALENDAR DATE only (not time-of-day) —
+    // strictly before today. Today and any future date are never locked.
+    function isStrictlyPastDate(dateStr) {
+        if (!dateStr) return false;
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d.getTime())) return false;
+        return d.getTime() < today.getTime();
+    }
+
+    // Handles the #regDate field's onchange. Separate from
+    // onDateOrBranchChange() (still used by the Branch/Shift selects) because
+    // only an actual DATE change needs the past-date PIN gate and the
+    // per-date draft flush/restore — a branch or shift change on the SAME
+    // date should keep showing that date's in-progress entry untouched.
+    function onDateFieldChange() {
+        let dateEl = document.getElementById('regDate');
+        let newDate = dateEl.value;
+        let oldDate = currentDraftDate;
+
+        if (!newDate) { onDateOrBranchChange(); return; }
+
+        // Selecting a strictly-past date requires the Owner PIN before that
+        // date's data (draft or blank form) becomes visible/editable — reuses
+        // appSettings.ownerPassword, the same PIN used elsewhere (e.g.
+        // deleteCashBillFromUnbilled). If no PIN is configured at all, there
+        // is nothing to unlock with, so past-date access is allowed freely,
+        // consistent with how other owner-PIN-gated features degrade.
+        if (isStrictlyPastDate(newDate) && appSettings.ownerPassword) {
+            let entered = prompt(`This is a PAST date (${formatDateDMY(newDate)}). Enter the Owner PIN to view/edit it:`);
+            if (entered === null) { dateEl.value = oldDate || ''; return; }
+            if (entered !== appSettings.ownerPassword) {
+                alert('Incorrect PIN. Not unlocked.');
+                dateEl.value = oldDate || '';
+                return;
+            }
+        }
+
+        completeDateSwitch(oldDate, newDate);
+    }
+
+    // Flushes the OUTGOING date's in-progress typing to its own draft key,
+    // then loads a blank template for the NEW date and overlays that date's
+    // own saved draft on top of it, if one exists.
+    function completeDateSwitch(oldDate, newDate) {
+        if (oldDate && oldDate !== newDate) {
+            clearTimeout(draftSaveTimer);
+            saveDraft(oldDate);
+        }
+        currentDraftDate = newDate;
+        blankRegisterFormForNewDate();
+        restoreDraftIfPresent(newDate);
     }
 
     // With multiple shifts a day, the "previous balance" a shift should carry
@@ -5188,12 +5356,129 @@
         if (!confirm('This will permanently delete ALL saved shift records (every number entered so far) on this device.\n\nBusiness profile, branches, default field names, cashier PINs and other settings will be kept.\n\nThis cannot be undone. Continue?')) return;
         if (!confirm('Are you absolutely sure? There is no way to undo this.')) return;
         localStorage.removeItem('lalitha_audit_register');
-        localStorage.removeItem('lalitha_register_draft');
+        // Drafts are stored per-date (lalitha_register_draft_<date>) — remove
+        // every one of them, not just a single fixed key.
+        Object.keys(localStorage).filter(k => k.indexOf(DRAFT_KEY_PREFIX) === 0).forEach(k => localStorage.removeItem(k));
         localStorage.removeItem('lalitha_last_backup_at');
         localStorage.removeItem('lalitha_backup_snooze_until');
         localStorage.removeItem('lalitha_closed_months');
         alert('All test records have been cleared. The register is now empty and ready for real use.');
         location.reload();
+    }
+
+    // ---- SETTINGS-ONLY: DELETE PAST ENTRIES (targeted, date-range) --------
+    // Unlike "Erase All Test Data" above, this deletes only what falls inside
+    // a chosen From/To date range (and, optionally, only one branch) —
+    // per-date DRAFTS and/or actual committed shift RECORDS, chosen
+    // independently via the two checkboxes above. Reachable only from
+    // Settings, never from the main register page or Show Records.
+    function readDeletePastEntriesFilter() {
+        let from = document.getElementById('delPastFrom').value;
+        let to = document.getElementById('delPastTo').value;
+        let branch = document.getElementById('delPastBranch').value;
+        return { from, to, branch };
+    }
+
+    function dateInRange(dateStr, from, to) {
+        if (!dateStr) return false;
+        if (from && dateStr < from) return false;
+        if (to && dateStr > to) return false;
+        return true;
+    }
+
+    // Scans every lalitha_register_draft_<date> key and returns those whose
+    // date (and branch, if the draft has content for one) match the filter.
+    function matchingDraftKeys(filter) {
+        return Object.keys(localStorage).filter(k => {
+            if (k.indexOf(DRAFT_KEY_PREFIX) !== 0) return false;
+            let date = k.slice(DRAFT_KEY_PREFIX.length);
+            if (!dateInRange(date, filter.from, filter.to)) return false;
+            if (filter.branch) {
+                let raw;
+                try { raw = JSON.parse(localStorage.getItem(k)); } catch (e) { raw = null; }
+                if (raw && raw.branch && raw.branch !== filter.branch) return false;
+            }
+            return true;
+        });
+    }
+
+    function matchingSavedRecordIndexes(filter, store) {
+        let idxs = [];
+        store.forEach((r, i) => {
+            if (!dateInRange(r.date, filter.from, filter.to)) return;
+            if (filter.branch && r.branch !== filter.branch) return;
+            idxs.push(i);
+        });
+        return idxs;
+    }
+
+    function previewDeletePastEntries() {
+        let filter = readDeletePastEntriesFilter();
+        if (!filter.from || !filter.to) {
+            document.getElementById('delPastPreviewResult').textContent = 'Pick both a From and To date first.';
+            return;
+        }
+        let draftCount = matchingDraftKeys(filter).length;
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+        let recordCount = matchingSavedRecordIndexes(filter, store).length;
+        document.getElementById('delPastPreviewResult').textContent =
+            `${draftCount} draft${draftCount === 1 ? '' : 's'} · ${recordCount} saved record${recordCount === 1 ? '' : 's'} in range${filter.branch ? ' (' + filter.branch + ')' : ''}.`;
+    }
+
+    function executeDeletePastEntries() {
+        let filter = readDeletePastEntriesFilter();
+        if (!filter.from || !filter.to) { alert('Pick both a From and To date first.'); return; }
+        if (filter.from > filter.to) { alert('"From" date must be on or before "To" date.'); return; }
+
+        let deleteDrafts = document.getElementById('delPastDraftsChk').checked;
+        let deleteRecords = document.getElementById('delPastRecordsChk').checked;
+        if (!deleteDrafts && !deleteRecords) { alert('Nothing selected — check at least one of the two boxes.'); return; }
+
+        // Reuse the same Owner PIN used elsewhere (e.g. deleting a Cash Bill).
+        // If none is configured, deleting real committed records has no
+        // meaningful gate to reuse, so a PIN is required to be set first for
+        // this specific (destructive, past-financial-data) action.
+        if (!appSettings.ownerPassword) {
+            let setPw = prompt('No Owner PIN is set yet. Set one now to allow deleting past entries (leave blank to cancel):');
+            if (!setPw) return;
+            appSettings.ownerPassword = setPw;
+            saveSettings();
+        } else {
+            let entered = prompt('Enter the Owner PIN to delete past entries:');
+            if (entered === null) return;
+            if (entered !== appSettings.ownerPassword) { alert('Incorrect PIN. Nothing deleted.'); return; }
+        }
+
+        let draftKeys = deleteDrafts ? matchingDraftKeys(filter) : [];
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+        let recordIdxs = deleteRecords ? matchingSavedRecordIndexes(filter, store) : [];
+
+        if (draftKeys.length === 0 && recordIdxs.length === 0) {
+            alert('Nothing matches that date range/branch/selection — nothing to delete.');
+            return;
+        }
+
+        let summary = `${draftKeys.length} draft${draftKeys.length === 1 ? '' : 's'} and ${recordIdxs.length} saved record${recordIdxs.length === 1 ? '' : 's'} from ${formatDateDMY(filter.from)} to ${formatDateDMY(filter.to)}${filter.branch ? ' (' + filter.branch + ')' : ''} will be PERMANENTLY deleted. This cannot be undone.`;
+        let typed = prompt(summary + '\n\nType DELETE (in capitals) to confirm:');
+        if (typed !== 'DELETE') { alert('Not deleted — confirmation text did not match.'); return; }
+
+        draftKeys.forEach(k => localStorage.removeItem(k));
+        if (recordIdxs.length) {
+            let idxSet = new Set(recordIdxs);
+            let newStore = store.filter((r, i) => !idxSet.has(i));
+            localStorage.setItem('lalitha_audit_register', JSON.stringify(newStore));
+        }
+
+        alert(`Deleted ${draftKeys.length} draft(s) and ${recordIdxs.length} saved record(s).`);
+        previewDeletePastEntries();
+        // The on-screen register may currently be showing a date/draft that
+        // was just deleted — reload it from storage so the view can't keep
+        // showing now-deleted data.
+        if (currentDraftDate && dateInRange(currentDraftDate, filter.from, filter.to) &&
+            (!filter.branch || document.getElementById('branchLocation').value === filter.branch)) {
+            blankRegisterFormForNewDate();
+            restoreDraftIfPresent(currentDraftDate);
+        }
     }
 
     // Resets ONLY appSettings (branch names, owner/expense/vendor/unbilled names,
@@ -5324,29 +5609,14 @@
     }
 
     function resetRegisterForm() {
+        // "CLEAR PAGE" clears only the CURRENTLY SELECTED date's draft — see
+        // clearDraft()'s per-date behavior — never any other date's
+        // in-progress entry.
         clearDraft();
         // Suppress autosave while the blank template rows are rebuilt below —
         // otherwise that rebuild would immediately re-create a meaningless
         // "draft" of the empty template we just cleared.
-        isInitializing = true;
-        document.querySelectorAll('input[type="number"], input[type="text"]').forEach(input => {
-            if (input.id !== 'regDate' && input.id !== 'cashierName') {
-                input.value = '';
-            }
-        });
-        document.getElementById('cashierName').value = '';
-        document.getElementById('registerNotes').value = '';
-
-        document.getElementById('expTableBody').innerHTML = '';
-        document.getElementById('ownerTableBody').innerHTML = '';
-        document.getElementById('vendTableBody').innerHTML = '';
-        document.getElementById('staffTableBody').innerHTML = '';
-        document.getElementById('unbTableBody').innerHTML = '';
-
-        seedDefaultRegisterRows();
-
-        loadOpeningBalance();
-        isInitializing = false;
+        blankRegisterFormForNewDate();
         document.getElementById('cashierName').focus();
     }
 
