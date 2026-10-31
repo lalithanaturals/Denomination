@@ -2220,7 +2220,7 @@
     // fresh, independent object/array copy is produced each time (never a shared
     // reference that a later appSettings mutation could accidentally corrupt).
     function getDefaultAppSettings() {
-        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true, ownerEmail: 'lalithanaturals@gmail.com', formulaConfig: getDefaultFormulaConfig() };
+        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycby1kw_vD60m-3s-X95saFzgOY9PrfLQgtnc0YDRJtFmYDiZ57aQiZdS-f9fmCrLSN4-cQ/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true, ownerEmail: 'lalithanaturals@gmail.com', formulaConfig: getDefaultFormulaConfig() };
     }
     let appSettings = getDefaultAppSettings();
     let activeLogoDataURI = '';
@@ -3171,6 +3171,21 @@
         try {
             let raw = localStorage.getItem(SETTINGS_KEY);
             if (raw) appSettings = Object.assign(appSettings, JSON.parse(raw));
+        } catch (e) {}
+        // One-time migration: self-heal devices whose saved cloudSyncUrl still points
+        // at an old/dead Apps Script deployment (the original broken URL, or a stray
+        // unused deployment that appeared during debugging). Cheap string check, safe
+        // to run on every load; re-saves appSettings so the fix persists.
+        try {
+            let OLD_BROKEN_SYNC_URLS = [
+                'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec',
+                'https://script.google.com/macros/s/AKfycbxWD98Xd5yRzBwuQfvpsZnhEZGmk_uza1GAw2Y_G2JbfrKgBNxJuCp6u7w7aE0oMYy6ug/exec'
+            ];
+            let NEW_WORKING_SYNC_URL = 'https://script.google.com/macros/s/AKfycby1kw_vD60m-3s-X95saFzgOY9PrfLQgtnc0YDRJtFmYDiZ57aQiZdS-f9fmCrLSN4-cQ/exec';
+            if (OLD_BROKEN_SYNC_URLS.indexOf(appSettings.cloudSyncUrl) !== -1) {
+                appSettings.cloudSyncUrl = NEW_WORKING_SYNC_URL;
+                saveSettings();
+            }
         } catch (e) {}
         // One-time migration: older versions stored the branch lock inside
         // appSettings.lockedBranch. If this device has no device-key value yet
