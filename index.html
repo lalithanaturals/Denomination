@@ -641,6 +641,7 @@
                 <img id="headerLogoImg" class="brand-logo" alt="Business logo" src="">
             </div>
             <div class="register-title-box" id="pageTitleBox">Daily Shift Register</div>
+            <span class="app-version-display" id="headerVersionLabel" style="font-size:10.5px; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-left:8px; align-self:flex-end;" title="App build version"></span>
         </div>
         <div class="meta-group">
             <div id="registerMetaInputs" class="header-fields">
@@ -1047,8 +1048,9 @@
 <!-- SETTINGS MODAL — sidebar-navigated settings page -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal-box settings-box">
-        <div class="settings-header">
+        <div class="settings-header" style="display:flex; align-items:baseline; justify-content:space-between;">
             <h3>Settings</h3>
+            <span class="app-version-display" id="settingsVersionLabel" style="font-size:11px; color:#94a3b8; font-family:'JetBrains Mono', monospace;" title="App build version"></span>
         </div>
 
         <div class="settings-body">
@@ -1301,9 +1303,17 @@
                 <div class="settings-panel" id="settingsPanelOwner">
                     <div><h4>Owner Access</h4></div>
                     <div class="settings-field">
-                        <label for="settingsOwnerPassword">Owner password</label>
-                        <input type="password" id="settingsOwnerPassword" placeholder="Leave blank to keep current / unset">
-                        <p>Protects "🔒 Owner Insights" (combined KPIs across both branches). Separate from cashier PINs. Type a new password here to set/change it.</p>
+                        <label>Owner PIN</label>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <span id="ownerPinStatusText" style="font-size:12px; font-weight:700; color:#475569;"></span>
+                            <button type="button" class="btn-mini" onclick="openChangePinModal()">🔑 Change Owner PIN</button>
+                        </div>
+                        <p>Protects "🔒 Owner Insights", editing Closing Balance, deleting a Cash Bill, unlocking a past date, and deleting past register data. Separate from cashier PINs. Changing the PIN now requires an email verification code (see below) so a staff member who learns the current PIN can't silently change it.</p>
+                    </div>
+                    <div class="settings-field">
+                        <label for="settingsOwnerEmail">Owner Email (for PIN change verification)</label>
+                        <input type="email" id="settingsOwnerEmail" placeholder="owner@example.com">
+                        <p>Where the one-time 6-digit code is sent whenever the Owner PIN is changed. Sent via the same Google Apps Script used for Cloud Sync below — changing the PIN requires Cloud Sync to be enabled with a Web App URL set, and this email filled in.</p>
                     </div>
                 </div>
 
@@ -1327,7 +1337,7 @@
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <button type="button" class="btn-mini" onclick="testCloudSyncConnection()">🔌 Test Connection</button>
-                        <button type="button" class="btn-mini" onclick="syncNowFlushPending()">☁️ Sync Now</button>
+                        <button type="button" class="btn-mini" onclick="syncNowFlushPending()">🔄 Sync Now (Push + Pull)</button>
                         <button type="button" class="btn-mini" id="syncCatalogNowBtn" onclick="syncCatalogNow()">☁️ Sync Catalog Now</button>
                         <button type="button" class="btn-mini" id="cloudSyncInfoBtn" onclick="toggleCloudSyncInfo()">ℹ️ What is this?</button>
                         <button type="button" class="btn-mini" onclick="openAppsScriptCodeModal()">📄 View / Copy Apps Script Code</button>
@@ -1348,6 +1358,7 @@
                         <p style="margin:4px 0 0; color:#64748b;">The URL stays the same when updating this way — only making a brand-new deployment changes it. Full instructions: "Cloud Sync Setup Instructions" that came with this app.</p>
                     </div>
                     <p id="cloudSyncPendingInfo" style="font-size:11.5px; color:#475569; font-weight:600; margin:0;"></p>
+                    <p id="lastShiftPullInfo" style="font-size:11.5px; color:#475569; margin:0;"></p>
                     <p id="cloudSyncTestResult" style="font-size:11.5px; margin:0;"></p>
                     <p id="catalogSyncResult" style="font-size:11.5px; margin:0;"></p>
                     <div style="margin-top:10px; padding-top:12px; border-top:1px solid var(--border); font-size:11.5px; color:#94a3b8;">
@@ -1412,9 +1423,12 @@
             </div>
         </div>
 
-        <div class="settings-footer modal-buttons" style="margin-top:0;">
-            <button class="btn-modal-cancel" onclick="closeSettingsModal()">Cancel</button>
-            <button class="submit-btn" onclick="saveSettingsFromModal()">Save Settings</button>
+        <div class="settings-footer modal-buttons" style="margin-top:0; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; color:#94a3b8;">Lalitha Naturals Shift Register — <span class="app-version-display" id="settingsFooterVersionLabel"></span></span>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-modal-cancel" onclick="closeSettingsModal()">Cancel</button>
+                <button class="submit-btn" onclick="saveSettingsFromModal()">Save Settings</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1942,6 +1956,67 @@
     </div>
 </div>
 
+<!-- Change Owner PIN (email OTP verification) -->
+<div class="modal-overlay" id="changePinModal">
+    <div class="modal-box" style="width:95vw; max-width:440px;">
+        <h3>🔑 Change Owner PIN</h3>
+
+        <div id="changePinBlocked" style="display:none;">
+            <p style="font-size:12.5px; color:#7c2d12; background:#fff7ed; border:1px solid #fdba74; border-radius:8px; padding:10px 12px; line-height:1.6;">
+                Email verification requires Cloud Sync to be set up with your Owner Email address — go to <b>Settings &gt; ☁️ Cloud Sync</b> and enter/enable that first, then fill in <b>Owner Email</b> above, and try again. The Owner PIN cannot be changed until this one-time setup is done, so a PIN change is never silently allowed without verification.
+            </p>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" onclick="closeChangePinModal()">Close</button>
+            </div>
+        </div>
+
+        <div id="changePinStep1" style="display:none;">
+            <p style="font-size:12px; color:#64748b;">Enter the <b>current</b> Owner PIN to continue.</p>
+            <div class="settings-field">
+                <label for="changePinCurrentInput">Current PIN</label>
+                <input type="password" id="changePinCurrentInput" autocomplete="off">
+            </div>
+            <p id="changePinStep1Error" style="font-size:11.5px; color:#dc2626; min-height:14px;"></p>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" onclick="closeChangePinModal()">Cancel</button>
+                <button class="submit-btn" onclick="changePinStep1Next()">Next</button>
+            </div>
+        </div>
+
+        <div id="changePinStep2" style="display:none;">
+            <p style="font-size:12px; color:#64748b;">Enter the new PIN you want to set.</p>
+            <div class="settings-field">
+                <label for="changePinNewInput">New PIN</label>
+                <input type="password" id="changePinNewInput" autocomplete="off">
+            </div>
+            <div class="settings-field">
+                <label for="changePinNewInput2">Confirm new PIN</label>
+                <input type="password" id="changePinNewInput2" autocomplete="off">
+            </div>
+            <p id="changePinStep2Error" style="font-size:11.5px; color:#dc2626; min-height:14px;"></p>
+            <div class="modal-buttons">
+                <button class="btn-modal-cancel" onclick="closeChangePinModal()">Cancel</button>
+                <button class="submit-btn" onclick="changePinStep2Next()">Send Email Code</button>
+            </div>
+        </div>
+
+        <div id="changePinStep3" style="display:none;">
+            <p style="font-size:12px; color:#64748b;">A 6-digit code was sent to <b id="changePinEmailDisplay"></b>. Enter it below to finish changing the PIN.</p>
+            <div class="settings-field">
+                <label for="changePinOtpInput">Email code</label>
+                <input type="text" inputmode="numeric" maxlength="6" id="changePinOtpInput" autocomplete="off">
+            </div>
+            <p id="changePinStep3Error" style="font-size:11.5px; color:#dc2626; min-height:14px;"></p>
+            <p id="changePinStep3Status" style="font-size:11.5px; color:#475569; min-height:14px;"></p>
+            <div class="modal-buttons" style="flex-wrap:wrap;">
+                <button class="btn-modal-cancel" onclick="closeChangePinModal()">Cancel</button>
+                <button class="btn-mini" id="changePinResendBtn" onclick="changePinResend()">↻ Resend Code</button>
+                <button class="submit-btn" onclick="changePinVerifyAndSave()">Verify & Save New PIN</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- HIDDEN A4 LANDSCAPE EXPORT CONTAINER -->
 <div id="a4ExportContainer">
     <div class="sheet-header">
@@ -2084,6 +2159,12 @@
 </div>
 
 <script>
+    // ===================== APP VERSION (single source of truth) =====================
+    // Bump this one line for every build/phase; every on-screen display of the
+    // version (Settings modal, header label, tab title) reads from it instead
+    // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
+    var APP_VERSION = '1.0.0';
+
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
     // thermal receipt, WhatsApp text, report modals, history/archive views) goes
@@ -2139,7 +2220,7 @@
     // fresh, independent object/array copy is produced each time (never a shared
     // reference that a later appSettings mutation could accidentally corrupt).
     function getDefaultAppSettings() {
-        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true, formulaConfig: getDefaultFormulaConfig() };
+        return { varianceAlertThreshold: 0, businessName: 'Lalitha Naturals', businessLogo: '', businessAddress: '', businessPhone: '', branches: ['Gajuwaka', 'Kurmannapalem'], expenseNames: ['Snacks', 'Water', 'Branch transport'], ownerNames: ['Bhargav', 'Kanthi'], vendorNames: [], staffNames: [], unbillNames: [], shifts: ['Full Day', 'Morning', 'Evening'], shiftsEnabled: false, defaultPaymentMode: 'Cash', thermalPaperWidth: '80mm', appLockPin: '', cloudSyncUrl: 'https://script.google.com/macros/s/AKfycbwt3KTj--TMVq7XFJ2f4kqhpyRLmwRaAB8wdDmVeU5SBbgw726sD5-f9kI06nTppTGP/exec', cloudSyncEnabled: true, sectionsCollapsedByDefault: true, ownerEmail: 'lalithanaturals@gmail.com', formulaConfig: getDefaultFormulaConfig() };
     }
     let appSettings = getDefaultAppSettings();
     let activeLogoDataURI = '';
@@ -2237,6 +2318,7 @@
         removeActionButtonsFromTabOrder();
         applyBranchLock();
         applyBusinessProfile();
+        applyAppVersionDisplay();
         checkBackupReminder();
 
         seedDefaultRegisterRows();
@@ -2260,6 +2342,13 @@
         // TODAY's own draft (keyed by date) is restored here; other dates'
         // drafts stay untouched in storage until their date is selected.
         restoreDraftIfPresent();
+
+        // Catch this device up with whatever other devices have committed
+        // since it was last open (push already happens instantly on commit;
+        // this is the missing pull half — see pullShiftRecordsFromCloud).
+        // Only touches the saved lalitha_audit_register store, never the
+        // in-progress draft just restored above.
+        startShiftAutoPull();
 
         // Initial template setup is done — real autosave starts from here.
         isInitializing = false;
@@ -2350,7 +2439,11 @@
         }
         let queue = getPendingSyncQueue();
         if (queue.length === 0) {
-            alert('Nothing queued — all shifts are up to date.');
+            // Nothing to push, but "Sync Now" still means push+pull — pull in
+            // anything other devices have committed before reporting back.
+            pullShiftRecordsFromCloud().then(() => {
+                alert('Nothing queued to push — all shifts already sent. Pulled latest records from the cloud too.');
+            });
             return;
         }
         savePendingSyncQueue([]); // optimistically clear; failures re-queue below
@@ -2360,8 +2453,14 @@
         );
         Promise.all(attempts).then(() => {
             if (remaining.length > 0) savePendingSyncQueue(remaining);
-            alert('Sync Now: attempted ' + queue.length + ' queued record(s)' +
-                (remaining.length ? ', ' + remaining.length + ' still failed and remain queued.' : ', all sent.'));
+            // "Sync Now" is push AND pull: after flushing whatever was queued
+            // locally, also pull+merge in anything other devices have
+            // committed, so one button guarantees both directions.
+            return pullShiftRecordsFromCloud().then(() => {
+                alert('Sync Now: attempted ' + queue.length + ' queued record(s)' +
+                    (remaining.length ? ', ' + remaining.length + ' still failed and remain queued.' : ', all sent.') +
+                    ' Pulled latest records from the cloud too.');
+            });
         });
     }
 
@@ -2492,6 +2591,159 @@
         });
     }
 
+    // ---- SHIFT RECORD CLOUD PULL + MERGE (multi-device sync) --------------
+    // Push already happens instantly on every commit (syncRecordToGoogleSheet
+    // above). This adds the missing PULL half: fetching whatever shift
+    // records exist in the Sheet (any device may have pushed them) and
+    // merging them into this device's own lalitha_audit_register, so two
+    // devices converge instead of each only ever seeing its own commits.
+    // Modeled directly on pullCatalogFromCloud/mergeCatalogRecords above.
+    const LAST_SHIFT_PULL_KEY = 'lalitha_last_shift_pull_at';
+    // Tombstones: keys ("date||branch||shift") for records this device
+    // deleted via "Delete Past Entries". Delete Past Entries only removes
+    // the LOCAL copy (there is no cloud-delete endpoint), so without this
+    // list a later pull would happily bring a deleted record right back
+    // because it still exists in the Sheet. Checked before ever re-adding a
+    // pulled record. This does NOT delete anything from the Sheet itself —
+    // the row still lives there and still shows on other devices/exports —
+    // it only stops THIS device's own pull from resurrecting it locally.
+    const DELETED_SHIFT_KEYS_KEY = 'lalitha_deleted_shift_keys';
+    let shiftPullInFlight = null;
+
+    function shiftRecordKey(date, branch, shift) {
+        return date + '||' + branch + '||' + (shift || 'Full Day');
+    }
+
+    function getDeletedShiftKeys() {
+        try { return JSON.parse(localStorage.getItem(DELETED_SHIFT_KEYS_KEY) || '[]'); } catch (e) { return []; }
+    }
+
+    function addDeletedShiftKeys(keys) {
+        if (!keys || !keys.length) return;
+        let existing = new Set(getDeletedShiftKeys());
+        keys.forEach(k => existing.add(k));
+        try { localStorage.setItem(DELETED_SHIFT_KEYS_KEY, JSON.stringify(Array.from(existing))); } catch (e) {}
+    }
+
+    function updateLastSyncedDisplay() {
+        let el = document.getElementById('lastShiftPullInfo');
+        if (!el) return;
+        let ts = localStorage.getItem(LAST_SHIFT_PULL_KEY);
+        el.textContent = ts ? ('Last synced from cloud: ' + formatDateTimeDMY(ts)) : 'Last synced from cloud: never yet.';
+    }
+
+    // Merges rows pulled from the Sheet's default doGet() response (the same
+    // "ShiftRegister" rows the Sheet shows a person, keyed by the sheet's
+    // own headers) into lalitha_audit_register. Each row's "Full Record
+    // (JSON)" column holds the exact record as originally posted, so that's
+    // used to reconstruct the full local-shaped object rather than trying to
+    // rebuild one from the display columns. Conflict rule is last-write-wins,
+    // compared via the "Synced At" column the server stamps on every write
+    // against this device's own record.syncedAt (the last time THIS device
+    // knows that key was successfully synced): if a local record for that
+    // key doesn't exist at all, always add it (it's clearly from another
+    // device); if it exists but the remote row is newer, overwrite the local
+    // fields with the remote (cloud-as-source-of-truth for conflicts); if
+    // local is already at least as new, leave it alone.
+    function mergeShiftRecords(remoteRows) {
+        if (!Array.isArray(remoteRows) || remoteRows.length === 0) return;
+        let store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+        let deletedKeys = new Set(getDeletedShiftKeys());
+        let changed = false;
+
+        remoteRows.forEach(row => {
+            if (!row) return;
+            let date = row['Date'], branch = row['Branch'];
+            let shift = row['Shift'] || 'Full Day';
+            if (!date || !branch) return;
+
+            let key = shiftRecordKey(date, branch, shift);
+            if (deletedKeys.has(key)) return; // locally deleted — don't resurrect
+
+            let remoteRecord = null;
+            let fullJson = row['Full Record (JSON)'];
+            if (fullJson) {
+                try { remoteRecord = JSON.parse(fullJson); } catch (e) { remoteRecord = null; }
+            }
+            if (!remoteRecord) return; // nothing safe to merge without the full record
+
+            let remoteSyncedAt = row['Synced At'] ? new Date(row['Synced At']).getTime() : 0;
+            let idx = store.findIndex(r => r.date === date && r.branch === branch && (r.shift || 'Full Day') === shift);
+
+            if (idx === -1) {
+                // No local record at all for this key — clearly committed on
+                // another device. Always add it.
+                remoteRecord.syncedAt = row['Synced At'] || remoteRecord.syncedAt || null;
+                store.unshift(remoteRecord);
+                changed = true;
+            } else {
+                let local = store[idx];
+                let localSyncedAt = local.syncedAt ? new Date(local.syncedAt).getTime() : 0;
+                if (remoteSyncedAt > localSyncedAt) {
+                    // Cloud copy is demonstrably newer than what this device
+                    // last knew — merge cloud in as the source of truth for
+                    // field values, but keep this device's own edit history
+                    // and monthClosed flag rather than losing them.
+                    remoteRecord.history = local.history || remoteRecord.history || [];
+                    if (local.monthClosed) remoteRecord.monthClosed = true;
+                    remoteRecord.syncedAt = row['Synced At'] || remoteRecord.syncedAt || local.syncedAt;
+                    store[idx] = remoteRecord;
+                    changed = true;
+                }
+                // else: local is already at least as new — don't needlessly
+                // overwrite (e.g. this device is the one that pushed it).
+            }
+        });
+
+        if (changed) {
+            localStorage.setItem('lalitha_audit_register', JSON.stringify(store));
+            // Refresh whatever's currently showing this data. A live re-render
+            // of an already-open report modal (Variance History, Sales
+            // Summary, etc.) is a nice-to-have, not essential — the underlying
+            // store being correct is what matters, since those all re-read it
+            // fresh the next time they're opened. The one view worth actively
+            // refreshing here is the Archive/"Show Records" table, since it's
+            // the main place shift records are browsed and may already be open.
+            let arch = document.getElementById('archiveSection');
+            if (arch && arch.style.display === 'flex') executeArchiveSearch();
+        }
+    }
+
+    // Pulls the latest shift records from the cloud and merges them in. Uses
+    // a plain (non "no-cors") GET, unlike the fire-and-forget pushes
+    // elsewhere, because this one actually needs to read the response body.
+    // Never blocks/throws on failure — same offline-tolerant behavior as the
+    // rest of cloud sync. No-ops silently when Cloud Sync is off/unconfigured.
+    function pullShiftRecordsFromCloud() {
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return Promise.resolve();
+        if (shiftPullInFlight) return shiftPullInFlight; // don't stack overlapping pulls
+        shiftPullInFlight = fetch(appSettings.cloudSyncUrl, { method: 'GET' })
+            .then(res => res.json())
+            .then(data => {
+                let records = (data && data.records) || [];
+                mergeShiftRecords(records);
+                try { localStorage.setItem(LAST_SHIFT_PULL_KEY, new Date().toISOString()); } catch (e) {}
+                updateLastSyncedDisplay();
+            })
+            .catch(err => {
+                console.error('Shift Pull Error:', err);
+            })
+            .finally(() => { shiftPullInFlight = null; });
+        return shiftPullInFlight;
+    }
+
+    // Sets up the automatic pull-on-load + periodic background pull exactly
+    // once per page load, regardless of how many times recalcRegister() or
+    // similar might otherwise run.
+    let shiftAutoPullStarted = false;
+    function startShiftAutoPull() {
+        if (shiftAutoPullStarted) return;
+        shiftAutoPullStarted = true;
+        if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return;
+        pullShiftRecordsFromCloud();
+        setInterval(pullShiftRecordsFromCloud, 5 * 60 * 1000);
+    }
+
     function toggleCloudSyncInfo() {
         let box = document.getElementById('cloudSyncInfoBox');
         if (!box) return;
@@ -2553,6 +2805,163 @@
             resultEl.style.color = '#dc2626';
             resultEl.textContent = '✗ Could not reach that URL (' + err.message + '). Most likely reasons: (1) no internet connection right now, (2) the URL is wrong/incomplete — re-copy it from Apps Script, or (3) the deployment\'s "Who has access" isn\'t set to "Anyone" — or you edited Code.gs since the last deploy and need to redeploy it (Deploy > Manage deployments > Edit > Version: New version > Deploy).';
         });
+    }
+
+    // ---- OWNER PIN CHANGE: EMAIL OTP VERIFICATION --------------------------
+    // Changing appSettings.ownerPassword (as opposed to merely being CHECKED
+    // against it, e.g. to delete a Cash Bill or unlock a past date — those
+    // flows are untouched) now requires a 6-digit code emailed via the same
+    // Apps Script used for Cloud Sync. See sendPinOtp_/verifyPinOtp_ in
+    // Code.gs. This is the one place in the app that needs to actually READ
+    // the JSON body of an Apps Script response, so unlike postRecordToCloud()
+    // above (mode:"no-cors", fire-and-forget) this uses a plain cross-origin
+    // fetch with a text/plain body — Apps Script's ContentService responses
+    // are readable cross-origin for such "simple" requests (no CORS
+    // preflight is triggered because the request avoids
+    // application/json, which would otherwise be blocked by Apps Script not
+    // answering the preflight OPTIONS request).
+    function callAppsScriptRPC(type, payload) {
+        let body = Object.assign({ type: type }, payload || {});
+        return fetch(appSettings.cloudSyncUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(body)
+        }).then(r => r.json());
+    }
+
+    let changePinState = { newPin: '', resendTimer: null };
+
+    function pinChangeEmailReady() {
+        return !!(appSettings.cloudSyncEnabled && appSettings.cloudSyncUrl && appSettings.ownerEmail);
+    }
+
+    function openChangePinModal() {
+        ['changePinBlocked', 'changePinStep1', 'changePinStep2', 'changePinStep3'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+        document.getElementById('changePinStep1Error').textContent = '';
+        document.getElementById('changePinStep2Error').textContent = '';
+        document.getElementById('changePinStep3Error').textContent = '';
+        document.getElementById('changePinStep3Status').textContent = '';
+        document.getElementById('changePinCurrentInput').value = '';
+        document.getElementById('changePinNewInput').value = '';
+        document.getElementById('changePinNewInput2').value = '';
+        document.getElementById('changePinOtpInput').value = '';
+        changePinState = { newPin: '', resendTimer: null };
+
+        if (!pinChangeEmailReady()) {
+            document.getElementById('changePinBlocked').style.display = 'block';
+        } else if (appSettings.ownerPassword) {
+            document.getElementById('changePinStep1').style.display = 'block';
+        } else {
+            // No PIN set yet — nothing to verify against, go straight to
+            // choosing a new PIN (still requires the email OTP step below).
+            document.getElementById('changePinStep2').style.display = 'block';
+        }
+        document.getElementById('changePinModal').style.display = 'flex';
+    }
+
+    function closeChangePinModal() {
+        if (changePinState.resendTimer) clearInterval(changePinState.resendTimer);
+        document.getElementById('changePinModal').style.display = 'none';
+    }
+
+    function changePinStep1Next() {
+        let entered = document.getElementById('changePinCurrentInput').value;
+        if (entered !== appSettings.ownerPassword) {
+            document.getElementById('changePinStep1Error').textContent = 'Incorrect current PIN.';
+            return;
+        }
+        document.getElementById('changePinStep1').style.display = 'none';
+        document.getElementById('changePinStep2').style.display = 'block';
+    }
+
+    function changePinStep2Next() {
+        let p1 = document.getElementById('changePinNewInput').value;
+        let p2 = document.getElementById('changePinNewInput2').value;
+        let errEl = document.getElementById('changePinStep2Error');
+        if (!p1) { errEl.textContent = 'Enter a new PIN.'; return; }
+        if (p1 !== p2) { errEl.textContent = 'PINs do not match.'; return; }
+        errEl.textContent = '';
+        changePinState.newPin = p1;
+        sendChangePinOtp(/*isResend*/ false);
+    }
+
+    function sendChangePinOtp(isResend) {
+        let statusEl = document.getElementById('changePinStep3Status');
+        let errEl = document.getElementById('changePinStep3Error');
+        document.getElementById('changePinStep2').style.display = 'none';
+        document.getElementById('changePinStep3').style.display = 'block';
+        document.getElementById('changePinEmailDisplay').textContent = appSettings.ownerEmail;
+        errEl.textContent = '';
+        statusEl.textContent = isResend ? 'Resending code…' : 'Sending code…';
+        callAppsScriptRPC('send_pin_otp', { email: appSettings.ownerEmail })
+            .then(res => {
+                if (res && res.ok) {
+                    statusEl.textContent = 'Code sent — check ' + appSettings.ownerEmail + '. It expires in 10 minutes.';
+                    startResendCooldown();
+                } else {
+                    statusEl.textContent = '';
+                    errEl.textContent = 'Could not send the code' + (res && res.error ? (': ' + res.error) : '.') + ' Check your Web App URL/deployment and try Resend.';
+                }
+            })
+            .catch(err => {
+                statusEl.textContent = '';
+                errEl.textContent = 'Network error sending the code (' + err.message + '). Check your internet connection and try Resend.';
+            });
+    }
+
+    function startResendCooldown() {
+        let btn = document.getElementById('changePinResendBtn');
+        let seconds = 45;
+        btn.disabled = true;
+        if (changePinState.resendTimer) clearInterval(changePinState.resendTimer);
+        let update = () => {
+            btn.textContent = seconds > 0 ? ('↻ Resend Code (' + seconds + 's)') : '↻ Resend Code';
+            if (seconds <= 0) {
+                clearInterval(changePinState.resendTimer);
+                btn.disabled = false;
+            }
+            seconds--;
+        };
+        update();
+        changePinState.resendTimer = setInterval(update, 1000);
+    }
+
+    function changePinResend() {
+        if (document.getElementById('changePinResendBtn').disabled) return;
+        sendChangePinOtp(true);
+    }
+
+    function changePinVerifyAndSave() {
+        let code = (document.getElementById('changePinOtpInput').value || '').trim();
+        let errEl = document.getElementById('changePinStep3Error');
+        let statusEl = document.getElementById('changePinStep3Status');
+        if (!/^\d{6}$/.test(code)) {
+            errEl.textContent = 'Enter the 6-digit code from the email.';
+            return;
+        }
+        errEl.textContent = '';
+        statusEl.textContent = 'Verifying…';
+        callAppsScriptRPC('verify_pin_otp', { code: code })
+            .then(res => {
+                if (res && res.ok) {
+                    appSettings.ownerPassword = changePinState.newPin;
+                    saveSettings();
+                    document.getElementById('ownerPinStatusText').textContent = 'PIN is set.';
+                    statusEl.textContent = '';
+                    if (changePinState.resendTimer) clearInterval(changePinState.resendTimer);
+                    alert('Owner PIN changed successfully.');
+                    closeChangePinModal();
+                } else {
+                    statusEl.textContent = '';
+                    errEl.textContent = 'Incorrect or expired code. Try again, or Resend a new one.';
+                }
+            })
+            .catch(err => {
+                statusEl.textContent = '';
+                errEl.textContent = 'Network error verifying the code (' + err.message + '). Try again.';
+            });
     }
 
     // ---- DAMAGE / EXPIRY LEDGER --------------------------------------------
@@ -2797,8 +3206,8 @@
         activeLogoDataURI = appSettings.businessLogo || DEFAULT_LOGO_DATA_URI;
 
         let titleTag = document.getElementById('pageTitleTag');
-        if (titleTag) titleTag.innerText = `${name} - Business Intelligence & Cloud Audit Register`;
-        document.title = `${name} - Business Intelligence & Cloud Audit Register`;
+        if (titleTag) titleTag.innerText = `${name} - Business Intelligence & Cloud Audit Register v${APP_VERSION}`;
+        document.title = `${name} - Business Intelligence & Cloud Audit Register v${APP_VERSION}`;
 
         ['headerLogoImg', 'a4LogoImg', 'dashLogoImg'].forEach(id => {
             let el = document.getElementById(id);
@@ -2810,6 +3219,15 @@
 
         let a4Contact = document.getElementById('a4BusinessContact');
         if (a4Contact) a4Contact.innerText = businessContactLine();
+    }
+
+    // Writes APP_VERSION into every on-screen display point (header label +
+    // Settings modal) so they always agree and a version bump is a one-line
+    // change above, not a find-and-replace across the file.
+    function applyAppVersionDisplay() {
+        document.querySelectorAll('.app-version-display').forEach(el => {
+            el.textContent = 'v' + APP_VERSION;
+        });
     }
 
     // Address + phone as one "Address | Phone" line for print headers,
@@ -2829,8 +3247,8 @@
     function previewBusinessNameLive() {
         let name = (document.getElementById('settingsBusinessName').value || '').trim() || 'Lalitha Naturals';
         let titleTag = document.getElementById('pageTitleTag');
-        if (titleTag) titleTag.innerText = `${name} - Business Intelligence & Cloud Audit Register`;
-        document.title = `${name} - Business Intelligence & Cloud Audit Register`;
+        if (titleTag) titleTag.innerText = `${name} - Business Intelligence & Cloud Audit Register v${APP_VERSION}`;
+        document.title = `${name} - Business Intelligence & Cloud Audit Register v${APP_VERSION}`;
         let thermalName = document.getElementById('thermalBusinessName');
         if (thermalName) thermalName.innerText = name.toUpperCase();
     }
@@ -2910,8 +3328,11 @@
         document.getElementById('settingsAppLockPin').value = appSettings.appLockPin || '';
         document.getElementById('settingsCloudSyncUrl').value = appSettings.cloudSyncUrl || '';
         document.getElementById('settingsCloudSyncEnabled').checked = !!appSettings.cloudSyncEnabled;
+        document.getElementById('settingsOwnerEmail').value = appSettings.ownerEmail || '';
+        document.getElementById('ownerPinStatusText').textContent = appSettings.ownerPassword ? 'PIN is set.' : 'No PIN set yet.';
         document.getElementById('cloudSyncTestResult').textContent = '';
         updatePendingSyncIndicator();
+        updateLastSyncedDisplay();
         updateStorageUsageDisplay();
         renderFormulaEditor();
         switchSettingsTab('branding');
@@ -3348,8 +3769,12 @@
         pendingBusinessLogo = null;
         pendingBranches = null;
         pendingFieldNames = null;
-        let newOwnerPw = document.getElementById('settingsOwnerPassword').value;
-        if (newOwnerPw) appSettings.ownerPassword = newOwnerPw;
+        // Owner PIN itself is no longer changed from this bulk Save Settings
+        // action — see openChangePinModal() / the "🔑 Change Owner PIN" button
+        // in Owner Access, which requires email OTP verification before the
+        // new PIN is persisted. Owner Email (where that code is sent) is a
+        // plain setting like any other, saved here as usual.
+        appSettings.ownerEmail = (document.getElementById('settingsOwnerEmail').value || '').trim();
 
         let newAppLockPin = (document.getElementById('settingsAppLockPin').value || '').trim();
         if (newAppLockPin && !/^\d{4,6}$/.test(newAppLockPin)) {
@@ -3368,7 +3793,6 @@
         applyBranchLock();
         applyBusinessProfile();
         syncFieldRowsWithSettings();
-        document.getElementById('settingsOwnerPassword').value = '';
         closeSettingsModal();
         // Everything just saved (formula toggles, business name/branch labels,
         // default payment mode, etc.) must be reflected on the live register
@@ -3626,14 +4050,26 @@
         let code = barcodeEl.value.trim();
         if (!code) return;
 
+        // Scan-vs-type distinction: a real hardware barcode scanner always
+        // emits digits only (typically 8-13 of them) followed by an Enter
+        // it emulates, so a PURELY NUMERIC value typed here is treated as a
+        // barcode/item code lookup. Anything containing a letter or other
+        // non-digit character (e.g. "Neem Soap", "7up") is treated as a
+        // PRODUCT NAME typed directly — never as a barcode — and must never
+        // be asked to also supply a barcode. This is a simple, safe
+        // heuristic: product names essentially never consist of digits
+        // only, while scanner input always does.
+        let isNumericCode = /^\d+$/.test(code);
+
         let catalog = getPosCatalog();
         let known = catalog[code];
         let lookupKey = code;
 
-        // Matching priority: (a) exact barcode match [above], (b) a name
-        // match against ANY catalog entry — barcode-keyed OR name-only —
-        // case-insensitive/trimmed, (c) otherwise fall through and create a
-        // brand-new blank row with the typed text as the name.
+        // Matching priority (unchanged): (a) exact barcode match [above],
+        // (b) a name match against ANY catalog entry — barcode-keyed OR
+        // name-only — case-insensitive/trimmed, (c) otherwise fall through
+        // per the branch below (numeric -> ask for a name; text -> use the
+        // typed text as the new row's name).
         if (!known) {
             let nameMatchKey = Object.keys(catalog).find(k => (catalog[k].name || '').toLowerCase() === code.toLowerCase());
             if (nameMatchKey) {
@@ -3648,19 +4084,35 @@
             nameEntry = nameCatalog[normalizeItemName(code)] || null;
         }
 
-        let item = known
-            ? { barcode: lookupKey, name: known.name, mrp: known.mrp, sellingPrice: known.sellingPrice, discount: known.discount || 0, discountMode: known.discountMode || '₹', qty: 1 }
-            : nameEntry
+        let item;
+        if (known) {
+            item = { barcode: lookupKey, name: known.name, mrp: known.mrp, sellingPrice: known.sellingPrice, discount: known.discount || 0, discountMode: known.discountMode || '₹', qty: 1 };
+        } else if (nameEntry) {
             // A previously-entered NAME-ONLY item (no barcode) — prefill its
             // remembered pricing, same as a barcode match, but keep barcode
-            // blank since none is known.
-            ? { barcode: '', name: nameEntry.name, mrp: nameEntry.mrp, sellingPrice: nameEntry.sellingPrice, discount: nameEntry.discount || 0, discountMode: nameEntry.discountMode || '₹', qty: 1 }
-            // Not a known barcode or catalog name — treat the typed text as
-            // the new row's PRODUCT NAME directly. No real barcode value
-            // exists yet, so it's left blank (the cashier can fill one in
-            // via the row's Barcode cell later if they want) rather than
-            // duplicating the typed name into the barcode field.
-            : { barcode: '', name: code, mrp: 0, sellingPrice: 0, discount: 0, discountMode: (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹'), qty: 1, isNew: true };
+            // blank since none is known. Reached from either the numeric or
+            // the text path: a numeric code can still match a catalog entry
+            // by name (barcode-catalog-by-name, above), and a numeric code
+            // typed in without any letters can also happen to equal a
+            // remembered name-catalog key.
+            item = { barcode: isNumericCode ? code : '', name: nameEntry.name, mrp: nameEntry.mrp, sellingPrice: nameEntry.sellingPrice, discount: nameEntry.discount || 0, discountMode: nameEntry.discountMode || '₹', qty: 1 };
+        } else if (isNumericCode) {
+            // Unmatched BARCODE/item code — never park the raw digits in the
+            // Product name field (a bare number is a useless, confusing
+            // name in the cart/receipt). Create the row with the barcode
+            // already filled in and the name left blank; the newly-created
+            // row's Name cell auto-focuses below (mirroring the existing
+            // "new row auto-focuses name" behavior already built for
+            // name-only entries) so the cashier types the name right away.
+            item = { barcode: code, name: '', mrp: 0, sellingPrice: 0, discount: 0, discountMode: (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹'), qty: 1, isNew: true };
+        } else {
+            // Unmatched PRODUCT NAME typed directly — use the typed text as
+            // the new row's name immediately. No barcode is known or asked
+            // for at all (per the user's explicit requirement that typing a
+            // name must never prompt for an item code); the cashier can add
+            // one later via the row's Barcode cell if they want.
+            item = { barcode: '', name: code, mrp: 0, sellingPrice: 0, discount: 0, discountMode: (localStorage.getItem(POS_DISCOUNT_MODE_KEY) || '₹'), qty: 1, isNew: true };
+        }
 
         cashBillCart.push(item);
         let newIndex = cashBillCart.length - 1;
@@ -3937,7 +4389,14 @@
         let cartTotal = cashBillCart.reduce((s, item) => s + cashBillLineTotal(item), 0);
         let draftLine = '';
         let tableLines = cashBillItemsTableLines(cashBillCart, draftLine);
-        let rows = '<pre style="margin:0; font-family:\'JetBrains Mono\',monospace; font-size:10.5px; line-height:1.5; white-space:pre;">' +
+        // Item-table font size must match printCashBillReceipt's itemsFontSize
+        // exactly (9px at 58mm, 10.5px at 80mm) — this used to be hardcoded
+        // to 10.5px regardless of paper width, which made the 58mm preview
+        // NOT match what actually printed. Kept in sync so the live preview
+        // is a true mirror of the print output at either setting.
+        let is58Preview = appSettings.thermalPaperWidth === '58mm';
+        let previewItemsFontSize = is58Preview ? '9px' : '10.5px';
+        let rows = '<pre style="margin:0; font-family:\'JetBrains Mono\',monospace; font-size:' + previewItemsFontSize + '; line-height:1.55; white-space:pre;">' +
             tableLines.map(line => (draftLine && line === draftLine)
                 ? `<span style="border:1px dashed #94a3b8; display:block; padding:1px 2px; color:#0369a1;">${line}</span>`
                 : line
@@ -3983,23 +4442,36 @@
         // so the preview shows what it WILL be) — kept aligned with the
         // printed receipt's "Bill #N" heading line.
         let nextBillNo = (Number(localStorage.getItem(CASH_BILL_COUNTER_KEY)) || 0) + 1;
+        // Header, meta block, and footer are built to match
+        // printCashBillReceipt's structure/order/content exactly (same
+        // contact line, same meta line order: CASH BILL/Bill/Branch, then
+        // Salesman/Payment, then the timestamp — followed by the same
+        // "THANK YOU, VISIT AGAIN!" footer) so the live preview is a true
+        // mirror of what actually prints, not just a similar-looking panel.
         let logoSrc = appSettings.businessLogo || '';
-        let headingHTML = logoSrc
+        let contactLine = businessContactLine();
+        let contactHTML = contactLine ? `<div style="text-align:center; font-size:8.5px; margin-top:1px;">${contactLine}</div>` : '';
+        let headingHTML = (logoSrc
             ? `<div style="text-align:center; margin-bottom:2px;"><img src="${logoSrc}" style="max-width:100px; max-height:50px; filter:grayscale(100%) contrast(1.15);"></div>`
-            : `<div style="text-align:center; font-weight:700; font-size:13px;">${name}</div>`;
+            : `<div style="text-align:center; font-weight:700; font-size:13px;">${name}</div>`) + contactHTML;
 
         previewEl.innerHTML = `
             ${headingHTML}
-            <div style="text-align:center; font-size:9px; margin-bottom:4px;">CASH BILL</div>
-            <div style="text-align:center; font-size:9px;">Bill #${nextBillNo} | Branch: ${branch}</div>
-            <div style="text-align:center; font-size:9px;">${formatDateTimeDMY(now)}</div>
-            <div style="text-align:center; font-size:9px;">${salesman ? 'Salesman: ' + salesman + ' | ' : ''}Payment: ${paymentMode}</div>
+            <div style="text-align:center; font-size:9px; line-height:1.45; margin-top:4px;">
+                CASH BILL &middot; Bill #${nextBillNo} &middot; Branch: ${branch}<br>
+                ${salesman ? 'Salesman: ' + salesman + ' &middot; ' : ''}Payment: ${paymentMode}<br>
+                ${formatDateTimeDMY(now)}
+            </div>
             ${custLine}
             <div style="border-bottom:1px dashed #000; margin:6px 0;"></div>
             ${rows}
             ${swLine}
+            <div style="border-bottom:2px solid #000; margin:6px 0;"></div>
+            <div style="display:flex; justify-content:space-between; font-weight:800; font-size:14px; padding:3px 0;"><span>TOTAL</span><span>₹${grandTotal}</span></div>
             <div style="border-bottom:1px dashed #000; margin:6px 0;"></div>
-            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:13px;"><span>TOTAL</span><span>₹${grandTotal}</span></div>
+            <div style="text-align:center; font-size:9.5px; line-height:1.4;">
+                <div style="font-weight:700; font-size:10.5px; letter-spacing:0.5px;">THANK YOU, VISIT AGAIN!</div>
+            </div>
         `;
     }
 
@@ -4094,7 +4566,25 @@
         // measuring the printed box.
         let is58 = appSettings.thermalPaperWidth === '58mm';
         let paperWidthMm = is58 ? '58mm' : '80mm';
-        let bodyWidthMm = is58 ? '54mm' : '76mm';
+        // WIDTH FIX (found on fresh re-investigation — the earlier passes
+        // only ever fixed the page HEIGHT/trailing-blank-space bugs, never
+        // re-checked the width): this used to be '76mm'/'54mm', a leftover
+        // "safety margin" from an early pass that was never actually
+        // documented as intentional. Combined with `margin: 0 auto`
+        // centering the body inside the @page box (which IS a true
+        // 80mm/58mm — see applyComputedThermalPageSize), that shrunk the
+        // body 4mm narrower than the physical paper and then centered it,
+        // leaving ~2mm of blank margin on BOTH sides of the printed
+        // receipt — i.e. the printed content was genuinely narrower than
+        // 80mm/58mm, which is exactly what was reported. Since `* {
+        // box-sizing: border-box }` is already set above, the body's own
+        // `padding: 6px 6px 0` is already included in its width rather than
+        // added on top of it, so there is no need to additionally shrink
+        // the width to "make room" for that padding — setting the body's
+        // width to the FULL paper width gives a true edge-to-edge 80mm/58mm
+        // print with only the existing small 6px cosmetic padding inset,
+        // matching the @page size exactly with no extra blank margin.
+        let bodyWidthMm = paperWidthMm;
         let itemsFontSize = is58 ? '9px' : '10.5px';
 
         let logoSrc = appSettings.businessLogo || '';
@@ -5465,6 +5955,13 @@
         draftKeys.forEach(k => localStorage.removeItem(k));
         if (recordIdxs.length) {
             let idxSet = new Set(recordIdxs);
+            // Delete Past Entries only removes the LOCAL copy — there's no
+            // cloud-delete endpoint, so the row still exists in the Sheet.
+            // Record a tombstone for each deleted key so a later cloud pull
+            // on this device doesn't silently bring it back (other devices
+            // are unaffected and will still see it).
+            let tombstoneKeys = recordIdxs.map(i => shiftRecordKey(store[i].date, store[i].branch, store[i].shift));
+            addDeletedShiftKeys(tombstoneKeys);
             let newStore = store.filter((r, i) => !idxSet.has(i));
             localStorage.setItem('lalitha_audit_register', JSON.stringify(newStore));
         }
@@ -6019,8 +6516,24 @@
 
     function proceedAfterVerification() {
         document.getElementById('secondaryVerifyModal').style.display = 'none';
-        commitRegisterEntryToStorage();
-        currentSelectedArchiveRecord = null;
+        let committedRecord = commitRegisterEntryToStorage();
+        let todayStr = new Date().toISOString().split('T')[0];
+        if (committedRecord && committedRecord.date && committedRecord.date !== todayStr) {
+            // A backdated (or, in principle, future-dated) entry was just
+            // committed. Snapshot it as the "record to export" so the
+            // upcoming export/print modal still shows THIS entry's data
+            // (same mechanism the Archive/"Show Records" export flow already
+            // uses via openPrintModalForArchiveRecord — see
+            // populateA4DataFromRecord/populateThermalDataFromRecord/
+            // sendToWhatsAppDirect, which all already prefer
+            // currentSelectedArchiveRecord over the live form when it's set),
+            // and THEN jump the live form back to today right away so the
+            // date field is never left stuck on the just-committed past date.
+            currentSelectedArchiveRecord = committedRecord;
+            resetRegisterDateToToday();
+        } else {
+            currentSelectedArchiveRecord = null;
+        }
         document.getElementById('modalTitle').innerText = 'Commit & Export Register';
         document.getElementById('modalDesc').innerText = 'Entry has been saved and synced to Google Sheet successfully! Please select your preferred format to export or share with your team.';
         document.getElementById('confirmModal').style.display = 'flex';
@@ -6281,12 +6794,44 @@
         }
         localStorage.setItem('lalitha_audit_register', JSON.stringify(store));
 
+        // This shift is being (re-)committed on this device, so it's no
+        // longer "locally deleted" — clear any tombstone for this key so a
+        // future cloud pull is allowed to keep it in sync again.
+        try {
+            let key = shiftRecordKey(record.date, record.branch, record.shift);
+            let remaining = getDeletedShiftKeys().filter(k => k !== key);
+            localStorage.setItem(DELETED_SHIFT_KEYS_KEY, JSON.stringify(remaining));
+        } catch (e) {}
+
         // Sync to Google Sheet automatically
         syncRecordToGoogleSheet(record);
 
         // The entry is safely committed now, so the in-progress autosave draft
         // is no longer needed.
         clearDraft();
+
+        return record;
+    }
+
+    // Jumps the live register form back to TODAY, exactly like a fresh page
+    // load would (see the "#regDate.valueAsDate was already set..." comment
+    // in DOMContentLoaded) — but triggered right after a successful commit
+    // instead of requiring a manual refresh/date change. Fixes: after
+    // unlocking and committing a PAST date's entry, the date field used to
+    // stay stuck on that past date, so the very next thing typed (meant to
+    // be TODAY's entry) silently landed on the wrong date until the cashier
+    // noticed and changed it back. Mirrors completeDateSwitch()'s
+    // blank-then-restore-draft steps, but deliberately skips its "flush the
+    // OUTGOING date's typed values into a draft" step — the outgoing date was
+    // just committed to permanent storage (and its draft already cleared
+    // above), so there's nothing left to flush, and flushing now would just
+    // re-create a stale draft from whatever the form still displays.
+    function resetRegisterDateToToday() {
+        let dateEl = document.getElementById('regDate');
+        dateEl.valueAsDate = new Date();
+        currentDraftDate = dateEl.value;
+        blankRegisterFormForNewDate();
+        restoreDraftIfPresent(currentDraftDate);
     }
 
     function populateA4Data() {
@@ -6563,6 +7108,13 @@
             let pastMonth = new Date(); pastMonth.setDate(pastMonth.getDate() - 31);
             document.getElementById('searchFromDate').value = pastMonth.toISOString().split('T')[0];
             document.getElementById('searchToDate').value = today;
+            // Always open Show Records showing EVERY branch at once — never
+            // left filtered down to whichever single branch a previous visit
+            // (or this device's own default branch) happened to leave
+            // selected. Records from every branch should be visible together
+            // the instant this view opens, without the user having to notice
+            // and clear a filter first.
+            document.getElementById('searchBranch').value = '';
 
             let monthInput = document.getElementById('monthlySummaryMonth');
             if (!monthInput.value) {
@@ -6570,6 +7122,11 @@
             }
 
             executeArchiveSearch();
+            // Refresh from the cloud right as the records view is opened, so
+            // what's shown reflects the latest cloud state at the moment the
+            // user actually looks, not just whatever was cached from page
+            // load or the last 5-minute background pull.
+            pullShiftRecordsFromCloud();
         }
     }
 
@@ -7230,7 +7787,7 @@
     // can be viewed/copied from inside Settings > Cloud Sync, not just as a
     // separate downloaded file. Never executed or edited here — purely for
     // display + clipboard copy, to paste into script.google.com yourself.
-    const APPS_SCRIPT_SOURCE = "/**\n * Lalitha Naturals \u2014 Shift Register \u2014 Google Sheets Cloud Sync\n * =============================================================\n *\n * WHAT THIS IS\n * A tiny free \"Google Apps Script Web App\" that receives shift records\n * posted by the Shift Register HTML app and appends/updates them as rows\n * in a Google Sheet named \"ShiftRegister\" (created automatically the first\n * time it runs). This is what makes your shift data reachable from any\n * device \u2014 the Sheet lives in your own Google account.\n *\n * ONE-TIME SETUP (do this once; takes about 3 minutes):\n *   1. Go to https://sheets.google.com and create a new, blank Google Sheet\n *      (or open an existing one you want to use for this).\n *   2. In the menu, click Extensions > Apps Script. A code editor opens in\n *      a new tab, with a default empty \"Code.gs\" file.\n *   3. Select all the placeholder code in that editor and delete it. Paste\n *      in the ENTIRE contents of this file instead.\n *   4. Click the disk/Save icon (or Ctrl/Cmd+S).\n *   5. Click \"Deploy\" (top-right) > \"New deployment\".\n *   6. Next to \"Select type\", click the gear icon and choose \"Web app\".\n *   7. Fill in:\n *        Description:      Shift Register Sync (or anything you like)\n *        Execute as:        Me (your own Google account)\n *        Who has access:    Anyone with the link\n *      (These exact choices matter \u2014 \"Execute as: Me\" lets the script write\n *      to your Sheet on the app's behalf even though the app itself never\n *      logs into Google, and \"Anyone with the link\" lets the offline app\n *      call the URL without you having to log in from inside it.)\n *   8. Click \"Deploy\". The first time, Google will ask you to authorize the\n *      script \u2014 click through \"Review permissions\" > pick your account >\n *      \"Advanced\" > \"Go to (project name) (unsafe)\" > \"Allow\". This warning\n *      is expected and normal for a script you wrote/pasted yourself.\n *   9. Copy the \"Web app URL\" it gives you (ends in /exec). That is the URL\n *      you paste into the Shift Register app's Settings > Cloud Sync panel.\n *\n * If you ever edit this script again, you must create a NEW deployment (or\n * use \"Manage deployments\" > edit > \"New version\") for the changes to take\n * effect on the same URL.\n *\n * WHAT IT STORES\n * Every time a shift is saved in the app (with Cloud Sync turned on), it\n * POSTs the shift's data as JSON here. This script appends one row per\n * shift into a sheet tab named \"ShiftRegister\", creating that tab and its\n * header row automatically if they don't exist yet. If a row already\n * exists for the same Date + Branch + Shift, it's updated in place instead\n * of duplicated (an \"upsert\").\n *\n * The display columns cover the most useful fields at a glance. A final\n * \"Full Record (JSON)\" column also stores the ENTIRE record exactly as\n * received, so nothing is ever lost even if a future version of the app\n * adds fields this script doesn't explicitly list yet.\n *\n * This script also creates two more tabs automatically, the first time each\n * kind of item is synced:\n *   - \"ItemCatalog\": the Cash Bill's barcode/item catalog (name, MRP, price).\n *   - \"DamageExpiryLedger\": the Damage/Expiry write-off log (date, item,\n *     qty, reason, loss amount, branch) \u2014 a simple record, push-only from\n *     the app, upserted by its own id so re-syncs never duplicate a row.\n */\n\nvar SHEET_NAME = 'ShiftRegister';\nvar CATALOG_SHEET_NAME = 'ItemCatalog';\nvar CATALOG_HEADERS = ['barcode', 'name', 'mrp', 'sellingPrice', 'discount', 'discountMode', 'updatedAt'];\n\nfunction getOrCreateCatalogSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(CATALOG_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(CATALOG_SHEET_NAME);\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one catalog item row, keyed on barcode.\n */\nfunction upsertCatalogItem_(item) {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    item.barcode || '',\n    item.name || '',\n    item.mrp != null ? item.mrp : '',\n    item.sellingPrice != null ? item.sellingPrice : '',\n    item.discount != null ? item.discount : '',\n    item.discountMode || '',\n    item.updatedAt != null ? item.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(item.barcode)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all ItemCatalog rows as an array of plain objects.\n */\nfunction getCatalogRecords_() {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.barcode) rows.push(obj);\n  }\n  return rows;\n}\n\nvar DAMAGE_SHEET_NAME = 'DamageExpiryLedger';\nvar DAMAGE_HEADERS = ['id', 'date', 'item', 'qty', 'reason', 'note', 'lossAmount', 'branch', 'updatedAt'];\n\nfunction getOrCreateDamageSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(DAMAGE_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(DAMAGE_SHEET_NAME);\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one damage/expiry ledger row, keyed on its unique id\n * (last-write-wins by updatedAt, same pattern as the item catalog).\n */\nfunction upsertDamageEntry_(entry) {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    entry.id || '',\n    entry.date || '',\n    entry.item || '',\n    entry.qty != null ? entry.qty : '',\n    entry.reason || '',\n    entry.note || '',\n    entry.lossAmount != null ? entry.lossAmount : '',\n    entry.branch || '',\n    entry.updatedAt != null ? entry.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(entry.id)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all DamageExpiryLedger rows as plain objects \u2014 supports the\n * optional ?type=damage pull-merge path on doGet for symmetry with the\n * catalog sync, even though the app itself currently only pushes entries\n * (a logged write-off rarely needs to be pulled back and re-merged the way\n * a shared product catalog does, but the endpoint supports it either way).\n */\nfunction getDamageRecords_() {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.id) rows.push(obj);\n  }\n  return rows;\n}\n\nvar HEADERS = [\n  'Date', 'Branch', 'Shift', 'Cashier',\n  'Grand Total', 'Tray Balance (Closing Bal)', 'Total Outflows',\n  'Software Sale', 'Variance', 'Opening Bal', 'Closing Bal',\n  'Extra Change Given', 'Change Left by Customer', 'Staff Bills Total',\n  'Notes', 'Synced At', 'Full Record (JSON)'\n];\n\nfunction getOrCreateSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(SHEET_NAME);\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\nfunction sumField_(list, key) {\n  var total = 0;\n  (list || []).forEach(function (item) {\n    total += Number(item && item[key]) || 0;\n  });\n  return total;\n}\n\nfunction recordToRow_(record) {\n  // Staff Bills (items a staff member takes now and pays for later, by cash\n  // or salary deduction) are folded into Total Outflows the same way Owner\n  // Bills and Vendor Payments already are, matching how the app's own\n  // Grand Total / \"Total\" formula treats them (see the app's Settings >\n  // Formulas & Advanced panel).\n  var staffBillsTotal = sumField_(record.staffBills, 'amt');\n  var totalOutflows =\n    sumField_(record.expenses, 'amt') +\n    sumField_(record.owners, 'amt') +\n    sumField_(record.vendors, 'amt') +\n    staffBillsTotal;\n\n  return [\n    record.date || '',\n    record.branch || '',\n    record.shift || 'Full Day',\n    record.cashier || '',\n    record.grandTotal != null ? record.grandTotal : '',\n    record.closingBal != null ? record.closingBal : '', // \"Tray Balance\" note field\n    totalOutflows,\n    record.vasySale != null ? record.vasySale : '',\n    record.variance != null ? record.variance : '',\n    record.openingBal != null ? record.openingBal : '',\n    record.closingBal != null ? record.closingBal : '',\n    record.extraChangeGiven != null ? record.extraChangeGiven : '',\n    record.changeLeftByCustomer != null ? record.changeLeftByCustomer : '',\n    staffBillsTotal,\n    record.notes || '',\n    new Date().toISOString(),\n    JSON.stringify(record)\n  ];\n}\n\n/**\n * Receives a POST from the Shift Register app. Body is JSON for a single\n * shift record. Upserts a row keyed on Date + Branch + Shift.\n */\nfunction doPost(e) {\n  try {\n    var body = JSON.parse(e.postData.contents);\n\n    // A catalog-item post is additive, new behavior \u2014 the existing shift-\n    // record behavior below (no \"type\", or type: \"shift\") is unchanged.\n    if (body && body.type === 'catalog_item') {\n      upsertCatalogItem_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'catalog_item' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // A damage/expiry ledger entry \u2014 also additive, separate sheet tab.\n    if (body && body.type === 'damage_entry') {\n      upsertDamageEntry_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'damage_entry' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n\n    // Accept either a single record, or a { records: [...] } batch.\n    var records = Array.isArray(body) ? body\n      : (body.records ? body.records : [body]);\n\n    var data = sheet.getDataRange().getValues();\n    records.forEach(function (record) {\n      var rowValues = recordToRow_(record);\n      var matchRow = -1;\n      for (var i = 1; i < data.length; i++) {\n        if (data[i][0] === record.date && data[i][1] === record.branch &&\n            (data[i][2] || 'Full Day') === (record.shift || 'Full Day')) {\n          matchRow = i + 1; // 1-indexed sheet row\n          break;\n        }\n      }\n      if (matchRow > -1) {\n        sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n      } else {\n        sheet.appendRow(rowValues);\n        data.push(rowValues); // keep local copy in sync for subsequent records in this batch\n      }\n    });\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: records.length })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\n/**\n * Health check / fetch-existing-records. Called with a plain GET (e.g. the\n * app's \"Test Connection\" button, or a future \"Restore from Cloud\" feature).\n * Optional query param ?since=YYYY-MM-DD filters to rows on/after that date.\n */\nfunction doGet(e) {\n  try {\n    var type = e && e.parameter && e.parameter.type;\n\n    // New, additive behavior: ?type=catalog returns the ItemCatalog sheet\n    // instead of shift records. Existing behavior (no type, or type=shifts)\n    // is unchanged below.\n    if (type === 'catalog') {\n      var catalogRecords = getCatalogRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: catalogRecords.length, records: catalogRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // ?type=damage \u2014 symmetry with the catalog pull, for a future/manual\n    // pull-merge of the damage/expiry ledger. The app itself only pushes\n    // today (see notes above getDamageRecords_).\n    if (type === 'damage') {\n      var damageRecords = getDamageRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: damageRecords.length, records: damageRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n    var data = sheet.getDataRange().getValues();\n    var headers = data[0];\n    var since = e && e.parameter && e.parameter.since;\n\n    var rows = [];\n    for (var i = 1; i < data.length; i++) {\n      var rowDate = data[i][0];\n      if (since && String(rowDate) < since) continue;\n      var obj = {};\n      headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n      rows.push(obj);\n    }\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: rows.length, records: rows })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n";
+    const APPS_SCRIPT_SOURCE = "/**\n * Lalitha Naturals \u2014 Shift Register \u2014 Google Sheets Cloud Sync\n * =============================================================\n *\n * WHAT THIS IS\n * A tiny free \"Google Apps Script Web App\" that receives shift records\n * posted by the Shift Register HTML app and appends/updates them as rows\n * in a Google Sheet named \"ShiftRegister\" (created automatically the first\n * time it runs). This is what makes your shift data reachable from any\n * device \u2014 the Sheet lives in your own Google account.\n *\n * ONE-TIME SETUP (do this once; takes about 3 minutes):\n *   1. Go to https://sheets.google.com and create a new, blank Google Sheet\n *      (or open an existing one you want to use for this).\n *   2. In the menu, click Extensions > Apps Script. A code editor opens in\n *      a new tab, with a default empty \"Code.gs\" file.\n *   3. Select all the placeholder code in that editor and delete it. Paste\n *      in the ENTIRE contents of this file instead.\n *   4. Click the disk/Save icon (or Ctrl/Cmd+S).\n *   5. Click \"Deploy\" (top-right) > \"New deployment\".\n *   6. Next to \"Select type\", click the gear icon and choose \"Web app\".\n *   7. Fill in:\n *        Description:      Shift Register Sync (or anything you like)\n *        Execute as:        Me (your own Google account)\n *        Who has access:    Anyone with the link\n *      (These exact choices matter \u2014 \"Execute as: Me\" lets the script write\n *      to your Sheet on the app's behalf even though the app itself never\n *      logs into Google, and \"Anyone with the link\" lets the offline app\n *      call the URL without you having to log in from inside it.)\n *   8. Click \"Deploy\". The first time, Google will ask you to authorize the\n *      script \u2014 click through \"Review permissions\" > pick your account >\n *      \"Advanced\" > \"Go to (project name) (unsafe)\" > \"Allow\". This warning\n *      is expected and normal for a script you wrote/pasted yourself.\n *   9. Copy the \"Web app URL\" it gives you (ends in /exec). That is the URL\n *      you paste into the Shift Register app's Settings > Cloud Sync panel.\n *\n * If you ever edit this script again, you must create a NEW deployment (or\n * use \"Manage deployments\" > edit > \"New version\") for the changes to take\n * effect on the same URL.\n *\n * WHAT IT STORES\n * Every time a shift is saved in the app (with Cloud Sync turned on), it\n * POSTs the shift's data as JSON here. This script appends one row per\n * shift into a sheet tab named \"ShiftRegister\", creating that tab and its\n * header row automatically if they don't exist yet. If a row already\n * exists for the same Date + Branch + Shift, it's updated in place instead\n * of duplicated (an \"upsert\").\n *\n * The display columns cover the most useful fields at a glance. A final\n * \"Full Record (JSON)\" column also stores the ENTIRE record exactly as\n * received, so nothing is ever lost even if a future version of the app\n * adds fields this script doesn't explicitly list yet.\n *\n * This script also creates two more tabs automatically, the first time each\n * kind of item is synced:\n *   - \"ItemCatalog\": the Cash Bill's barcode/item catalog (name, MRP, price).\n *   - \"DamageExpiryLedger\": the Damage/Expiry write-off log (date, item,\n *     qty, reason, loss amount, branch) \u2014 a simple record, push-only from\n *     the app, upserted by its own id so re-syncs never duplicate a row.\n *\n * OWNER PIN CHANGE \u2014 EMAIL OTP VERIFICATION\n * Changing the app's Owner PIN (Settings > Owner Access) now requires a\n * one-time 6-digit code emailed to the \"Owner Email\" configured in that\n * same Settings panel, so that simply knowing the current PIN is no longer\n * enough to change it to something else. This script is what sends that\n * email \u2014 via MailApp.sendEmail(), which sends as your own Google account\n * for free within Google's normal daily quota \u2014 since a static HTML app has\n * no other way to send mail. Two new request types on doPost:\n *   - type: \"send_pin_otp\"   generates a random 6-digit code, stores it in\n *     Script Properties (PIN_OTP_CODE / PIN_OTP_EXPIRES / PIN_OTP_EMAIL /\n *     PIN_OTP_ATTEMPTS) with a 10-minute expiry, and emails it to the\n *     address the app sends in the request. The code itself is never\n *     echoed back in the HTTP response \u2014 only the email carries it.\n *   - type: \"verify_pin_otp\" checks a submitted code against the stored\n *     one (must match, and not be expired). A correct code is deleted\n *     immediately after use (one-time use). Up to 5 wrong attempts are\n *     allowed before the stored code is invalidated, as a simple brute-\n *     force guard (Apps Script has no built-in rate limiting).\n * Script Properties (not the Sheet) are used because they persist across\n * every future request to this deployment, executing \"as Me\", which is\n * exactly the shared server-side state a short-lived OTP needs.\n */\n\nvar SHEET_NAME = 'ShiftRegister';\nvar CATALOG_SHEET_NAME = 'ItemCatalog';\nvar CATALOG_HEADERS = ['barcode', 'name', 'mrp', 'sellingPrice', 'discount', 'discountMode', 'updatedAt'];\n\nfunction getOrCreateCatalogSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(CATALOG_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(CATALOG_SHEET_NAME);\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(CATALOG_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one catalog item row, keyed on barcode.\n */\nfunction upsertCatalogItem_(item) {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    item.barcode || '',\n    item.name || '',\n    item.mrp != null ? item.mrp : '',\n    item.sellingPrice != null ? item.sellingPrice : '',\n    item.discount != null ? item.discount : '',\n    item.discountMode || '',\n    item.updatedAt != null ? item.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(item.barcode)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all ItemCatalog rows as an array of plain objects.\n */\nfunction getCatalogRecords_() {\n  var sheet = getOrCreateCatalogSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.barcode) rows.push(obj);\n  }\n  return rows;\n}\n\nvar DAMAGE_SHEET_NAME = 'DamageExpiryLedger';\nvar DAMAGE_HEADERS = ['id', 'date', 'item', 'qty', 'reason', 'note', 'lossAmount', 'branch', 'updatedAt'];\n\nfunction getOrCreateDamageSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(DAMAGE_SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(DAMAGE_SHEET_NAME);\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(DAMAGE_HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  return sheet;\n}\n\n/**\n * Upserts one damage/expiry ledger row, keyed on its unique id\n * (last-write-wins by updatedAt, same pattern as the item catalog).\n */\nfunction upsertDamageEntry_(entry) {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var rowValues = [\n    entry.id || '',\n    entry.date || '',\n    entry.item || '',\n    entry.qty != null ? entry.qty : '',\n    entry.reason || '',\n    entry.note || '',\n    entry.lossAmount != null ? entry.lossAmount : '',\n    entry.branch || '',\n    entry.updatedAt != null ? entry.updatedAt : ''\n  ];\n  var matchRow = -1;\n  for (var i = 1; i < data.length; i++) {\n    if (String(data[i][0]) === String(entry.id)) {\n      matchRow = i + 1;\n      break;\n    }\n  }\n  if (matchRow > -1) {\n    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n  } else {\n    sheet.appendRow(rowValues);\n  }\n}\n\n/**\n * Returns all DamageExpiryLedger rows as plain objects \u2014 supports the\n * optional ?type=damage pull-merge path on doGet for symmetry with the\n * catalog sync, even though the app itself currently only pushes entries\n * (a logged write-off rarely needs to be pulled back and re-merged the way\n * a shared product catalog does, but the endpoint supports it either way).\n */\nfunction getDamageRecords_() {\n  var sheet = getOrCreateDamageSheet_();\n  var data = sheet.getDataRange().getValues();\n  var headers = data[0];\n  var rows = [];\n  for (var i = 1; i < data.length; i++) {\n    var obj = {};\n    headers.forEach(function (h, idx) { obj[h] = data[i][idx]; });\n    if (obj.id) rows.push(obj);\n  }\n  return rows;\n}\n\n// ---- OWNER PIN CHANGE: EMAIL OTP VERIFICATION -----------------------------\nvar PIN_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes\nvar PIN_OTP_MAX_ATTEMPTS = 5;\n\nfunction generateOtpCode_() {\n  var n = Math.floor(Math.random() * 1000000);\n  var s = String(n);\n  while (s.length < 6) s = '0' + s;\n  return s;\n}\n\n/**\n * Generates a fresh 6-digit code, stores it (with expiry + target email +\n * a reset attempt counter) in Script Properties, and emails it to toEmail.\n * Responds { ok: true } on success, or { ok: false, error: ... } if the\n * email address is missing/invalid or MailApp fails (e.g. daily quota).\n */\nfunction sendPinOtp_(body) {\n  var toEmail = body && body.email;\n  if (!toEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(toEmail)) {\n    return { ok: false, error: 'A valid Owner Email is required to send a verification code.' };\n  }\n  try {\n    var code = generateOtpCode_();\n    var props = PropertiesService.getScriptProperties();\n    props.setProperties({\n      PIN_OTP_CODE: code,\n      PIN_OTP_EXPIRES: String(Date.now() + PIN_OTP_TTL_MS),\n      PIN_OTP_EMAIL: toEmail,\n      PIN_OTP_ATTEMPTS: '0'\n    });\n    var subject = 'Your Owner PIN change code \u2014 Lalitha Naturals Shift Register';\n    var body_ = 'Your one-time verification code to change the Owner PIN is:\\n\\n' +\n      code + '\\n\\n' +\n      'This code expires in 10 minutes and can only be used once. ' +\n      'If you did not request this, you can ignore this email \u2014 your PIN will not change without this code.';\n    MailApp.sendEmail(toEmail, subject, body_);\n    return { ok: true };\n  } catch (err) {\n    return { ok: false, error: String(err) };\n  }\n}\n\n/**\n * Verifies a submitted OTP code against the stored one. On a correct,\n * unexpired code: deletes the stored properties (one-time use) and returns\n * { ok: true }. On a wrong or expired code: increments the attempt counter\n * (invalidating the code entirely after PIN_OTP_MAX_ATTEMPTS) and returns\n * { ok: false, error: 'invalid_or_expired' } WITHOUT deleting a still-valid\n * stored code, so a mistyped attempt doesn't burn the real code.\n */\nfunction verifyPinOtp_(body) {\n  var submitted = body && String(body.code || '').trim();\n  var props = PropertiesService.getScriptProperties();\n  var storedCode = props.getProperty('PIN_OTP_CODE');\n  var storedExpires = Number(props.getProperty('PIN_OTP_EXPIRES') || 0);\n  var attempts = Number(props.getProperty('PIN_OTP_ATTEMPTS') || 0);\n\n  if (!storedCode || !submitted) {\n    return { ok: false, error: 'invalid_or_expired' };\n  }\n  if (Date.now() > storedExpires || attempts >= PIN_OTP_MAX_ATTEMPTS) {\n    props.deleteProperty('PIN_OTP_CODE');\n    props.deleteProperty('PIN_OTP_EXPIRES');\n    props.deleteProperty('PIN_OTP_EMAIL');\n    props.deleteProperty('PIN_OTP_ATTEMPTS');\n    return { ok: false, error: 'invalid_or_expired' };\n  }\n  if (submitted !== storedCode) {\n    props.setProperty('PIN_OTP_ATTEMPTS', String(attempts + 1));\n    return { ok: false, error: 'invalid_or_expired' };\n  }\n\n  // Correct code \u2014 one-time use, delete immediately so it can't be replayed.\n  props.deleteProperty('PIN_OTP_CODE');\n  props.deleteProperty('PIN_OTP_EXPIRES');\n  props.deleteProperty('PIN_OTP_EMAIL');\n  props.deleteProperty('PIN_OTP_ATTEMPTS');\n  return { ok: true };\n}\n\nvar HEADERS = [\n  'Date', 'Branch', 'Shift', 'Cashier',\n  'Grand Total', 'Tray Balance (Closing Bal)', 'Total Outflows',\n  'Software Sale', 'Variance', 'Opening Bal', 'Closing Bal',\n  'Extra Change Given', 'Change Left by Customer', 'Staff Bills Total',\n  'Notes', 'Synced At', 'Full Record (JSON)'\n];\n\nfunction getOrCreateSheet_() {\n  var ss = SpreadsheetApp.getActiveSpreadsheet();\n  var sheet = ss.getSheetByName(SHEET_NAME);\n  if (!sheet) {\n    sheet = ss.insertSheet(SHEET_NAME);\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  } else if (sheet.getLastRow() === 0) {\n    sheet.appendRow(HEADERS);\n    sheet.setFrozenRows(1);\n  }\n  // The \"Date\" column (column 1) holds strings like \"2026-09-29\". Google\n  // Sheets' default \"Automatic\" number format silently reinterprets any\n  // string that LOOKS like a date as an actual Date value the moment it's\n  // written \u2014 even when written via the API, not just typed in the UI. Once\n  // that happens, getValues() hands back a real JS Date object for that\n  // cell instead of the original string, which breaks the exact-string\n  // match this script's own upsert logic (recordToRow_/doPost below) relies\n  // on to find an existing row for the same Date+Branch+Shift, so instead of\n  // updating that row it appends a duplicate \u2014 and a pulling device's merge\n  // (which also matches by that same Date string) can then quietly disagree\n  // with what's actually stored. Forcing this column to Plain Text (\"@\")\n  // stops Sheets from ever auto-converting it going forward. This is\n  // idempotent and cheap, so it's safe to call on every request rather than\n  // only right after creating the sheet (an already-existing sheet from\n  // before this fix still has \"Automatic\" format on this column otherwise).\n  sheet.getRange(1, 1, Math.max(sheet.getMaxRows(), 2), 1).setNumberFormat('@');\n  return sheet;\n}\n\n// Normalizes a \"Date\" cell's value back into a plain \"yyyy-MM-dd\" string,\n// whether it's already a string (the intended, post-fix case) or a real JS\n// Date object (rows written before the Plain Text fix above, or any other\n// cell Sheets auto-converted regardless). Used on every read/compare of\n// that column so already-corrupted existing rows keep matching/merging\n// correctly instead of silently diverging forever.\nfunction normalizeDateValue_(v) {\n  if (v instanceof Date) {\n    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');\n  }\n  return String(v == null ? '' : v);\n}\n\nfunction sumField_(list, key) {\n  var total = 0;\n  (list || []).forEach(function (item) {\n    total += Number(item && item[key]) || 0;\n  });\n  return total;\n}\n\nfunction recordToRow_(record) {\n  // Staff Bills (items a staff member takes now and pays for later, by cash\n  // or salary deduction) are folded into Total Outflows the same way Owner\n  // Bills and Vendor Payments already are, matching how the app's own\n  // Grand Total / \"Total\" formula treats them (see the app's Settings >\n  // Formulas & Advanced panel).\n  var staffBillsTotal = sumField_(record.staffBills, 'amt');\n  var totalOutflows =\n    sumField_(record.expenses, 'amt') +\n    sumField_(record.owners, 'amt') +\n    sumField_(record.vendors, 'amt') +\n    staffBillsTotal;\n\n  return [\n    record.date || '',\n    record.branch || '',\n    record.shift || 'Full Day',\n    record.cashier || '',\n    record.grandTotal != null ? record.grandTotal : '',\n    record.closingBal != null ? record.closingBal : '', // \"Tray Balance\" note field\n    totalOutflows,\n    record.vasySale != null ? record.vasySale : '',\n    record.variance != null ? record.variance : '',\n    record.openingBal != null ? record.openingBal : '',\n    record.closingBal != null ? record.closingBal : '',\n    record.extraChangeGiven != null ? record.extraChangeGiven : '',\n    record.changeLeftByCustomer != null ? record.changeLeftByCustomer : '',\n    staffBillsTotal,\n    record.notes || '',\n    new Date().toISOString(),\n    JSON.stringify(record)\n  ];\n}\n\n/**\n * Receives a POST from the Shift Register app. Body is JSON for a single\n * shift record. Upserts a row keyed on Date + Branch + Shift.\n */\nfunction doPost(e) {\n  try {\n    var body = JSON.parse(e.postData.contents);\n\n    // A catalog-item post is additive, new behavior \u2014 the existing shift-\n    // record behavior below (no \"type\", or type: \"shift\") is unchanged.\n    if (body && body.type === 'catalog_item') {\n      upsertCatalogItem_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'catalog_item' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // A damage/expiry ledger entry \u2014 also additive, separate sheet tab.\n    if (body && body.type === 'damage_entry') {\n      upsertDamageEntry_(body);\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, type: 'damage_entry' })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // Owner PIN change \u2014 step 1: send a 6-digit email OTP.\n    if (body && body.type === 'send_pin_otp') {\n      return ContentService.createTextOutput(\n        JSON.stringify(sendPinOtp_(body))\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // Owner PIN change \u2014 step 2: verify the submitted OTP.\n    if (body && body.type === 'verify_pin_otp') {\n      return ContentService.createTextOutput(\n        JSON.stringify(verifyPinOtp_(body))\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n\n    // Accept either a single record, or a { records: [...] } batch.\n    var records = Array.isArray(body) ? body\n      : (body.records ? body.records : [body]);\n\n    var data = sheet.getDataRange().getValues();\n    records.forEach(function (record) {\n      var rowValues = recordToRow_(record);\n      var matchRow = -1;\n      for (var i = 1; i < data.length; i++) {\n        if (normalizeDateValue_(data[i][0]) === record.date && data[i][1] === record.branch &&\n            (data[i][2] || 'Full Day') === (record.shift || 'Full Day')) {\n          matchRow = i + 1; // 1-indexed sheet row\n          break;\n        }\n      }\n      if (matchRow > -1) {\n        sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);\n      } else {\n        sheet.appendRow(rowValues);\n        data.push(rowValues); // keep local copy in sync for subsequent records in this batch\n      }\n    });\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: records.length })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\n/**\n * Health check / fetch-existing-records. Called with a plain GET (e.g. the\n * app's \"Test Connection\" button, or a future \"Restore from Cloud\" feature).\n * Optional query param ?since=YYYY-MM-DD filters to rows on/after that date.\n */\nfunction doGet(e) {\n  try {\n    var type = e && e.parameter && e.parameter.type;\n\n    // New, additive behavior: ?type=catalog returns the ItemCatalog sheet\n    // instead of shift records. Existing behavior (no type, or type=shifts)\n    // is unchanged below.\n    if (type === 'catalog') {\n      var catalogRecords = getCatalogRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: catalogRecords.length, records: catalogRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    // ?type=damage \u2014 symmetry with the catalog pull, for a future/manual\n    // pull-merge of the damage/expiry ledger. The app itself only pushes\n    // today (see notes above getDamageRecords_).\n    if (type === 'damage') {\n      var damageRecords = getDamageRecords_();\n      return ContentService.createTextOutput(\n        JSON.stringify({ ok: true, count: damageRecords.length, records: damageRecords })\n      ).setMimeType(ContentService.MimeType.JSON);\n    }\n\n    var sheet = getOrCreateSheet_();\n    var data = sheet.getDataRange().getValues();\n    var headers = data[0];\n    var since = e && e.parameter && e.parameter.since;\n\n    var rows = [];\n    for (var i = 1; i < data.length; i++) {\n      var rowDate = normalizeDateValue_(data[i][0]);\n      if (since && rowDate < since) continue;\n      var obj = {};\n      headers.forEach(function (h, idx) {\n        obj[h] = (h === 'Date') ? rowDate : data[i][idx];\n      });\n      rows.push(obj);\n    }\n\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: true, count: rows.length, records: rows })\n    ).setMimeType(ContentService.MimeType.JSON);\n  } catch (err) {\n    return ContentService.createTextOutput(\n      JSON.stringify({ ok: false, error: String(err) })\n    ).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n";
 
     function openAppsScriptCodeModal() {
         document.getElementById('appsScriptCodeTextarea').value = APPS_SCRIPT_SOURCE;
