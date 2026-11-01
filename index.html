@@ -6976,6 +6976,16 @@
             cashier: document.getElementById('cashierName').value.trim(),
             openingBal: Number(openingBal),
             closingBal: Number(closingBal),
+            // Card/UPI/Pluxee were being folded into grandTotal and dropped
+            // from the saved record itself (see the old comment that used to
+            // sit near the monthly-report code), which made archived/reprinted
+            // A4 sheets (populateA4DataFromRecord) always show ₹0 for these
+            // three fields even when the cashier genuinely entered non-zero
+            // amounts — fixed by saving them on the record like every other
+            // live-form field.
+            cardPay: Number(parseFloat(document.getElementById('cardPay').value) || 0),
+            upiPay: Number(parseFloat(document.getElementById('upiPay').value) || 0),
+            pluxeePay: Number(parseFloat(document.getElementById('pluxeePay').value) || 0),
             extraChangeGiven: Number(extraChangeGiven),
             changeLeftByCustomer: Number(changeLeftByCustomer),
             grandTotal: Number(document.getElementById('sumGrand').innerText.replace('₹','')) || 0,
@@ -7189,9 +7199,9 @@
         document.getElementById('a4Cashier').innerText = rec.cashier;
         document.getElementById('a4ClosingBal').innerText = '₹' + (rec.closingBal || 0);
 
-        document.getElementById('a4CardPay').innerText = '₹0';
-        document.getElementById('a4UpiPay').innerText = '₹0';
-        document.getElementById('a4PluxeePay').innerText = '₹0';
+        document.getElementById('a4CardPay').innerText = '₹' + (rec.cardPay || 0);
+        document.getElementById('a4UpiPay').innerText = '₹' + (rec.upiPay || 0);
+        document.getElementById('a4PluxeePay').innerText = '₹' + (rec.pluxeePay || 0);
         document.getElementById('a4DigitalAddTable').innerHTML = '';
 
         let recTrayHtml = `<tr><td>Opening Balance (-)</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr>`;
@@ -8474,12 +8484,12 @@
             totalVariance += Number(r.variance || 0);
             return { r, expTotal };
         });
-        // Digital payments (Card/UPI/Pluxee) are not stored as separate fields
-        // on the saved record — only folded into Grand Total by recalcRegister()
-        // — so a standalone "Total Digital Payments" figure isn't available
-        // from history alone and is intentionally omitted here to avoid
-        // showing a misleading number; Grand Total and Closing Balance (cash)
-        // are shown instead, which are both fields actually saved on the record.
+        // Digital payments (Card/UPI/Pluxee) are now saved as separate fields
+        // on the record (cardPay/upiPay/pluxeePay), but a standalone "Total
+        // Digital Payments" column is still intentionally omitted from this
+        // monthly summary to keep it focused on Grand Total and Closing
+        // Balance (cash); records saved before this fix existed won't have
+        // these fields anyway.
 
         let monthLabel = new Date(Number(monthVal.split('-')[0]), Number(monthVal.split('-')[1]) - 1, 1)
             .toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
