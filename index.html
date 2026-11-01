@@ -186,14 +186,31 @@
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow: hidden;
+            /* Safe fallback: normal scrolling until/unless the auto-fit-to-
+               display script (further down the page) successfully measures
+               the content and applies its scale transform, at which point it
+               switches these to overflow:hidden via inline style. If that
+               script fails or ResizeObserver isn't supported, the page is
+               left exactly like this - scrollable, never visually broken. */
+            overflow-y: auto;
+            overflow-x: hidden;
         }
+
+        /* #autoFitStage wraps .register-wrapper (see markup) purely so the
+           auto-fit script below has something outside .register-wrapper to
+           position/transform, without pinning .register-wrapper's own size -
+           that keeps ResizeObserver able to see real content-height changes
+           (section expand/collapse, new rows, etc.) on .register-wrapper
+           itself. With no JS, #autoFitStage is an inert block box and changes
+           nothing about the page. */
+        #autoFitStage { transform-origin: top left; }
 
         .register-wrapper {
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 100vh;
+            height: auto;
+            min-height: 100vh;
             padding: 12px;
             padding-top: calc(12px + env(safe-area-inset-top));
             padding-left: calc(12px + env(safe-area-inset-left));
@@ -239,8 +256,8 @@
         .meta-group input, .meta-group select { border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; height: 34px; background: #fff; color: var(--primary); font-weight: 600; }
 
         /* Spreadsheet Grid Layout - Exactly 5 Columns Filling 100% Width */
-        .sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; flex-grow: 1; overflow: hidden; width: 100%; }
-        .sheet-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; }
+        .sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; flex-grow: 1; overflow: visible; width: 100%; }
+        .sheet-section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; overflow: visible; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; }
         .section-header { background: var(--primary); color: white; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 9px 12px; letter-spacing: 0.5px; flex-shrink: 0; }
         .section-header.owner-header { background: #7c3aed; }
         .sub-header { background: var(--header-bg); font-size: 10.5px; font-weight: 700; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -252,10 +269,10 @@
         input[type="text"] { text-align: left; }
         input:focus { background: #eef2ff !important; border-color: var(--border-focus) !important; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
         tr:hover { background-color: #f8fafc; }
-        .table-scroll { overflow-y: auto; max-height: calc(100vh - 280px); flex-grow: 1; }
+        .table-scroll { overflow-y: visible; max-height: none; flex-grow: 1; }
 
         /* Summary Card Column */
-        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 0; font-size: 17px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; overflow-y: auto; }
+        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 0; font-size: 17px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); min-width: 0; overflow-y: visible; }
         /* Fixed-rhythm block for the scorecard rows (task: "over-stretched"
            fix). Previously the card had no explicit justify-content, so it
            relied solely on .grand-display's margin-top:auto to soak up the
@@ -541,20 +558,15 @@
             position: fixed; top: -9999px; left: -9999px; width: 1754px; background: #ffffff; padding: 40px; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column; gap: 20px; color: #1e293b;
         }
 
-        /* MOBILE / NARROW SCREEN LAYOUT — the 5-column grid below is a fixed-
-           height desktop layout: the whole page never scrolls, and each
-           column scrolls internally instead. On a phone that made columns
-           get squeezed and cut off mid-content, needing a scroll gesture
-           inside a tiny box to see the rest of it. Below this width the
-           columns stack into one, the internal per-column scrollbars are
-           turned off, and the page itself scrolls normally instead — nothing
-           moves or resizes unexpectedly while you're typing into it. */
+        /* MOBILE / NARROW SCREEN LAYOUT — below this width the 5-column grid
+           stacks into one column instead. (Height/overflow used to also be
+           switched here from a clipped fixed-height desktop layout to a
+           naturally-flowing one, but that natural-flow behavior is now the
+           base behavior at every width - see the auto-fit-to-display script
+           near the end of <body>, which scales the whole page to fit the
+           viewport with no scrollbars instead.) */
         @media (max-width: 900px) {
-            body, html { height: auto; overflow-y: auto; }
-            .register-wrapper { height: auto; min-height: 100vh; }
-            .sheet-grid { grid-template-columns: 1fr; overflow: visible; height: auto; }
-            .sheet-section { overflow: visible; }
-            .table-scroll { overflow-y: visible; max-height: none; }
+            .sheet-grid { grid-template-columns: 1fr; }
             .cb-body { flex-direction: column; }
             .cb-preview { width: 100% !important; flex-basis: auto !important; order: -1; }
             .header-fields.shifts-disabled { column-gap: 0; }
@@ -567,6 +579,24 @@
         }
         @media (max-width: 480px) {
             .cb-manual-grid-3, .cb-manual-grid-3b { grid-template-columns: 1fr 1fr !important; }
+        }
+
+        /* DESKTOP/PC TUNING — the main register grid (.sheet-grid) is
+           already a 5-column layout by default (Digital Payments, Tray
+           Balance, Expenses, Owner/Vendor/Unbilled, Total Summary side by
+           side) and only collapses to one column below 900px (see the
+           max-width:900px rule above). This block only trims a little
+           vertical padding/spacing at PC widths so the grid's natural
+           height sits closer to common desktop viewport heights
+           (1366x768, 1440x900, 1920x1080), letting the auto-fit-to-display
+           script (near the end of <body>) land nearer scale 1.0 instead of
+           shrinking more than necessary. Scoped to min-width:1024px only,
+           so phone/tablet layout below that width is completely untouched. */
+        @media (min-width: 1024px) {
+            .register-wrapper { padding: 10px; gap: 8px; }
+            .sheet-grid { gap: 8px; }
+            .section-header { padding: 7px 12px; }
+            .sub-header { padding: 5px 10px; }
         }
 
         /* CASH BILL (MINI POS) — REDESIGN */
@@ -694,7 +724,7 @@
   </div>
 </div>
 
-<div class="register-wrapper">
+<div id="autoFitStage"><div class="register-wrapper">
 
     <!-- Top Header -->
     <div class="sheet-header">
@@ -1105,6 +1135,7 @@
     </div>
 
 </div>
+</div><!-- /#autoFitStage -->
 
 <!-- CLEAR PAGE CONFIRMATION MODAL -->
 <!-- SETTINGS MODAL — sidebar-navigated settings page -->
@@ -8537,6 +8568,131 @@
         let data = computeBranchTotals(records);
         document.getElementById('bcContent').innerHTML = renderBranchComparisonHTML(data, `${from ? formatDateDMY(from) : 'Start'} to ${to ? formatDateDMY(to) : 'Today'}`, null);
     }
+</script>
+
+<!-- ===================== AUTO-FIT-TO-DISPLAY (no scrollbars) =====================
+     Scales the whole main register page (the #autoFitStage/.register-wrapper
+     pair - NOT any modal, which lives as a separate sibling of these in the
+     DOM and is completely untouched) down or up so it always exactly fills
+     the viewport, with no horizontal or vertical scrollbar.
+
+     How it works:
+       1. .register-wrapper's own CSS now lets it (and its grid/sections/
+          tables) grow to their natural, unclipped height instead of being
+          clamped to the viewport - see the base .register-wrapper / .sheet-
+          grid / .sheet-section / .table-scroll / .summary-card rules.
+       2. This script measures that natural width/height, works out the
+          scale factor that fits it inside the current viewport with no
+          overflow in either direction, and applies that as a CSS
+          `transform: scale()` on #autoFitStage (transform-origin: top left),
+          with #autoFitStage's position/left/top set so the scaled box is
+          centered in the viewport.
+       3. #autoFitStage is a plain sibling wrapper around .register-wrapper,
+          not an ancestor shared with any modal - the modals (.modal-overlay,
+          position:fixed) sit later in <body>, outside #autoFitStage, so
+          this transform never becomes their containing block and never
+          shifts/misaligns them. They keep their own normal (unscaled)
+          behavior and their own internal scrolling.
+       4. A minimum scale floor (MIN_SCALE below) stops content from
+          shrinking to illegibly tiny on a small device with a lot expanded -
+          in that rare edge case the floor scale is used instead and normal
+          page scrolling is temporarily allowed, rather than forcing
+          unreadable text. A modest max scale cap (MAX_SCALE) stops the page
+          from being blown up to a strange size on a very wide desktop
+          monitor when the natural content is narrower than the screen.
+       5. Recalculated on initial load (after fonts/layout settle), window
+          resize, orientation change, and - via ResizeObserver, the robust
+          way to catch every case rather than hooking each individual event -
+          whenever .register-wrapper's own natural content height/width
+          changes (Settings-style sections expanding/collapsing, denomination
+          or expense rows being added/removed, validation messages
+          appearing, etc.). ResizeObserver watches .register-wrapper itself
+          (not #autoFitStage), because #autoFitStage's rendered box is left
+          to size itself from its content, so it still reports real content
+          changes even once the transform is applied.
+
+     Entirely guarded by feature detection + try/catch: if ResizeObserver
+     isn't available, or anything here throws, the script leaves the page
+     exactly as the base CSS already has it - normal scrollable layout, no
+     transform - so a failure here can never break the app. -->
+<script>
+(function () {
+    try {
+        if (!('ResizeObserver' in window)) return; // no safe way to track content changes - skip, stay scrollable
+        var stage = document.getElementById('autoFitStage');
+        var wrapper = stage ? stage.querySelector('.register-wrapper') : null;
+        if (!stage || !wrapper) return;
+
+        var MIN_SCALE = 0.48;   // never shrink below ~48% - safety floor for legibility
+        var MAX_SCALE = 1.15;   // never blow up past a modest upscale on big desktop screens
+        var pending = false;
+
+        function applyFit() {
+            pending = false;
+            try {
+                // Reset so we measure the wrapper's true natural size for the
+                // CURRENT viewport width (its width tracks 100% of the page,
+                // its height is now free to be whatever its content needs).
+                stage.style.position = '';
+                stage.style.left = '';
+                stage.style.top = '';
+                stage.style.transform = 'none';
+
+                var vw = window.innerWidth;
+                var vh = window.innerHeight;
+                var natW = wrapper.scrollWidth;
+                var natH = wrapper.scrollHeight;
+                if (!vw || !vh || !natW || !natH) return;
+
+                var rawScale = Math.min(vw / natW, vh / natH);
+                var scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, rawScale));
+                var flooredBelowFit = scale > rawScale; // true only in the genuine small-screen/lots-of-content edge case
+
+                var scaledW = natW * scale;
+                var scaledH = natH * scale;
+                var left = Math.max(0, (vw - scaledW) / 2);
+                var top = Math.max(0, (vh - scaledH) / 2);
+
+                stage.style.position = 'fixed';
+                stage.style.left = left + 'px';
+                stage.style.top = top + 'px';
+                stage.style.transform = 'scale(' + scale + ')';
+
+                if (flooredBelowFit) {
+                    // Genuine edge case: even the floor scale doesn't fully
+                    // avoid overflow. Bias strongly towards "no scrollbars"
+                    // normally, but don't let the app become unreadable/
+                    // unusable either - allow scrolling only here, as a
+                    // fallback, not the default behavior.
+                    document.documentElement.style.overflow = 'auto';
+                    document.body.style.overflow = 'auto';
+                } else {
+                    document.documentElement.style.overflow = 'hidden';
+                    document.body.style.overflow = 'hidden';
+                }
+            } catch (err) {
+                console.warn('Auto-fit-to-display skipped:', err && err.message);
+            }
+        }
+
+        function scheduleFit() {
+            if (pending) return;
+            pending = true;
+            requestAnimationFrame(applyFit);
+        }
+
+        // Initial run: double rAF so fonts/layout have settled first.
+        requestAnimationFrame(function () { requestAnimationFrame(applyFit); });
+
+        window.addEventListener('resize', scheduleFit);
+        window.addEventListener('orientationchange', scheduleFit);
+
+        var ro = new ResizeObserver(scheduleFit);
+        ro.observe(wrapper);
+    } catch (err) {
+        console.warn('Auto-fit-to-display setup skipped:', err && err.message);
+    }
+})();
 </script>
 
 <!-- ===================== PWA: minimal offline-shell service worker =====================
