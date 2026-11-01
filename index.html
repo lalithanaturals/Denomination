@@ -400,17 +400,34 @@
         .compare-tab-panel { display: none; }
         .compare-tab-panel.active { display: block; }
 
-        /* ARCHIVE & BUSINESS INTELLIGENCE DASHBOARD */
+        /* ARCHIVE & BUSINESS INTELLIGENCE DASHBOARD
+           Sizing note (auto-fit-to-display): this section used to force
+           itself to exactly `calc(100vh - 110px)` with `overflow:hidden`,
+           which fought the main-register auto-fit script below - that
+           script measures .register-wrapper's NATURAL (unclamped) content
+           size and scales the whole wrapper down/up to fit the viewport,
+           but a child that pins itself to a *fraction of the current
+           viewport* doesn't report a natural size, so the measurement was
+           unreliable and this view ended up a size unrelated to its own
+           content. Now it lays out naturally like the register grid does,
+           so the exact same auto-fit math that fits the register page
+           fits this one too - same #autoFitStage/.register-wrapper, same
+           script, no separate logic needed. The one exception is the
+           results table (.search-results-box below), which is capped at a
+           bounded height with its own internal scroll, since a filter like
+           "All Branches" + a wide date range can return an effectively
+           unbounded number of rows - letting that grow the whole page's
+           natural height would just drive the auto-fit scale down toward
+           its floor and still not really fit. Scrolling inside the table
+           (not the page) is the deliberate compromise for that case. */
         #archiveSection {
             display: none;
             flex-direction: column;
-            height: calc(100vh - 110px);
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 16px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
-            overflow: hidden;
         }
         .search-filter-bar { display: flex; gap: 12px; background: var(--header-bg); padding: 12px; border-radius: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
         .search-filter-bar input, .search-filter-bar select { border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; background: #fff; }
@@ -420,7 +437,10 @@
         .analytics-card span { display: block; font-size: 9px; color: #94a3b8; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .analytics-card strong { font-size: 13.5px; font-weight: 700; color: #38bdf8; font-family: 'JetBrains Mono', monospace; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .search-results-box { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+        /* Bounded, independently-scrollable results table - see the
+           #archiveSection comment above for why this one keeps its own
+           internal scroll instead of growing the page without limit. */
+        .search-results-box { max-height: 46vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; flex-shrink: 0; }
         .audit-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
         .audit-table th { background: #f1f5f9; color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 11.5px; padding: 10px 14px; border-bottom: 2px solid var(--border); text-align: left; position: sticky; top: 0; z-index: 2; }
         .audit-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -2263,7 +2283,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.1.0';
+    var APP_VERSION = '1.2.0';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -7390,6 +7410,12 @@
             // load or the last 5-minute background pull.
             pullShiftRecordsFromCloud();
         }
+
+        // Switching between the register grid and the archive view changes
+        // .register-wrapper's natural content height - the ResizeObserver in
+        // the auto-fit script picks this up on its own, but nudging it
+        // explicitly here avoids any one-frame flash of the old scale.
+        if (typeof window.__recalcAutoFit === 'function') window.__recalcAutoFit();
     }
 
     function executeArchiveSearch() {
@@ -7463,6 +7489,7 @@
 
             if (filtered.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color: var(--muted); padding:30px;">No records found matching your filters.</td></tr>`;
+                if (typeof window.__recalcAutoFit === 'function') window.__recalcAutoFit();
                 return;
             }
 
@@ -7542,6 +7569,7 @@
 
             if (subList.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="${showPhotoCol ? 6 : 5}" style="text-align:center; color: var(--muted); padding:30px;">No detail items found for this filter.</td></tr>`;
+                if (typeof window.__recalcAutoFit === 'function') window.__recalcAutoFit();
                 return;
             }
 
@@ -7559,6 +7587,13 @@
             tableBody.innerHTML = html;
             window.__lastPhotoLookup = subList;
         }
+
+        // Filter changes can grow or shrink the results table's row count
+        // (e.g. narrowing from "All Branches" to one branch), which changes
+        // how tall the archive view's content naturally is - nudge the
+        // auto-fit scale to match, same as the explicit nudge in
+        // toggleArchive() above.
+        if (typeof window.__recalcAutoFit === 'function') window.__recalcAutoFit();
     }
 
     // ---- EXPORT TO EXCEL (CSV) ---------------------------------------------
@@ -8699,6 +8734,16 @@
 
         var ro = new ResizeObserver(scheduleFit);
         ro.observe(wrapper);
+
+        // Exposed so other views that live inside the same #autoFitStage/
+        // .register-wrapper (currently: the Show Records / Archive
+        // dashboard - see toggleArchive()/executeArchiveSearch()) can ask
+        // for an explicit recalculation right when they know content just
+        // changed, as a belt-and-suspenders on top of the ResizeObserver
+        // above. Guarded with typeof at every call site since this script
+        // may have bailed out above (no ResizeObserver, or an error) and
+        // never defined it.
+        window.__recalcAutoFit = scheduleFit;
     } catch (err) {
         console.warn('Auto-fit-to-display setup skipped:', err && err.message);
     }
