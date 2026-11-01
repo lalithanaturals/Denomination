@@ -412,14 +412,16 @@
            content. Now it lays out naturally like the register grid does,
            so the exact same auto-fit math that fits the register page
            fits this one too - same #autoFitStage/.register-wrapper, same
-           script, no separate logic needed. The one exception is the
-           results table (.search-results-box below), which is capped at a
-           bounded height with its own internal scroll, since a filter like
-           "All Branches" + a wide date range can return an effectively
-           unbounded number of rows - letting that grow the whole page's
-           natural height would just drive the auto-fit scale down toward
-           its floor and still not really fit. Scrolling inside the table
-           (not the page) is the deliberate compromise for that case. */
+           script, no separate logic needed, including the results table
+           (.search-results-box below): it now lays out at its full
+           natural height too, so the auto-fit script's measurement of
+           .register-wrapper's natural height includes every row and the
+           whole archive view scales down to fit, exactly like the
+           register grid does. The MIN_SCALE floor in the auto-fit script
+           is what keeps a genuinely huge result set (e.g. "All Branches"
+           + a wide date range) legible and still usable - it falls back
+           to normal page scrolling only in that edge case, rather than
+           this table growing its own separate internal scrollbar. */
         #archiveSection {
             display: none;
             flex-direction: column;
@@ -437,10 +439,11 @@
         .analytics-card span { display: block; font-size: 9px; color: #94a3b8; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .analytics-card strong { font-size: 13.5px; font-weight: 700; color: #38bdf8; font-family: 'JetBrains Mono', monospace; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Bounded, independently-scrollable results table - see the
-           #archiveSection comment above for why this one keeps its own
-           internal scroll instead of growing the page without limit. */
-        .search-results-box { max-height: 46vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; flex-shrink: 0; }
+        /* Lays out at its full natural height (no max-height/internal
+           scroll) so the auto-fit script's measurement of
+           .register-wrapper's natural height includes every row - see
+           the #archiveSection comment above. */
+        .search-results-box { border: 1px solid var(--border); border-radius: 8px; background: #fff; flex-shrink: 0; }
         .audit-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
         .audit-table th { background: #f1f5f9; color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 11.5px; padding: 10px 14px; border-bottom: 2px solid var(--border); text-align: left; position: sticky; top: 0; z-index: 2; }
         .audit-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -2283,7 +2286,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.2.0';
+    var APP_VERSION = '1.2.1';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -8698,7 +8701,21 @@
                 var left = Math.max(0, (vw - scaledW) / 2);
                 var top = Math.max(0, (vh - scaledH) / 2);
 
-                stage.style.position = 'fixed';
+                // Normally the stage is `position:fixed`, which is what lets
+                // it stay centered without itself growing the document's
+                // scrollable area (there's nothing to scroll - it always
+                // fits). In the floored edge case below, content taller than
+                // the viewport MUST be reachable by scrolling the page, but
+                // a `position:fixed` box is pinned to the viewport and never
+                // moves with page scroll no matter what document/body
+                // overflow is set to - it would leave the overflow genuinely
+                // unreachable. So when floored, use `position:absolute`
+                // instead: it stays part of the document's normal scrollable
+                // flow (relative to the viewport's top-left, same as fixed
+                // would have been, since nothing between it and <body> is
+                // itself positioned/scrolled), so the page can actually
+                // scroll down to the rest of it.
+                stage.style.position = flooredBelowFit ? 'absolute' : 'fixed';
                 stage.style.left = left + 'px';
                 stage.style.top = top + 'px';
                 stage.style.transform = 'scale(' + scale + ')';
