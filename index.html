@@ -401,27 +401,44 @@
         .compare-tab-panel.active { display: block; }
 
         /* ARCHIVE & BUSINESS INTELLIGENCE DASHBOARD
-           Sizing note (auto-fit-to-display): this section used to force
-           itself to exactly `calc(100vh - 110px)` with `overflow:hidden`,
-           which fought the main-register auto-fit script below - that
-           script measures .register-wrapper's NATURAL (unclamped) content
-           size and scales the whole wrapper down/up to fit the viewport,
-           but a child that pins itself to a *fraction of the current
-           viewport* doesn't report a natural size, so the measurement was
-           unreliable and this view ended up a size unrelated to its own
-           content. Now it lays out naturally like the register grid does,
-           so the exact same auto-fit math that fits the register page
-           fits this one too - same #autoFitStage/.register-wrapper, same
-           script, no separate logic needed, including the results table
-           (.search-results-box below): it now lays out at its full
-           natural height too, so the auto-fit script's measurement of
-           .register-wrapper's natural height includes every row and the
-           whole archive view scales down to fit, exactly like the
-           register grid does. The MIN_SCALE floor in the auto-fit script
-           is what keeps a genuinely huge result set (e.g. "All Branches"
-           + a wide date range) legible and still usable - it falls back
-           to normal page scrolling only in that edge case, rather than
-           this table growing its own separate internal scrollbar. */
+           Sizing history (auto-fit-to-display):
+             - Attempt 1 forced this section to exactly
+               `calc(100vh - 110px)` with `overflow:hidden`, which fought
+               the main-register auto-fit script because a child pinned to
+               a *fraction of the current viewport* doesn't report a
+               natural size, so the measurement was unreliable.
+             - Attempt 2 removed that and let the whole archive view
+               (including the full, unbounded .audit-table) lay out at its
+               natural height, feeding that into the SAME whole-page
+               scale-to-fit transform the register grid uses. That fixed
+               attempt 1's bug but created a worse one: with a realistic
+               number of saved shifts (49+, and only growing) the natural
+               height is huge, so the auto-fit script scales the ENTIRE
+               view - filter bar, stat cards, tabs and all - down to its
+               MIN_SCALE floor (0.48), making everything tiny, and even
+               that floor still isn't small enough to avoid a page
+               scrollbar on top of it. Confirmed broken on the user's real
+               49-record dataset.
+             - Current approach: Show Records no longer takes part in the
+               register's whole-page scale transform at all. While it's
+               open, `body.archive-open` (set/cleared in toggleArchive(),
+               below) switches #autoFitStage/.register-wrapper to real,
+               untransformed 100vh/100dvh sizing (see that rule, further
+               down in this stylesheet), and the auto-fit script itself
+               no-ops while that class is present (see its `applyFit()`).
+               #archiveSection becomes a `flex:1` child of .register-wrapper
+               so it fills whatever vertical space is left under the
+               header row at 100% real scale - like a native app's list
+               view (File Explorer, Excel): everything above the table
+               (filter bar, tabs, alert banner, the 7 stat cards) stays a
+               normal, fixed-size, flex-shrink:0 flex child that is never
+               scaled or clipped, and only `.search-results-box` (below)
+               flexes to fill the remainder and scrolls internally. No
+               page-level scrollbar, and the header area never shrinks,
+               regardless of how many records exist. The Register grid's
+               own scale-to-fit (MIN_SCALE/MAX_SCALE) is completely
+               untouched by any of this - it only ever applies when
+               #archiveSection is hidden. */
         #archiveSection {
             display: none;
             flex-direction: column;
@@ -430,6 +447,29 @@
             border-radius: 10px;
             padding: 16px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+        /* Real (untransformed) 100%-viewport sizing for Show Records - see
+           the #archiveSection comment above. Only active while
+           `body.archive-open` is set, so the Register entry screen's own
+           scale-to-fit (natural height -> transform: scale() on
+           #autoFitStage) is completely unaffected. */
+        body.archive-open #autoFitStage {
+            position: static;
+            left: auto;
+            top: auto;
+            transform: none;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+        }
+        body.archive-open .register-wrapper {
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            overflow: hidden;
         }
         .search-filter-bar { display: flex; gap: 12px; background: var(--header-bg); padding: 12px; border-radius: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
         .search-filter-bar input, .search-filter-bar select { border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; background: #fff; }
@@ -439,11 +479,12 @@
         .analytics-card span { display: block; font-size: 9px; color: #94a3b8; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .analytics-card strong { font-size: 13.5px; font-weight: 700; color: #38bdf8; font-family: 'JetBrains Mono', monospace; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Lays out at its full natural height (no max-height/internal
-           scroll) so the auto-fit script's measurement of
-           .register-wrapper's natural height includes every row - see
-           the #archiveSection comment above. */
-        .search-results-box { border: 1px solid var(--border); border-radius: 8px; background: #fff; flex-shrink: 0; }
+        /* The record list's own internal scroll box - fills whatever
+           vertical space is left in #archiveSection under the fixed-size
+           filter bar/tabs/alert/stat cards above it, and scrolls
+           internally once there are more rows than fit. See the
+           #archiveSection comment above for the full history/approach. */
+        .search-results-box { border: 1px solid var(--border); border-radius: 8px; background: #fff; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: auto; }
         .audit-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
         .audit-table th { background: #f1f5f9; color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 11.5px; padding: 10px 14px; border-bottom: 2px solid var(--border); text-align: left; position: sticky; top: 0; z-index: 2; }
         .audit-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -2286,7 +2327,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.2.1';
+    var APP_VERSION = '1.2.2';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -7381,6 +7422,9 @@
             regMeta.style.display = 'flex';
             btn.innerText = 'Show Records';
             titleBox.innerText = 'Daily Shift Register';
+            // Back to the Register entry screen - hand sizing back to the
+            // whole-page scale-to-fit script (see its applyFit()).
+            document.body.classList.remove('archive-open');
         } else {
             grid.style.display = 'none';
             arch.style.display = 'flex';
@@ -7388,6 +7432,11 @@
             regMeta.style.display = 'none';
             btn.innerText = 'Back to Register';
             titleBox.innerText = 'Audit & Analytics Dashboard';
+            // Show Records sizes itself against the real viewport (fixed
+            // header area + internally-scrolling table) instead of taking
+            // part in the register's whole-page scale transform - see the
+            // #archiveSection CSS comment and applyFit() for why.
+            document.body.classList.add('archive-open');
 
             let today = new Date().toISOString().split('T')[0];
             let pastMonth = new Date(); pastMonth.setDate(pastMonth.getDate() - 31);
@@ -8662,7 +8711,20 @@
      Entirely guarded by feature detection + try/catch: if ResizeObserver
      isn't available, or anything here throws, the script leaves the page
      exactly as the base CSS already has it - normal scrollable layout, no
-     transform - so a failure here can never break the app. -->
+     transform - so a failure here can never break the app.
+
+     EXCLUDED while Show Records is open: the Audit & Analytics Dashboard
+     (#archiveSection) does NOT take part in this scale-to-fit. Its result
+     table is unbounded (49+ real records, growing) and folding it into
+     this measurement forced the WHOLE view - filter bar, stat cards and
+     all - down to MIN_SCALE and still needed a page scrollbar on top of
+     that. Instead, while `body.archive-open` is set (toggled in
+     toggleArchive()), applyFit() below just clears the transform and
+     returns, and plain CSS (see the #archiveSection/.search-results-box
+     rules) makes that section a real-viewport flex column: fixed-size
+     header controls on top, the table flexing to fill the rest and
+     scrolling internally. This script's own MIN_SCALE/MAX_SCALE
+     scale-to-fit behavior for the Register entry screen is unchanged. -->
 <script>
 (function () {
     try {
@@ -8678,6 +8740,23 @@
         function applyFit() {
             pending = false;
             try {
+                // Show Records (#archiveSection, body.archive-open) uses its
+                // own real-viewport/flex layout - fixed-size header area +
+                // an internally-scrolling table - instead of this whole-
+                // page scale transform (see the #archiveSection CSS
+                // comment). Just clear any leftover transform from Register
+                // mode and bail; the CSS under body.archive-open handles
+                // the rest.
+                if (document.body.classList.contains('archive-open')) {
+                    stage.style.position = '';
+                    stage.style.left = '';
+                    stage.style.top = '';
+                    stage.style.transform = 'none';
+                    document.documentElement.style.overflow = 'hidden';
+                    document.body.style.overflow = 'hidden';
+                    return;
+                }
+
                 // Reset so we measure the wrapper's true natural size for the
                 // CURRENT viewport width (its width tracks 100% of the page,
                 // its height is now free to be whatever its content needs).
