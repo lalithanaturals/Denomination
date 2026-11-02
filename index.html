@@ -544,73 +544,92 @@
         .print-opt-card.whatsapp-opt { background: #f0fdf4; border-color: #bbf7d0; color: #16a34a; grid-column: span 2; }
         .print-opt-card.whatsapp-opt:hover { background: #dcfce7; border-color: #22c55e; }
 
-        /* A4 PORTRAIT "MODERN CARDS" EXPORT CONTAINER
-           Replaces the old landscape 5-column sheet with the approved
-           portrait "modern cards" design: a clean info strip, two red hero
-           cards (Total Sale / Amount Difference), then a dense two-column
-           grid of detail cards. All element IDs referenced by
-           populateA4Data()/populateA4DataFromRecord() are preserved so no
-           calculation/data-wiring logic needed to change — this is a
-           template/visual-only rebuild. Portrait A4 at ~150dpi (1240x1754). */
+        /* A4 LANDSCAPE "4-COLUMN + SUMMARY SIDEBAR" EXPORT CONTAINER (v1.2.4)
+           Keeps the existing header (logo / business name / branch pill /
+           info strip) exactly as-is, per explicit feedback that the header
+           was already right. v1.2.6 "navy duotone" layout: 4 equal-width
+           columns (Digital Payments / Tray Balance / Expenses /
+           Owner+Vendor+Staff+Unbilled) in a top row, each with a uniform
+           dark-navy section header bar (icons retained, no more per-column
+           rainbow colors) — then a second row below with a navy Total
+           Summary box next to red Total Sale and navy Variance hero boxes,
+           Total Sale and Variance sharing one CSS class with no per-box
+           size overrides so they render pixel-identical. Matches the
+           approved navy-duotone-refined-v4 mockup. All element IDs
+           referenced by populateA4Data()/populateA4DataFromRecord() are
+           preserved (minus a4SumTotal1/a4LblCombined, dropped along with
+           the rows they fed) so calculation/data-wiring logic is otherwise
+           unchanged. Landscape A4 at ~150dpi (1754x1240), fonts large per
+           explicit repeated feedback ("I want everything in big fonts"). */
         #a4ExportContainer {
-            position: fixed; top: -9999px; left: -9999px; width: 1240px; min-height: 1754px;
-            background: #ffffff; padding: 40px 44px 34px; font-family: 'Plus Jakarta Sans', sans-serif;
-            display: flex; flex-direction: column; gap: 14px; color: #0f172a; box-sizing: border-box;
+            position: fixed; top: -9999px; left: -9999px; width: 1754px; min-height: 1240px;
+            background: #ffffff; padding: 30px 34px 24px; font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex; flex-direction: column; gap: 12px; color: #0f172a; box-sizing: border-box;
         }
         #a4ExportContainer * { box-sizing: border-box; }
         #a4ExportContainer .a4-topbar { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #dc2626; padding-bottom: 14px; margin-bottom: 2px; }
-        #a4ExportContainer .a4-biz-name { font-size: 30px; font-weight: 800; color: #dc2626; letter-spacing: -0.5px; line-height: 1.1; }
-        #a4ExportContainer .a4-biz-sub { font-size: 13px; color: #64748b; font-weight: 600; margin-top: 4px; }
-        #a4ExportContainer .a4-branch-pill { background: #dc2626; color: #fff; font-weight: 800; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase; padding: 8px 16px; border-radius: 7px; white-space: nowrap; }
-        #a4ExportContainer .a4-infostrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        #a4ExportContainer .a4-info-card { background: #f1f5f9; border-radius: 9px; padding: 9px 13px; }
-        #a4ExportContainer .a4-info-card .lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #64748b; margin-bottom: 3px; }
-        #a4ExportContainer .a4-info-card .val { font-size: 18px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace; }
-        /* Hero cards — kept clearly dominant but reduced from the earlier
-           oversized mockup size per explicit feedback ("decrease the size a
-           little"). */
-        #a4ExportContainer .a4-hero-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        #a4ExportContainer .hero-card { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-radius: 13px; padding: 17px 20px; color: #fff; box-shadow: 0 6px 16px rgba(220,38,38,0.28); min-height: 108px; display: flex; flex-direction: column; justify-content: center; }
-        #a4ExportContainer .hero-card .hero-lbl { font-size: 12.5px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; opacity: 0.92; }
-        #a4ExportContainer .hero-card .hero-num { font-size: 42px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1.15; margin: 3px 0 2px; }
-        #a4ExportContainer .hero-card .hero-sub { font-size: 12px; font-weight: 600; opacity: 0.9; }
-        #a4ExportContainer .hero-badge { display: inline-block; padding: 5px 13px; border-radius: 18px; font-weight: 800; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 7px; }
-        #a4ExportContainer .hero-badge.sign-negative { background: rgba(255,255,255,0.24); color: #fff; }
-        #a4ExportContainer .hero-badge.sign-negative::before { content: "Short — Needs Attention"; }
-        #a4ExportContainer .hero-badge.sign-zero { background: #dcfce7; color: #14532d; }
-        #a4ExportContainer .hero-badge.sign-zero::before { content: "Matched — Perfect Tally"; }
-        #a4ExportContainer .hero-badge.sign-positive { background: #dbeafe; color: #1e3a8a; }
-        #a4ExportContainer .hero-badge.sign-positive::before { content: "Over — Surplus Cash"; }
-        #a4ExportContainer .hero-card #a4SumVariance { color: #fff !important; }
+        #a4ExportContainer .a4-biz-name { font-size: 38px; font-weight: 800; color: #dc2626; letter-spacing: -0.5px; line-height: 1.1; }
+        #a4ExportContainer .a4-biz-sub { font-size: 16px; color: #64748b; font-weight: 600; margin-top: 4px; }
+        #a4ExportContainer .a4-branch-pill { background: #dc2626; color: #fff; font-weight: 800; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; white-space: nowrap; }
+        #a4ExportContainer .a4-infostrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        #a4ExportContainer .a4-info-card { background: #f1f5f9; border-radius: 10px; padding: 10px 16px; }
+        #a4ExportContainer .a4-info-card .lbl { font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #64748b; margin-bottom: 3px; }
+        #a4ExportContainer .a4-info-card .val { font-size: 23px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace; }
 
-        #a4ExportContainer .a4-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
-        #a4ExportContainer .a4-grid .full-span { grid-column: 1 / -1; }
-        #a4ExportContainer .sheet-section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(15,23,42,0.05); }
-        #a4ExportContainer .section-header { background: #f8fafc; color: #334155; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 13px; border-bottom: 1px solid #e2e8f0; }
+        /* Body: 4 equal columns + a fixed-width full-height summary sidebar. */
+        #a4ExportContainer .a4-body-grid { display: flex; align-items: stretch; gap: 10px; flex: 1; }
+        #a4ExportContainer .a4-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        #a4ExportContainer .sheet-section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(15,23,42,0.05); flex: 0 0 auto; }
+        #a4ExportContainer .sheet-section.grow { flex: 1 1 auto; display: flex; flex-direction: column; }
+        #a4ExportContainer .sheet-section.grow table { flex: 1 1 auto; }
+
+        /* Colored bullet-point bar section headers, matching the approved
+           old-style mockup palette: blue/orange/red/purple per column. */
+        #a4ExportContainer .section-header { color: #fff; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 16px; display: flex; align-items: center; gap: 8px; background: #16213e; }
+        #a4ExportContainer .section-header .hdr-icon { font-size: 17px; line-height: 1; }
+
         #a4ExportContainer table { width: 100%; border-collapse: collapse; }
         #a4ExportContainer tr:nth-child(even) td { background: #fbfcfe; }
-        #a4ExportContainer th, #a4ExportContainer td { padding: 4px 13px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600; }
-        #a4ExportContainer .cell-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; font-size: 13px; white-space: nowrap; }
+        #a4ExportContainer th, #a4ExportContainer td { padding: 7px 16px; border-bottom: 1px solid #f1f5f9; font-size: 16px; font-weight: 600; }
+        #a4ExportContainer .cell-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; text-align: right; font-size: 16px; white-space: nowrap; }
         #a4ExportContainer table.tray-table { table-layout: fixed; }
         #a4ExportContainer table.tray-table td:first-child { width: 58%; white-space: normal; }
         #a4ExportContainer table.tray-table td.cell-val { width: 42%; padding-left: 4px; }
-        #a4ExportContainer .sheet-section-total { background: #f8fafc; padding: 6px 13px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; border-top: 2px solid #0f172a; }
-        #a4ExportContainer .subgroup-lbl { font-size: 11px; font-weight: 800; color: #475569; padding: 4px 13px; background: #f1f5f9; }
+        #a4ExportContainer .sheet-section-total { background: #f8fafc; padding: 9px 16px; font-weight: 800; font-size: 17px; display: flex; justify-content: space-between; border-top: 2px solid #0f172a; }
+        #a4ExportContainer .subgroup-lbl { font-size: 14px; font-weight: 800; color: #475569; padding: 6px 16px; background: #f1f5f9; }
 
-        #a4ExportContainer .summary-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 11px 14px; display: flex; flex-direction: column; gap: 0; font-size: 13px; box-shadow: 0 2px 6px rgba(15,23,42,0.05); }
-        #a4ExportContainer .summary-card .card-title { font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #334155; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 4px; }
-        #a4ExportContainer .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border-bottom: 1px dashed #e2e8f0; font-weight: 700; border-radius: 4px; font-size: 13px; }
-        #a4ExportContainer .summary-row.bold { font-weight: 800; color: #0f172a; font-size: 13.5px; background: #f1f5f9; }
-        #a4ExportContainer .summary-row.sign-negative { background: #fee2e2 !important; }
-        #a4ExportContainer .summary-row.sign-negative span, #a4ExportContainer .summary-row.sign-negative strong { color: #dc2626 !important; }
-        #a4ExportContainer .summary-row.sign-zero { background: #dcfce7 !important; }
-        #a4ExportContainer .summary-row.sign-zero span, #a4ExportContainer .summary-row.sign-zero strong { color: #16a34a !important; }
-        #a4ExportContainer .summary-row.sign-positive { background: #dbeafe !important; }
-        #a4ExportContainer .summary-row.sign-positive span, #a4ExportContainer .summary-row.sign-positive strong { color: #2563eb !important; }
-        #a4ExportContainer .a4-notes-card { font-size: 12.5px; font-weight: 600; color: #334155; }
-        #a4ExportContainer .a4-notes-card .card-title { font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #334155; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 6px; }
-        #a4ExportContainer .a4-sign-row { display: flex; justify-content: space-between; gap: 40px; margin-top: 10px; padding-top: 4px; }
-        #a4ExportContainer .a4-sign-row .sig { flex: 1; text-align: center; border-top: 1px solid #94a3b8; padding-top: 6px; font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; }
+        /* v1.2.6 navy-duotone bottom row: Total Summary box + Total Sale /
+           Variance hero boxes sit side by side, below the 4-column top row
+           (replaces the old full-height sidebar layout). Total Sale and
+           Variance share one base class (.a4-hero-box) with identical
+           flex/height rules and no per-box width/height overrides, so they
+           render pixel-identical in size — only background/text differ. */
+        #a4ExportContainer .a4-bottom-grid { display: flex; align-items: flex-start; gap: 10px; }
+        #a4ExportContainer .a4-summary-card { flex: 1 1 0; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(15,23,42,0.05); }
+        #a4ExportContainer .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 16px; border-bottom: 1px solid #f1f5f9; font-weight: 700; font-size: 16px; }
+        #a4ExportContainer .summary-row:last-child { border-bottom: none; }
+        #a4ExportContainer .summary-row span:first-child { color: #334155; }
+        #a4ExportContainer .summary-row span:last-child { font-family: 'JetBrains Mono', monospace; font-weight: 800; }
+        #a4ExportContainer .a4-hero-pair { display: flex; gap: 10px; flex: 1 1 0; }
+        #a4ExportContainer .a4-hero-box { flex: 1 1 0; min-width: 0; height: 120px; border-radius: 10px; padding: 16px 20px; color: #fff; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+        #a4ExportContainer .a4-hero-box .lbl { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.9; }
+        #a4ExportContainer .a4-hero-box .val { font-size: 38px; font-weight: 900; font-family: 'JetBrains Mono', monospace; line-height: 1.15; margin-top: 4px; }
+        #a4ExportContainer .a4-hero-box.sale { background: #dc2626; }
+        #a4ExportContainer .a4-hero-box.variance { background: #16213e; }
+        #a4ExportContainer .a4-hero-box.variance .val { margin-bottom: 6px; }
+        #a4ExportContainer .a4-notes-card { font-size: 15px; font-weight: 600; color: #334155; }
+
+        #a4ExportContainer .hero-badge { display: inline-block; padding: 6px 14px; border-radius: 18px; font-weight: 800; font-size: 13px; letter-spacing: 0.4px; text-transform: uppercase; }
+        #a4ExportContainer .hero-badge.sign-negative { background: #dc2626; color: #fff; }
+        #a4ExportContainer .hero-badge.sign-negative::before { content: "Short — Needs Attention"; }
+        #a4ExportContainer .hero-badge.sign-zero { background: #16a34a; color: #fff; }
+        #a4ExportContainer .hero-badge.sign-zero::before { content: "Matched — Perfect Tally"; }
+        #a4ExportContainer .hero-badge.sign-positive { background: #2563eb; color: #fff; }
+        #a4ExportContainer .hero-badge.sign-positive::before { content: "Over — Surplus Cash"; }
+
+        #a4ExportContainer .a4-footer-row { display: flex; justify-content: space-between; align-items: center; gap: 40px; margin-top: 6px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+        #a4ExportContainer .a4-footer-row .sig { flex: 1; text-align: center; font-size: 14px; font-weight: 700; color: #64748b; }
+        #a4ExportContainer .a4-footer-row .sig.left, #a4ExportContainer .a4-footer-row .sig.right { border-top: 1px solid #94a3b8; padding-top: 8px; text-transform: uppercase; letter-spacing: 0.4px; }
 
         /* THERMAL RECEIPT PRINT CONTAINER (80mm) */
         #thermalReceiptContainer {
@@ -2196,86 +2215,92 @@
         <div class="a4-info-card"><div class="lbl">Final Grand Total</div><div class="val" id="a4FinalGrandDisplay">₹0</div></div>
     </div>
 
-    <div class="a4-hero-row">
-        <div class="hero-card">
-            <div class="hero-lbl">Total Sale</div>
-            <div class="hero-num" id="a4SumTotalSale">₹0</div>
-            <div class="hero-sub">Final Sale incl. Software Sale</div>
+    <div class="a4-body-grid">
+        <div class="a4-col">
+            <div class="sheet-section">
+                <div class="section-header"><span class="hdr-icon">💳</span>Digital Payments</div>
+                <table>
+                    <tr><td>Card Pay</td><td class="cell-val" id="a4CardPay">₹0</td></tr>
+                    <tr><td>UPI Pay</td><td class="cell-val" id="a4UpiPay">₹0</td></tr>
+                    <tr><td>Pluxee (Sodexo)</td><td class="cell-val" id="a4PluxeePay">₹0</td></tr>
+                </table>
+                <div class="subgroup-lbl">Cash Added</div>
+                <table><tbody id="a4DigitalAddTable"></tbody></table>
+                <div class="sheet-section-total"><span>Grand Total:</span><span id="a4DigitalGrandTotal">₹0</span></div>
+            </div>
         </div>
-        <div class="hero-card">
-            <div class="hero-lbl">Amount Difference (Variance)</div>
-            <div class="hero-num" id="a4SumVariance">₹0</div>
-            <div class="hero-badge" id="a4SumVarianceRow"></div>
+
+        <div class="a4-col">
+            <div class="sheet-section grow">
+                <div class="section-header"><span class="hdr-icon">🧾</span>Tray Balance</div>
+                <table class="tray-table">
+                    <tbody id="a4TrayTable"></tbody>
+                </table>
+                <div class="sheet-section-total"><span>Grand Total:</span><span id="a4LblTotalDenom">₹0</span></div>
+            </div>
+        </div>
+
+        <div class="a4-col">
+            <div class="sheet-section grow">
+                <div class="section-header"><span class="hdr-icon">💰</span>Expenses</div>
+                <table><tbody id="a4ExpTable"></tbody></table>
+                <div class="sheet-section-total"><span>Exp Total:</span><span id="a4LblExpTotal">₹0</span></div>
+            </div>
+        </div>
+
+        <div class="a4-col">
+            <div class="sheet-section grow">
+                <div class="section-header"><span class="hdr-icon">🤝</span>Owner, Vendor &amp; Unbilled</div>
+                <div class="subgroup-lbl">Owner Bills</div>
+                <table><tbody id="a4OwnerTable"></tbody></table>
+                <div class="subgroup-lbl">Vendor Payments</div>
+                <table><tbody id="a4VendTable"></tbody></table>
+                <div class="subgroup-lbl">Staff Bills</div>
+                <table><tbody id="a4StaffTable"></tbody></table>
+                <div class="subgroup-lbl">Unbilled</div>
+                <table><tbody id="a4UnbTable"></tbody></table>
+            </div>
         </div>
     </div>
 
-    <div class="a4-grid">
-        <div class="sheet-section">
-            <div class="section-header">Tray Balance / Denomination Breakdown</div>
-            <table class="tray-table">
-                <tbody id="a4TrayTable"></tbody>
-            </table>
-            <div class="sheet-section-total"><span>Grand Total:</span><span id="a4LblTotalDenom">₹0</span></div>
+    <div class="a4-bottom-grid">
+        <div class="a4-summary-card">
+            <div class="section-header"><span class="hdr-icon">📊</span>Total Summary</div>
+            <div class="summary-row"><span>Digital + Cash Grand Total</span><span id="a4SumGrand">₹0</span></div>
+            <div class="summary-row"><span>Expense Total (+)</span><span id="a4SumExp">₹0</span></div>
+            <div class="summary-row"><span>Owner Bills (+)</span><span id="a4SumOwner">₹0</span></div>
+            <div class="summary-row"><span>Vendor Pay (+)</span><span id="a4SumVend">₹0</span></div>
+            <div class="summary-row"><span>Staff Bills (+)</span><span id="a4SumStaff">₹0</span></div>
+            <div class="summary-row"><span>Unbilled (+)</span><span id="a4SumUnb">₹0</span></div>
+            <div class="summary-row"><span>Software Sale</span><span id="a4VasySale">₹0</span></div>
         </div>
 
-        <div class="sheet-section">
-            <div class="section-header">Unbilled / Walk-in Sales</div>
-            <table><tbody id="a4UnbTable"></tbody></table>
-            <div class="sheet-section-total"><span>Unbilled Total:</span><span id="a4SumUnb">₹0</span></div>
-        </div>
+        <div class="a4-hero-pair">
+            <!-- Total Sale: the ONE prominent hero display of this figure
+                 (user: "i want only 1 that is total sale in big letters").
+                 Pixel-identical size to the Variance box below: both share
+                 the .a4-hero-box base class with no per-box width/height
+                 overrides. -->
+            <div class="a4-hero-box sale">
+                <div class="lbl">Total Sale</div>
+                <div class="val" id="a4SumTotalSale">₹0</div>
+            </div>
 
-        <div class="sheet-section">
-            <div class="section-header">Opening Balance / Digital Payments</div>
-            <table>
-                <tr><td>Card Pay</td><td class="cell-val" id="a4CardPay">₹0</td></tr>
-                <tr><td>UPI Pay</td><td class="cell-val" id="a4UpiPay">₹0</td></tr>
-                <tr><td>Pluxee (Sodexo)</td><td class="cell-val" id="a4PluxeePay">₹0</td></tr>
-                <tbody id="a4DigitalAddTable"></tbody>
-            </table>
+            <!-- Variance: equally prominent, same size as Total Sale, colored
+                 by the same sign convention used elsewhere (red/green/blue
+                 for short/matched/over). -->
+            <div class="a4-hero-box variance" id="a4SumVarianceRow">
+                <div class="lbl">Variance</div>
+                <div class="val" id="a4SumVariance">₹0</div>
+                <div class="hero-badge" id="a4SumVarianceBadge"></div>
+            </div>
         </div>
+    </div>
 
-        <div class="sheet-section">
-            <div class="section-header">Staff Bills</div>
-            <table><tbody id="a4StaffTable"></tbody></table>
-            <div class="sheet-section-total"><span>Staff Bills Total:</span><span id="a4SumStaff">₹0</span></div>
-        </div>
-
-        <div class="sheet-section">
-            <div class="section-header">Expenses</div>
-            <table><tbody id="a4ExpTable"></tbody></table>
-            <div class="sheet-section-total"><span>Exp Total:</span><span id="a4LblExpTotal">₹0</span></div>
-        </div>
-
-        <div class="sheet-section">
-            <div class="section-header">Owner / Cash & Other Entries</div>
-            <table><tbody id="a4OwnerTable"></tbody></table>
-            <div class="sheet-section-total"><span>Owner Total:</span><span id="a4SumOwner">₹0</span></div>
-        </div>
-
-        <div class="sheet-section full-span">
-            <div class="section-header">Vendor Payments</div>
-            <table><tbody id="a4VendTable"></tbody></table>
-            <div class="sheet-section-total"><span>Vendor Payments Total:</span><span id="a4SumVend">₹0</span></div>
-        </div>
-
-        <div class="summary-card">
-            <div class="card-title">Sales Summary</div>
-            <div class="summary-row"><span>Software Sale:</span><span id="a4VasySale">₹0</span></div>
-            <div class="summary-row bold" id="a4SumTotal1Row"><span>Total (Cash + Outflows):</span><span id="a4SumTotal1">₹0</span></div>
-            <div class="summary-row"><span>Cash Grand Total:</span><span id="a4SumGrand">₹0</span></div>
-            <div class="summary-row"><span>Expenses Total:</span><span id="a4SumExp">₹0</span></div>
-            <div class="summary-row"><span>Comb. Outflow Total:</span><span id="a4LblCombined">₹0</span></div>
-        </div>
-
-        <div class="summary-card a4-notes-card">
-            <div class="card-title">Notes</div>
-            <div>Notes: <span id="a4NotesDisplay" style="font-weight:500;">None</span></div>
-        </div>
-
-        <div class="full-span a4-sign-row">
-            <div class="sig">Cashier Signature</div>
-            <div class="sig">Verified By (Owner/Manager)</div>
-        </div>
+    <div class="a4-footer-row">
+        <div class="sig left">Cashier Signature — <span id="a4FooterCashier"></span></div>
+        <div class="sig">Notes: <span id="a4NotesDisplay" style="font-weight:700;">None</span></div>
+        <div class="sig right">Verified by Owner</div>
     </div>
 </div>
 
@@ -2327,7 +2352,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.2.2';
+    var APP_VERSION = '1.2.6';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -6961,7 +6986,7 @@
             html2canvas(exportEl, { scale: 2, useCORS: true }).then(canvas => {
                 let imgData = canvas.toDataURL('image/jpeg', 0.95);
                 let printWin = window.open('', '_blank');
-                printWin.document.write(`<html><head><title>Standard Print View</title><style>@page{size:A4 portrait;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();"></body></html>`);
+                printWin.document.write(`<html><head><title>Standard Print View</title><style>@page{size:A4 landscape;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();"></body></html>`);
                 printWin.document.close();
                 closeModalOnly();
             });
@@ -6981,7 +7006,7 @@
             html2canvas(exportEl, { scale: 2, useCORS: true }).then(canvas => {
                 let imgData = canvas.toDataURL('image/jpeg', 0.95);
                 let pdfWindow = window.open('', '_blank');
-                pdfWindow.document.write(`<html><head><title>PDF Document</title><style>@page{size:A4 portrait;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();"></body></html>`);
+                pdfWindow.document.write(`<html><head><title>PDF Document</title><style>@page{size:A4 landscape;margin:8mm;} body{margin:0;}</style></head><body><img src="${imgData}" style="width:100%;" onload="window.print();"></body></html>`);
                 pdfWindow.document.close();
                 closeModalOnly();
             });
@@ -7156,6 +7181,7 @@
         document.getElementById('a4Date').innerText = formatDateDMY(document.getElementById('regDate').value);
         document.getElementById('a4Branch').innerText = document.getElementById('branchLocation').value;
         document.getElementById('a4Cashier').innerText = document.getElementById('cashierName').value.trim();
+        document.getElementById('a4FooterCashier').innerText = document.getElementById('cashierName').value.trim();
         document.getElementById('a4ClosingBal').innerText = '₹' + (document.getElementById('closingBalInput').value || 0);
 
         document.getElementById('a4CardPay').innerText = '₹' + (document.getElementById('cardPay').value || 0);
@@ -7167,10 +7193,11 @@
             let val = inp.getAttribute('data-val');
             let qty = inp.value || 0;
             if(qty > 0) {
-                digitalAddHtml += `<tr><td>₹${val} Cash Added</td><td class="cell-val">${qty} pcs (₹${val*qty})</td></tr>`;
+                digitalAddHtml += `<tr><td>₹${val} × ${qty} pcs</td><td class="cell-val">₹${val*qty}</td></tr>`;
             }
         });
         document.getElementById('a4DigitalAddTable').innerHTML = digitalAddHtml;
+        document.getElementById('a4DigitalGrandTotal').innerText = '₹' + (calcDigitalPaymentsTotal() + calcCashAddedTotal());
 
         let trayHtml = `<tr><td>Opening Balance (-)</td><td class="cell-val">₹${document.getElementById('openingBalInput').value || 0}</td></tr>`;
         // #trayTable's tbody has NO header row — every <tr> in it (₹500 down to
@@ -7183,7 +7210,9 @@
             let sub = tr.querySelector('.d-sub').innerText;
             trayHtml += `<tr><td>${denom}</td><td class="cell-val">${qty} | ₹${sub}</td></tr>`;
         });
-        trayHtml += `<tr><td>Closing Bal (₹200-₹1)</td><td class="cell-val">₹${document.getElementById('closingBalInput').value || 0}</td></tr>`;
+        // Closing Balance is intentionally shown only once on this report —
+        // in the header info-strip (#a4ClosingBal) — not duplicated here
+        // (previously this row repeated it under a second label).
         let extraChangeGivenVal = document.getElementById('extraChangeGivenInput').value || 0;
         let changeLeftByCustomerVal = document.getElementById('changeLeftByCustomerInput').value || 0;
         if (Number(extraChangeGivenVal) > 0) {
@@ -7238,21 +7267,20 @@
             if(name || amt) unbHtml += `<tr><td>${name}</td><td class="cell-val">₹${amt}</td></tr>`;
         });
         document.getElementById('a4UnbTable').innerHTML = unbHtml || '<tr><td colspan="2" style="color:#94a3b8; text-align:center;">None</td></tr>';
-        document.getElementById('a4LblCombined').innerText = document.getElementById('lblCombinedOutflow').innerText;
 
         document.getElementById('a4SumGrand').innerText = document.getElementById('sumGrand').innerText;
         document.getElementById('a4SumExp').innerText = document.getElementById('sumExp').innerText;
         document.getElementById('a4SumOwner').innerText = document.getElementById('sumOwner').innerText;
         document.getElementById('a4SumVend').innerText = document.getElementById('sumVend').innerText;
         document.getElementById('a4SumStaff').innerText = document.getElementById('sumStaff').innerText;
-        document.getElementById('a4SumTotal1').innerText = document.getElementById('sumTotal1').innerText;
-        applySignHighlight(document.getElementById('a4SumTotal1Row'), document.getElementById('a4SumTotal1'), Number(document.getElementById('sumTotal1').innerText.replace('₹','')) || 0);
         document.getElementById('a4VasySale').innerText = '₹' + (document.getElementById('vasySale').value || 0);
         document.getElementById('a4SumUnb').innerText = document.getElementById('sumUnb').innerText;
         document.getElementById('a4SumTotalSale').innerText = document.getElementById('sumTotalSale').innerText;
         let a4VarEl = document.getElementById('a4SumVariance');
         a4VarEl.innerText = document.getElementById('sumVariance').innerText;
-        applySignHighlight(document.getElementById('a4SumVarianceRow'), a4VarEl, Number(document.getElementById('sumVariance').innerText.replace('₹','').replace('+','')) || 0);
+        let a4VarVal = Number(document.getElementById('sumVariance').innerText.replace('₹','').replace('+','')) || 0;
+        applySignHighlight(document.getElementById('a4SumVarianceRow'), a4VarEl, a4VarVal);
+        applySignHighlight(document.getElementById('a4SumVarianceBadge'), null, a4VarVal);
         document.getElementById('a4NotesDisplay').innerText = document.getElementById('registerNotes').value || 'None';
         document.getElementById('a4FinalGrandDisplay').innerText = document.getElementById('finalGrandDisplay').innerText;
     }
@@ -7261,12 +7289,14 @@
         document.getElementById('a4Date').innerText = formatDateDMY(rec.date);
         document.getElementById('a4Branch').innerText = rec.branch;
         document.getElementById('a4Cashier').innerText = rec.cashier;
+        document.getElementById('a4FooterCashier').innerText = rec.cashier;
         document.getElementById('a4ClosingBal').innerText = '₹' + (rec.closingBal || 0);
 
         document.getElementById('a4CardPay').innerText = '₹' + (rec.cardPay || 0);
         document.getElementById('a4UpiPay').innerText = '₹' + (rec.upiPay || 0);
         document.getElementById('a4PluxeePay').innerText = '₹' + (rec.pluxeePay || 0);
         document.getElementById('a4DigitalAddTable').innerHTML = '';
+        document.getElementById('a4DigitalGrandTotal').innerText = '₹' + ((Number(rec.cardPay)||0) + (Number(rec.upiPay)||0) + (Number(rec.pluxeePay)||0) + (Number(rec.cashAdded)||0));
 
         let recTrayHtml = `<tr><td>Opening Balance (-)</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr>`;
         // Older records saved before `denoms` existed simply won't have it —
@@ -7276,7 +7306,8 @@
                 recTrayHtml += `<tr><td>₹${d.val}</td><td class="cell-val">${d.qty || 0} | ₹${(Number(d.val) || 0) * (Number(d.qty) || 0)}</td></tr>`;
             });
         }
-        recTrayHtml += `<tr><td>Closing Balance (₹200-₹1)</td><td class="cell-val">₹${rec.closingBal || 0}</td></tr>`;
+        // Closing Balance is intentionally shown only once on this report —
+        // in the header info-strip (#a4ClosingBal) — not duplicated here.
         if (Number(rec.extraChangeGiven || 0) > 0) {
             recTrayHtml += `<tr><td>Extra Change Given (-)</td><td class="cell-val">₹${rec.extraChangeGiven}</td></tr>`;
         }
@@ -7312,13 +7343,6 @@
         });
         document.getElementById('a4UnbTable').innerHTML = unbH || '<tr><td colspan="2">None</td></tr>';
 
-        let combOut = totalExp;
-        if(rec.owners) rec.owners.forEach(o => combOut += o.amt);
-        if(rec.vendors) rec.vendors.forEach(v => combOut += v.amt);
-        if(rec.staffBills) rec.staffBills.forEach(s => combOut += s.amt);
-        if(rec.unbills) rec.unbills.forEach(u => combOut += u.amt);
-        document.getElementById('a4LblCombined').innerText = '₹' + combOut;
-
         document.getElementById('a4SumGrand').innerText = '₹' + (rec.grandTotal || 0);
         document.getElementById('a4SumExp').innerText = '₹' + totalExp;
         let totOwn = 0; if(rec.owners) rec.owners.forEach(o => totOwn += o.amt);
@@ -7327,9 +7351,6 @@
         document.getElementById('a4SumVend').innerText = '₹' + totVend;
         let totStaff = 0; if(rec.staffBills) rec.staffBills.forEach(s => totStaff += s.amt);
         document.getElementById('a4SumStaff').innerText = '₹' + totStaff;
-        let recTotal1 = Number(rec.finalTotal || rec.grandTotal || 0);
-        document.getElementById('a4SumTotal1').innerText = '₹' + recTotal1;
-        applySignHighlight(document.getElementById('a4SumTotal1Row'), document.getElementById('a4SumTotal1'), recTotal1);
         document.getElementById('a4VasySale').innerText = '₹' + (rec.vasySale || 0);
         document.getElementById('a4SumUnb').innerText = '₹' + totUnb;
         document.getElementById('a4SumTotalSale').innerText = '₹' + (rec.totalSale || 0);
@@ -7337,6 +7358,7 @@
         let recVariance = Number(rec.variance) || 0;
         a4VarElRec.innerText = (recVariance >= 0 ? '+' : '') + '₹' + recVariance;
         applySignHighlight(document.getElementById('a4SumVarianceRow'), a4VarElRec, recVariance);
+        applySignHighlight(document.getElementById('a4SumVarianceBadge'), null, recVariance);
         document.getElementById('a4NotesDisplay').innerText = rec.notes || 'None';
         document.getElementById('a4FinalGrandDisplay').innerText = '₹' + (rec.finalTotal || rec.grandTotal || 0);
     }
@@ -8847,9 +8869,18 @@
 </script>
 
 <!-- ===================== PWA: minimal offline-shell service worker =====================
-     Registered from an inline script via a Blob URL so this stays a single
-     .html file with no sibling .js that could go missing when the page is
-     just downloaded or opened from GitHub Pages. Deliberately minimal:
+     Registered from a real sibling file (./sw.js) at a STABLE relative URL,
+     not a Blob URL. A blob: URL is unique per page load, so the browser's
+     native update algorithm (which byte-diffs the currently-registered
+     script against the same URL on every navigation/periodic check) has
+     nothing stable to diff against - updates can silently never be
+     detected, and on some browsers blob: registration is outright
+     unsupported and just fails. ./sw.js fixes both: it's fetchable at a
+     fixed path next to index.html (works at the site root and under a
+     GitHub Pages subpath like /Denomination/ alike), so the browser's
+     update-check/skipWaiting/clients.claim machinery (already implemented
+     in sw.js) actually works release over release.
+     Deliberately minimal (logic lives in sw.js, see that file):
        - network-first for the page's own navigation request, so a reopen
          always picks up the newest deployed copy (old cached JS can never
          get stuck in the way of an update);
@@ -8865,43 +8896,53 @@
     try {
         if (!('serviceWorker' in navigator)) return;
         if (location.protocol === 'file:') return; // SW registration is unsupported here anyway
-        var swCode = [
-            "const CACHE_NAME = 'lalitha-register-shell-v1';",
-            "self.addEventListener('install', function (e) { self.skipWaiting(); });",
-            "self.addEventListener('activate', function (e) {",
-            "  e.waitUntil(Promise.all([",
-            "    clients.claim(),",
-            "    caches.keys().then(function (names) {",
-            "      return Promise.all(names.filter(function (n) { return n !== CACHE_NAME; }).map(function (n) { return caches.delete(n); }));",
-            "    })",
-            "  ]));",
-            "});",
-            "self.addEventListener('fetch', function (event) {",
-            "  const req = event.request;",
-            "  if (req.method !== 'GET') return;",
-            "  const url = new URL(req.url);",
-            // Cloud sync must always be live - never intercepted or cached.
-            "  if (url.hostname === 'script.google.com' || url.hostname.endsWith('.script.google.com') || url.hostname === 'script.googleusercontent.com') return;",
-            "  if (req.mode === 'navigate') {",
-            // Network-first for the page itself: on success, refresh the cache
-            // but always serve what the network just returned, so an update
-            // is visible the moment it is reopened. Only falls back to the
-            // cached shell if the network request fails outright (offline).
-            "    event.respondWith(",
-            "      fetch(req).then(function (resp) {",
-            "        const copy = resp.clone();",
-            "        caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); }).catch(function () {});",
-            "        return resp;",
-            "      }).catch(function () {",
-            "        return caches.open(CACHE_NAME).then(function (c) { return c.match(req); });",
-            "      })",
-            "    );",
-            "  }",
-            "});"
-        ].join('\n');
-        var blob = new Blob([swCode], { type: 'application/javascript' });
-        var swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(function (err) {
+
+        // ---- One-time migration off the old broken blob: service worker ----
+        // Earlier builds of this app registered the service worker from a
+        // Blob URL (see history). Because that URL is unique per page load,
+        // some installed devices (notably "Add to Home Screen"/desktop PWA
+        // installs) got an old blob: worker stuck in the ACTIVE state,
+        // permanently serving a stale cached copy of the app - a normal
+        // browser-tab hard refresh never touches it, because the installed
+        // PWA is a separate cached context controlled by that stuck worker.
+        // That old worker's own `activate` cleanup can't run again to fix
+        // this (it already ran, once, back when it installed) - the only
+        // reliable fix is a page-level unregister of anything that is not
+        // already our stable ./sw.js, followed by a fresh registration.
+        // DO NOT remove this block casually: it is what recovers users
+        // already stuck on the old blob-based worker. It is safe to delete
+        // only once we're confident no installed device is still on it.
+        try {
+            if (navigator.serviceWorker.getRegistrations) {
+                navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    (regs || []).forEach(function (reg) {
+                        var sw = reg.active || reg.waiting || reg.installing;
+                        var scriptUrl = sw && sw.scriptURL;
+                        var isNewWorker = scriptUrl && /\/sw\.js(?:[?#].*)?$/.test(scriptUrl);
+                        if (!isNewWorker) {
+                            reg.unregister().catch(function () {});
+                        }
+                    });
+                }).catch(function () {});
+            }
+            // Belt-and-suspenders: also drop any cache that isn't the current
+            // versioned one from the page side. sw.js's own `activate`
+            // handler does this too, but only once it successfully takes
+            // over - which is exactly what's been failing for stuck devices.
+            if (window.caches && caches.keys) {
+                caches.keys().then(function (names) {
+                    (names || []).forEach(function (n) {
+                        if (n !== 'lalitha-register-shell-v' + APP_VERSION) {
+                            caches.delete(n).catch(function () {});
+                        }
+                    });
+                }).catch(function () {});
+            }
+        } catch (migErr) {
+            console.warn('Old service worker migration skipped:', migErr && migErr.message);
+        }
+
+        navigator.serviceWorker.register('./sw.js').catch(function (err) {
             // Registration failing (unsupported context, blocked, etc.) must
             // never break the app itself - it just runs without offline caching.
             console.warn('Service worker registration skipped:', err && err.message);
