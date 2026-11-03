@@ -2352,7 +2352,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.2.9';
+    var APP_VERSION = '1.2.10';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -5040,17 +5040,12 @@
     function applyThermalPageSizeContinuous(win, paperWidthMm) {
         paperWidthMm = paperWidthMm || '72mm';
         try {
-            // Switched from 3276mm to 420mm (2026-11-03, second pass): the
-            // 3276mm value made Chrome's print PREVIEW shrink the actual
-            // content down to an unreadably tiny sliver at the top (since
-            // the preview scales the whole declared page into one small
-            // pane), which worried the cashier even though the real
-            // printed font size is fixed in px and unrelated to the page's
-            // declared length. Using the driver's much shorter 420mm
-            // option instead keeps the same "let the printer auto-cut
-            // after the real content" behavior while giving a preview
-            // that's actually legible, in case 3276mm turns out to print
-            // wrong on this printer too.
+            // 420mm (2026-11-03, confirmed working): tried 3276mm first,
+            // which did collapse to "1 sheet of paper" but made Chrome's
+            // print PREVIEW shrink to an unreadably tiny sliver. 420mm
+            // also lands on "1 sheet of paper" (confirmed by the user on
+            // the real print dialog) with a normal, legible preview — so
+            // this is the value to keep for this printer.
             let styleEl = win.document.createElement('style');
             styleEl.id = 'computedPageSize';
             styleEl.textContent = `@page { size: ${paperWidthMm} 420mm; margin: 0; }`;
@@ -5114,12 +5109,12 @@
                 <style>
                     * { box-sizing: border-box; }
                     html, body { height: auto; margin: 0; padding: 0; }
-                    body { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: ${bodyWidthMm}; max-width: 100%; margin: 0 auto; padding: 14px 6px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow-x: hidden; }
+                    body { font-family: 'JetBrains Mono', monospace; font-size: 13px; width: ${bodyWidthMm}; max-width: 100%; margin: 0 auto; padding: 14px 4px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow-x: hidden; }
                     .center { text-align: center; }
-                    .biz-name { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
-                    .meta { font-size: 9px; line-height: 1.45; text-align: center; color: #111; margin-top: 4px; }
+                    .biz-name { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; }
+                    .meta { font-size: 11px; line-height: 1.45; text-align: center; color: #111; margin-top: 4px; }
                     .divider { border: none; border-top: 1px dashed #000; margin: 12px 0; }
-                    .denom-line { text-align: center; font-size: 20px; font-weight: 800; padding: 16px 0; }
+                    .denom-line { text-align: center; font-size: 26px; font-weight: 800; padding: 16px 0; white-space: nowrap; }
                 </style>
             </head>
             <body>
