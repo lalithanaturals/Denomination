@@ -2352,7 +2352,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.2.8';
+    var APP_VERSION = '1.2.9';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -5040,9 +5040,20 @@
     function applyThermalPageSizeContinuous(win, paperWidthMm) {
         paperWidthMm = paperWidthMm || '72mm';
         try {
+            // Switched from 3276mm to 420mm (2026-11-03, second pass): the
+            // 3276mm value made Chrome's print PREVIEW shrink the actual
+            // content down to an unreadably tiny sliver at the top (since
+            // the preview scales the whole declared page into one small
+            // pane), which worried the cashier even though the real
+            // printed font size is fixed in px and unrelated to the page's
+            // declared length. Using the driver's much shorter 420mm
+            // option instead keeps the same "let the printer auto-cut
+            // after the real content" behavior while giving a preview
+            // that's actually legible, in case 3276mm turns out to print
+            // wrong on this printer too.
             let styleEl = win.document.createElement('style');
             styleEl.id = 'computedPageSize';
-            styleEl.textContent = `@page { size: ${paperWidthMm} 3276mm; margin: 0; }`;
+            styleEl.textContent = `@page { size: ${paperWidthMm} 420mm; margin: 0; }`;
             win.document.head.appendChild(styleEl);
         } catch (e) { /* best-effort — printing still works without it */ }
     }
