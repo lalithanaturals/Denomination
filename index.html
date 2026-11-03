@@ -954,19 +954,29 @@
                     <button class="btn-clear-mini" onclick="event.stopPropagation(); clearCategory('cash_added')">Clear</button>
                 </div>
                 <div id="cashAddedWrap">
-                <div class="sub-header"><span>Denom / Field</span><span>Qty | Amount (₹)</span></div>
+                <!-- Live Cash Locker balance for whatever branch is currently
+                     selected above (#branchLocation) — shown right here so
+                     you can see what's available before pulling, without
+                     having to open the Cash Locker screen. Kept in sync by
+                     updateCashAddedLockerStockRow(), called on page load,
+                     branch change, and right after any locker withdrawal. -->
+                <div id="cashAddedLockerBalRow" style="background:#ecfdf5; border-top:1px solid #a7f3d0; border-bottom:1px solid #a7f3d0; padding:6px 12px; font-size:10.5px; font-weight:700; color:#065f46; display:flex; justify-content:space-between; align-items:center;">
+                    <span>💰 In Locker (<span id="cashAddedLockerBranchName">—</span>):</span>
+                    <span id="cashAddedLockerBalTotal" style="font-family:'JetBrains Mono';">₹0</span>
+                </div>
+                <div class="sub-header"><span>Denom / Field</span><span>Qty | Amount (₹)</span><span>In Locker</span></div>
                 <div class="table-scroll no-internal-scroll">
                 <table>
                     <tbody id="cashAddedBody">
-                    <tr><td>₹500</td><td><input type="number" class="c-count" data-val="500" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹200</td><td><input type="number" class="c-count" data-val="200" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹100</td><td><input type="number" class="c-count" data-val="100" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹50</td><td><input type="number" class="c-count" data-val="50" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹20</td><td><input type="number" class="c-count" data-val="20" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹10</td><td><input type="number" class="c-count" data-val="10" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹5</td><td><input type="number" class="c-count" data-val="5" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹2</td><td><input type="number" class="c-count" data-val="2" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
-                    <tr><td>₹1</td><td><input type="number" class="c-count" data-val="1" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)"></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td></tr>
+                    <tr><td>₹500</td><td><input type="number" class="c-count" data-val="500" data-key="n500" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="500" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹200</td><td><input type="number" class="c-count" data-val="200" data-key="n200" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="200" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹100</td><td><input type="number" class="c-count" data-val="100" data-key="n100" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="100" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹50</td><td><input type="number" class="c-count" data-val="50" data-key="n50" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="50" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹20</td><td><input type="number" class="c-count" data-val="20" data-key="n20" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="20" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹10</td><td><input type="number" class="c-count" data-val="10" data-key="n10" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="10" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹5</td><td><input type="number" class="c-count" data-val="5" data-key="c5" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="5" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹2</td><td><input type="number" class="c-count" data-val="2" data-key="c2" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="2" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
+                    <tr><td>₹1</td><td><input type="number" class="c-count" data-val="1" data-key="c1" data-committed-qty="0" placeholder="0" oninput="recalcRegister()" onkeydown="handleEnter(event)" onchange="handleCashAddedDirectEntry(this)" title="Typed amounts are checked against this branch's Locker stock on save."></td><td class="c-sub" style="text-align:right; font-family:'JetBrains Mono'; font-weight:700;">0</td><td class="c-locker-avail" data-val="1" style="text-align:right; font-family:'JetBrains Mono'; font-size:10.5px; color:var(--muted);">0</td></tr>
                     </tbody>
                 </table>
                 </div>
@@ -981,10 +991,7 @@
         <div class="sheet-section accent-amber">
             <div class="section-header header-amber" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Tray Balance</span>
-                <div style="display:flex; gap:4px;">
-                    <button class="btn-mini" onclick="openPullFromLockerModal()" title="Pull cash from a branch's Cash Locker stock straight into this Tray Balance">📤 Pull From Locker</button>
-                    <button class="btn-clear-mini" onclick="clearCategory('tray')">Clear</button>
-                </div>
+                <button class="btn-clear-mini" onclick="clearCategory('tray')">Clear</button>
             </div>
             <div class="sub-header"><span>Denom / Field</span><span>Qty | Amount (₹)</span></div>
             <div class="table-scroll no-internal-scroll">
@@ -2395,7 +2402,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.3.4';
+    var APP_VERSION = '1.3.9';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -5848,6 +5855,7 @@
             vasySale: document.getElementById('vasySale').value,
             notes: document.getElementById('registerNotes').value,
             cCounts: Array.from(document.querySelectorAll('.c-count')).map(i => ({ val: i.getAttribute('data-val'), qty: i.value })),
+            cashAddedExternalLog: (window.cashAddedExternalLog || []).slice(),
             dCounts: Array.from(document.querySelectorAll('.d-count')).map(i => ({ val: i.getAttribute('data-val'), qty: i.value })),
             exp: Array.from(document.querySelectorAll('#expTableBody tr')).map(tr => ({ name: tr.querySelector('.exp-name').value, amt: tr.querySelector('.exp-amt').value, photo: tr.dataset.photo || '' })),
             owner: Array.from(document.querySelectorAll('#ownerTableBody tr')).map(tr => ({ name: tr.querySelector('.owner-name').value, amt: tr.querySelector('.owner-amt').value })),
@@ -5975,8 +5983,16 @@
 
         (state.cCounts || []).forEach(d => {
             let el = document.querySelector('.c-count[data-val="' + d.val + '"]');
-            if (el) el.value = d.qty || '';
+            if (el) {
+                el.value = d.qty || '';
+                // This value is being restored from a saved draft, not freshly
+                // typed — treat it as already checked against the locker (it
+                // was, when it was first typed) so handleCashAddedDirectEntry
+                // only reacts to amounts typed FROM HERE on, not this restore.
+                el.setAttribute('data-committed-qty', String(parseInt(d.qty, 10) || 0));
+            }
         });
+        window.cashAddedExternalLog = Array.isArray(state.cashAddedExternalLog) ? state.cashAddedExternalLog.slice() : [];
         (state.dCounts || []).forEach(d => {
             let el = document.querySelector('.d-count[data-val="' + d.val + '"]');
             if (el) el.value = d.qty || '';
@@ -6028,6 +6044,16 @@
         document.getElementById('unbTableBody').innerHTML = '';
 
         seedDefaultRegisterRows();
+
+        // Clearing the form must also clear the log of "added outside the
+        // locker" justifications that went with whatever was in those cells
+        // — otherwise a blanked form would still print a stale reason/
+        // source note from the previous date/entry — and reset each Cash
+        // Added cell's "already accounted for" baseline back to 0, so the
+        // very next typed amount on a fresh form is checked against the
+        // locker from scratch rather than treated as already-deducted.
+        window.cashAddedExternalLog = [];
+        document.querySelectorAll('.c-count').forEach(i => i.setAttribute('data-committed-qty', '0'));
 
         loadOpeningBalance();
         isInitializing = false;
@@ -6135,6 +6161,9 @@
 
     function onDateOrBranchChange() {
         loadOpeningBalance();
+        if (typeof updateCashAddedLockerStockRow === 'function') updateCashAddedLockerStockRow();
+        if (typeof syncPullLockerBranchToRegister === 'function') syncPullLockerBranchToRegister();
+        if (typeof syncLockerRoleBranchToRegister === 'function') syncLockerRoleBranchToRegister();
     }
 
     function handleEnter(event) {
@@ -6481,7 +6510,7 @@
         if (cat === 'digital') {
             document.querySelectorAll('.dig-input').forEach(i => i.value = '');
         } else if (cat === 'cash_added') {
-            document.querySelectorAll('.c-count').forEach(i => i.value = '');
+            document.querySelectorAll('.c-count').forEach(i => { i.value = ''; i.setAttribute('data-committed-qty', '0'); });
         } else if (cat === 'tray') {
             document.querySelectorAll('.d-count').forEach(i => i.value = '');
             document.getElementById('openingBalInput').value = '';
@@ -7202,6 +7231,13 @@
             // re-exported A4 sheet for this record (populateA4DataFromRecord)
             // can show the same itemized Tray Balance table the live print does.
             denoms: Array.from(document.querySelectorAll('#trayTable .d-count')).map(i => ({ val: i.getAttribute('data-val'), qty: Number(i.value) || 0 })),
+            // Cash Added can now only be filled via a Locker pull, so its
+            // breakdown and the log of anything added from outside the
+            // locker (with reason/source) are saved on the record too, so
+            // a reprinted/re-exported A4 sheet shows the exact same figures
+            // and the same justification notes as the live print did.
+            cashAddedDenoms: Array.from(document.querySelectorAll('#cashAddedBody .c-count')).map(i => ({ val: i.getAttribute('data-val'), qty: Number(i.value) || 0 })),
+            cashAddedExternalLog: (window.cashAddedExternalLog || []).slice(),
             expenses: [], owners: [], vendors: [], staffBills: [], unbills: []
         };
 
@@ -7308,6 +7344,13 @@
                 digitalAddHtml += `<tr><td>₹${val} × ${qty} pcs</td><td class="cell-val">₹${val*qty}</td></tr>`;
             }
         });
+        // Anything added to Cash Added from outside the Locker (a shortfall
+        // the cashier justified with a reason + source at the time) is
+        // printed right under the Cash Added breakdown, so the report
+        // always shows where every rupee of it actually came from.
+        (window.cashAddedExternalLog || []).forEach(e => {
+            digitalAddHtml += `<tr><td colspan="2" style="font-size:9.5px; color:#92400e; background:#fffbeb; padding:4px 6px;">⚠️ ₹${e.amount.toLocaleString('en-IN')} (${e.denomSummary}) added outside Locker — ${e.reason} / from ${e.source}</td></tr>`;
+        });
         document.getElementById('a4DigitalAddTable').innerHTML = digitalAddHtml;
         document.getElementById('a4DigitalGrandTotal').innerText = '₹' + (calcDigitalPaymentsTotal() + calcCashAddedTotal());
 
@@ -7407,8 +7450,28 @@
         document.getElementById('a4CardPay').innerText = '₹' + (rec.cardPay || 0);
         document.getElementById('a4UpiPay').innerText = '₹' + (rec.upiPay || 0);
         document.getElementById('a4PluxeePay').innerText = '₹' + (rec.pluxeePay || 0);
-        document.getElementById('a4DigitalAddTable').innerHTML = '';
-        document.getElementById('a4DigitalGrandTotal').innerText = '₹' + ((Number(rec.cardPay)||0) + (Number(rec.upiPay)||0) + (Number(rec.pluxeePay)||0) + (Number(rec.cashAdded)||0));
+        // Cash Added breakdown + any "added outside the Locker" notes, saved
+        // on the record by commitRegisterEntryToStorage() — older records
+        // saved before this existed just won't have rec.cashAddedDenoms /
+        // rec.cashAddedExternalLog, so this prints empty for those, same as
+        // before this fix.
+        let recCashAddedTotal = 0;
+        let recDigitalAddHtml = '';
+        if (Array.isArray(rec.cashAddedDenoms)) {
+            rec.cashAddedDenoms.forEach(d => {
+                let qty = Number(d.qty) || 0;
+                let val = Number(d.val) || 0;
+                recCashAddedTotal += qty * val;
+                if (qty > 0) recDigitalAddHtml += `<tr><td>₹${d.val} × ${qty} pcs</td><td class="cell-val">₹${val * qty}</td></tr>`;
+            });
+        }
+        if (Array.isArray(rec.cashAddedExternalLog)) {
+            rec.cashAddedExternalLog.forEach(e => {
+                recDigitalAddHtml += `<tr><td colspan="2" style="font-size:9.5px; color:#92400e; background:#fffbeb; padding:4px 6px;">⚠️ ₹${(e.amount||0).toLocaleString('en-IN')} (${e.denomSummary || ''}) added outside Locker — ${e.reason || ''} / from ${e.source || ''}</td></tr>`;
+            });
+        }
+        document.getElementById('a4DigitalAddTable').innerHTML = recDigitalAddHtml;
+        document.getElementById('a4DigitalGrandTotal').innerText = '₹' + ((Number(rec.cardPay)||0) + (Number(rec.upiPay)||0) + (Number(rec.pluxeePay)||0) + recCashAddedTotal);
 
         let recTrayHtml = `<tr><td>Opening Balance (-)</td><td class="cell-val">₹${rec.openingBal || 0}</td></tr>`;
         // Older records saved before `denoms` existed simply won't have it —
@@ -8336,7 +8399,7 @@
     // the same fields/ids used by sendToWhatsAppDirect()/populateA4Data() so
     // the numbers always match what's shown on screen and in print/export.
     function buildWhatsAppSummaryText() {
-        let branch, date, shift, cashier, opening, closing, card, upi, pluxee, cashAdded, exp, grand, varVal;
+        let branch, date, shift, cashier, opening, closing, card, upi, pluxee, cashAdded, exp, grand, varVal, externalCashLog;
 
         if (currentSelectedArchiveRecord) {
             let r = currentSelectedArchiveRecord;
@@ -8346,7 +8409,8 @@
             opening = r.openingBal || 0;
             closing = r.closingBal || 0;
             card = 0; upi = 0; pluxee = 0;
-            cashAdded = r.cashAdded || 0;
+            cashAdded = Array.isArray(r.cashAddedDenoms) ? r.cashAddedDenoms.reduce((s, d) => s + (Number(d.val) || 0) * (Number(d.qty) || 0), 0) : (r.cashAdded || 0);
+            externalCashLog = Array.isArray(r.cashAddedExternalLog) ? r.cashAddedExternalLog : [];
             let totalExp = 0; if (r.expenses) r.expenses.forEach(e => totalExp += e.amt);
             exp = totalExp;
             grand = r.finalTotal || r.grandTotal || 0;
@@ -8361,6 +8425,7 @@
             upi = document.getElementById('upiPay') ? (document.getElementById('upiPay').value || 0) : 0;
             pluxee = document.getElementById('pluxeePay') ? (document.getElementById('pluxeePay').value || 0) : 0;
             cashAdded = (typeof calcCashAddedTotal === 'function') ? calcCashAddedTotal() : 0;
+            externalCashLog = window.cashAddedExternalLog || [];
             exp = (document.getElementById('lblExpTotal').innerText || '₹0').replace(/[^0-9.\-]/g, '') || 0;
             grand = document.getElementById('sumGrand').innerText;
             varVal = document.getElementById('sumVariance').innerText;
@@ -8383,6 +8448,12 @@
             ``,
             varianceLine
         ];
+        if (externalCashLog && externalCashLog.length) {
+            lines.push(``, `⚠️ Cash added outside the Locker:`);
+            externalCashLog.forEach(e => {
+                lines.push(`  ₹${e.amount} (${e.denomSummary}) — ${e.reason} / from ${e.source}`);
+            });
+        }
         return lines.join('\n');
     }
 
@@ -10320,7 +10391,14 @@
       <div class="p-5 space-y-3">
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Locker Branch</label>
-          <select id="pullLockerBranch" onchange="updatePullLockerStockDisplay()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></select>
+          <!-- Locked to whatever branch the Denomination form's own Branch
+               field is set to (#branchLocation) — not independently
+               selectable here, so you can never pull from a different
+               branch's locker than the shift you're actually working on.
+               #pullLockerBranch is now a hidden input holding the branch
+               key; this div is just the read-only display. -->
+          <div id="pullLockerBranchDisplay" class="w-full border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm text-slate-700 font-semibold">—</div>
+          <input type="hidden" id="pullLockerBranch" value="">
         </div>
         <table class="w-full text-sm">
           <thead><tr class="text-left text-xs text-slate-500 uppercase"><th class="py-1">Note</th><th class="py-1">Qty to pull</th><th class="py-1 text-right">Locker stock</th></tr></thead>
@@ -10329,10 +10407,56 @@
         <div class="flex justify-between items-center pt-2 border-t border-slate-200 font-bold text-slate-800">
           <span>Total:</span><span id="pullLockerTotal">₹0</span>
         </div>
+        <!-- Shown only when the quantities typed above exceed what this
+             branch's locker actually has for one or more notes (including
+             a note the locker has 0 of). You can still add that amount to
+             Cash Added, but only with a reason and source recorded — it
+             does NOT pretend that cash came from the locker: the locker's
+             stock is left exactly as it was for the shortfall portion. -->
+        <div id="pullLockerShortfallBox" class="hidden p-3 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
+          <div class="text-xs font-bold text-amber-800">Not enough in the locker for: <span id="pullLockerShortfallList"></span>. Cash still gets added, but you must say why and where it came from.</div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Reason <span class="text-red-500">*</span></label>
+            <input type="text" id="pullLockerShortfallReason" placeholder="e.g. Advance from owner, change from a sale" oninput="updatePullLockerTotal()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Where did it come from? <span class="text-red-500">*</span></label>
+            <input type="text" id="pullLockerShortfallSource" placeholder="e.g. Owner's wallet, bank withdrawal" oninput="updatePullLockerTotal()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
       </div>
       <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
         <button type="button" onclick="closePullFromLockerModal()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600">Cancel</button>
-        <button type="button" onclick="lockerWithdrawToTray()" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white font-semibold">Withdraw &amp; Add to Tray</button>
+        <button type="button" onclick="lockerWithdrawToCashAdded()" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white font-semibold">Withdraw &amp; Add to Cash Added</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shown only when typing directly into a Cash Added cell asks for more
+       of a denomination than this branch's locker actually has in stock
+       (including a note the locker has 0 of). The shortfall is NOT deducted
+       from the locker — it's logged as cash added from outside the locker,
+       with a mandatory reason + source, same as the Pull-From-Locker flow. -->
+  <div id="directCashJustifyModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="font-bold text-slate-800">Not Enough in the Locker</h3>
+        <button type="button" onclick="cancelDirectCashJustify()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5 space-y-3">
+        <div id="directCashJustifyDesc" class="text-sm text-slate-700"></div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Reason <span class="text-red-500">*</span></label>
+          <input type="text" id="directCashJustifyReason" placeholder="e.g. Advance from owner, change from a sale" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Where did it come from? <span class="text-red-500">*</span></label>
+          <input type="text" id="directCashJustifySource" placeholder="e.g. Owner's wallet, bank withdrawal" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+        <button type="button" onclick="cancelDirectCashJustify()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600">Cancel</button>
+        <button type="button" onclick="confirmDirectCashJustify()" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white font-semibold">Confirm &amp; Add</button>
       </div>
     </div>
   </div>
@@ -10381,6 +10505,12 @@
       loadStateFromStorage();
       initDateControl();
       renderAllViews();
+      // Registered after the Register's own DOMContentLoaded listener (this
+      // script block comes later in the document), so branchLocation
+      // already has its value set by the time this runs — safe to show the
+      // right branch's locker balance on first load, not just after a
+      // manual branch change.
+      if (typeof updateCashAddedLockerStockRow === 'function') updateCashAddedLockerStockRow();
     });
 
     function saveState() {
@@ -10429,6 +10559,17 @@
       } else {
         lockerState.role = selectedRole;
         lockerState.isAdminAuthenticated = false;
+        // Picking a branch here must carry over to the Denomination form's
+        // own Branch field too — there is only one branch concept across
+        // both screens, so the Locker can never show a different branch
+        // than the sheet, however it was changed.
+        let branchNames = lockerGetAppBranchNames();
+        let matchName = branchNames.find(n => lockerBranchKeyFromName(n) === selectedRole);
+        let registerBranchSel = document.getElementById('branchLocation');
+        if (matchName && registerBranchSel && registerBranchSel.value !== matchName) {
+          registerBranchSel.value = matchName;
+          if (typeof onDateOrBranchChange === 'function') onDateOrBranchChange();
+        }
         renderAllViews();
       }
     }
@@ -11666,6 +11807,10 @@
       saveState();
       renderAllViews();
       closeModal('lockerConfirmModal');
+      // Any locker submission (Cash In/Out, transfer, vendor change, etc.)
+      // can change this branch's locker balance, so keep the Register's
+      // inline "In Locker" figures next to Cash Added in sync too.
+      if (typeof updateCashAddedLockerStockRow === 'function') updateCashAddedLockerStockRow();
     }
 
     function handleEnterTab(e, nextId, prevId) {
@@ -12019,21 +12164,40 @@
             let validVals = names.map(lockerBranchKeyFromName).concat(['owner']);
             roleSel.value = validVals.includes(prev) ? prev : (validVals[0] || '');
         }
-        let pullSel = document.getElementById('pullLockerBranch');
-        if (pullSel) {
-            let prevPull = pullSel.value;
-            pullSel.innerHTML = names.map(name => {
-                let key = lockerBranchKeyFromName(name);
-                return `<option value="${key}">${name}</option>`;
-            }).join('');
-            let validPull = names.map(lockerBranchKeyFromName);
-            pullSel.value = validPull.includes(prevPull) ? prevPull : (validPull[0] || '');
-            updatePullLockerStockDisplay();
-        }
+        syncPullLockerBranchToRegister();
+        updateCashAddedLockerStockRow();
+    }
+
+    // Keeps the "In Locker" figures shown right inside the Cash Added card
+    // (the live balance line + the per-denomination column) in sync with
+    // whatever branch is currently selected in the shift form, so the
+    // cashier can see what's actually available in the locker before
+    // pulling any of it — without having to open the Cash Locker screen
+    // first. Safe to call often: it's cheap and only touches text content.
+    function updateCashAddedLockerStockRow() {
+        let branchSel = document.getElementById('branchLocation');
+        let branchName = branchSel ? branchSel.value : '';
+        let branchKey = lockerBranchKeyFromName(branchName);
+        let stock = (lockerState.branches && lockerState.branches[branchKey]) || lockerZeroDenomTemplate();
+
+        let nameEl = document.getElementById('cashAddedLockerBranchName');
+        if (nameEl) nameEl.textContent = branchName || '—';
+
+        let total = 0;
+        LOCKER_DENOM_CONFIG.forEach(d => { total += (stock[d.key] || 0) * d.val; });
+        let totalEl = document.getElementById('cashAddedLockerBalTotal');
+        if (totalEl) totalEl.textContent = '₹' + total.toLocaleString('en-IN');
+
+        document.querySelectorAll('#cashAddedBody .c-locker-avail').forEach(cell => {
+            let val = cell.getAttribute('data-val');
+            let denomCfg = LOCKER_DENOM_CONFIG.find(d => String(d.val) === String(val));
+            cell.textContent = denomCfg ? (stock[denomCfg.key] || 0) : 0;
+        });
     }
 
     function openCashLocker() {
         ensureLockerBranchesSynced();
+        syncLockerRoleBranchToRegister();
         document.getElementById('lockerAppRoot').style.display = 'block';
         document.body.classList.add('locker-open');
         renderAllViews();
@@ -12095,25 +12259,63 @@
         `).join('');
     }
 
-    function openPullFromLockerModal() {
+    function openPullFromLockerModal(focusDenomKey) {
         ensureLockerBranchesSynced();
         lockerRenderPullRows();
-        let names = lockerGetAppBranchNames();
-        lockerRebuildBranchSelects(names);
-        // Default the branch picker to whatever branch the live shift form
-        // is already set to, so the common case needs no extra click.
-        let liveBranchSel = document.getElementById('branchLocation');
-        if (liveBranchSel && liveBranchSel.value) {
-            let key = lockerBranchKeyFromName(liveBranchSel.value);
-            let pullSel = document.getElementById('pullLockerBranch');
-            if (pullSel && Array.from(pullSel.options).some(o => o.value === key)) pullSel.value = key;
-        }
-        updatePullLockerStockDisplay();
+        syncPullLockerBranchToRegister();
+        let reasonInp = document.getElementById('pullLockerShortfallReason');
+        let sourceInp = document.getElementById('pullLockerShortfallSource');
+        if (reasonInp) reasonInp.value = '';
+        if (sourceInp) sourceInp.value = '';
+        let box = document.getElementById('pullLockerShortfallBox');
+        if (box) box.classList.add('hidden');
         document.getElementById('pullLockerModal').classList.remove('hidden');
+        // Opened by clicking a specific Cash Added row (see #cashAddedBody
+        // .c-count onclick) — jump straight to that denomination's qty box.
+        if (focusDenomKey) {
+            let target = document.getElementById('pullQty_' + focusDenomKey);
+            if (target) setTimeout(() => target.focus(), 50);
+        }
     }
 
     function closePullFromLockerModal() {
         document.getElementById('pullLockerModal').classList.add('hidden');
+    }
+
+    // The Pull-From-Locker branch is always whatever the Denomination form's
+    // own Branch field (#branchLocation) is set to — there is no separate
+    // picker any more, so cash can never be pulled from a different
+    // branch's locker than the shift actually being worked on. Called on
+    // modal open and whenever the Register's branch changes.
+    function syncPullLockerBranchToRegister() {
+        let liveBranchSel = document.getElementById('branchLocation');
+        let branchName = liveBranchSel ? liveBranchSel.value : '';
+        let key = lockerBranchKeyFromName(branchName);
+        let hidden = document.getElementById('pullLockerBranch');
+        if (hidden) hidden.value = key;
+        let display = document.getElementById('pullLockerBranchDisplay');
+        if (display) display.textContent = branchName || '—';
+        updatePullLockerStockDisplay();
+    }
+
+    // The Cash Locker's own Branch/Role switcher (#roleSelect, top bar of the
+    // Locker screen) must always show the SAME branch as the Denomination
+    // form's own Branch field (#branchLocation) — never a different one.
+    // Only Admin stays independent: once authenticated as Store Owner /
+    // Admin, the locker keeps showing the all-branches admin view even if
+    // the Register's branch changes, since admin is a separate "see
+    // everything" mode, not a branch choice. Called on locker open and
+    // whenever the Register's branch changes.
+    function syncLockerRoleBranchToRegister() {
+        if (lockerState.role === 'owner' && lockerState.isAdminAuthenticated) return;
+        let liveBranchSel = document.getElementById('branchLocation');
+        let branchName = liveBranchSel ? liveBranchSel.value : '';
+        let key = lockerBranchKeyFromName(branchName);
+        if (lockerState.role === key) return;
+        lockerState.role = key;
+        let roleSel = document.getElementById('roleSelect');
+        if (roleSel) roleSel.value = key;
+        if (typeof renderAllViews === 'function' && document.body.classList.contains('locker-open')) renderAllViews();
     }
 
     function updatePullLockerStockDisplay() {
@@ -12128,66 +12330,101 @@
 
     function updatePullLockerTotal() {
         let total = 0;
+        let branchKey = document.getElementById('pullLockerBranch').value;
+        let stock = (lockerState.branches && lockerState.branches[branchKey]) || lockerZeroDenomTemplate();
+        let shortNames = [];
         LOCKER_DENOM_CONFIG.forEach(d => {
             let inp = document.getElementById('pullQty_' + d.key);
             let qty = inp ? (parseInt(inp.value, 10) || 0) : 0;
             total += qty * d.val;
+            if (qty > (stock[d.key] || 0)) shortNames.push('₹' + d.label);
         });
         let lbl = document.getElementById('pullLockerTotal');
         if (lbl) lbl.textContent = '₹' + total.toLocaleString('en-IN');
+
+        let box = document.getElementById('pullLockerShortfallBox');
+        if (box) {
+            if (shortNames.length) {
+                box.classList.remove('hidden');
+                document.getElementById('pullLockerShortfallList').textContent = shortNames.join(', ');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
     }
 
-    function lockerWithdrawToTray() {
+    function lockerWithdrawToCashAdded() {
         let branchKey = document.getElementById('pullLockerBranch').value;
         let stock = (lockerState.branches && lockerState.branches[branchKey]) || lockerZeroDenomTemplate();
-        let qtys = {};
-        let anyOver = [];
+        let qtys = {};          // full amount requested per denom (all goes to Cash Added)
+        let fromStock = {};     // the portion of each denom actually deducted from the locker
+        let shortfall = {};     // the portion NOT covered by locker stock (0 is a valid shortfall case)
         let totalValue = 0;
+        let shortfallValue = 0;
         LOCKER_DENOM_CONFIG.forEach(d => {
             let inp = document.getElementById('pullQty_' + d.key);
             let qty = inp ? (parseInt(inp.value, 10) || 0) : 0;
             if (qty > 0) {
-                if (qty > (stock[d.key] || 0)) anyOver.push(`₹${d.label} (have ${stock[d.key] || 0}, asked ${qty})`);
+                let have = stock[d.key] || 0;
+                let covered = Math.min(qty, have);
+                let short = qty - covered;
                 qtys[d.key] = qty;
+                if (covered > 0) fromStock[d.key] = covered;
+                if (short > 0) { shortfall[d.key] = short; shortfallValue += short * d.val; }
                 totalValue += qty * d.val;
             }
         });
         if (totalValue <= 0) { alert('Enter at least one denomination count to pull from the locker.'); return; }
-        // Hard block: cash that isn't in the locker can never be pulled into
-        // the Tray Balance from here. If it's genuinely not there, use
-        // "Record Cash In" on the Cash Locker dashboard first (which now
-        // requires you to say where that cash came from) so the locker
-        // stays the single source of truth for what cash actually exists.
-        if (anyOver.length) {
-            alert('Not enough stock in the locker for: ' + anyOver.join(', ') + '.\n\nNothing was withdrawn. Add that cash to the locker first (Cash Locker → Record Cash In), or pull a smaller amount.');
+
+        // Cash beyond what the locker actually holds for a note (including
+        // a note the locker has 0 of) can still be added to Cash Added, but
+        // only with a reason and a source recorded — never silently, and
+        // never pretending it came from the locker (that portion of the
+        // locker's stock is left untouched).
+        let reasonInp = document.getElementById('pullLockerShortfallReason');
+        let sourceInp = document.getElementById('pullLockerShortfallSource');
+        let reason = reasonInp ? reasonInp.value.trim() : '';
+        let source = sourceInp ? sourceInp.value.trim() : '';
+        if (shortfallValue > 0 && (!reason || !source)) {
+            alert('The locker doesn’t have enough for ' + Object.keys(shortfall).map(k => '₹' + LOCKER_DENOM_CONFIG.find(d => d.key === k).label).join(', ') + '.\n\nTo add that amount anyway, fill in both the Reason and Where did it come from fields below.');
             return;
         }
 
-        // 1) Deduct from the locker's per-branch denomination stock.
+        // 1) Deduct from the locker's per-branch stock — only the portion
+        //    that was actually available (fromStock), never the shortfall.
         LOCKER_DENOM_CONFIG.forEach(d => {
-            if (qtys[d.key]) stock[d.key] = (stock[d.key] || 0) - qtys[d.key];
+            if (fromStock[d.key]) stock[d.key] = (stock[d.key] || 0) - fromStock[d.key];
         });
         lockerState.branches[branchKey] = stock;
 
         // 2) Log it as a real locker transaction so it shows up in Recent
         //    Movements / All Entries like any other locker-out movement.
+        //    The shortfall portion (if any) is recorded on the same entry
+        //    with its reason/source, but is NOT subtracted from stock above.
         let cashierEl = document.getElementById('cashierName');
-        let branchNameEl = document.getElementById('branchLocation');
         lockerState.transactions = lockerState.transactions || [];
         lockerState.transactions.push({
             refId: 'TRAY-' + Date.now(),
             date: (typeof getActiveFormattedDate === 'function') ? getActiveFormattedDate() : new Date().toISOString().split('T')[0],
             branch: (lockerState._branchNames && lockerState._branchNames[branchKey]) || branchKey,
-            category: 'Added to Denomination Tray',
+            category: shortfallValue > 0 ? 'Added to Cash Added (partly outside locker)' : 'Added to Cash Added (float top-up)',
             handler: (cashierEl && cashierEl.value.trim()) || 'Shift Register',
             denoms: qtys,
+            fromStock: fromStock,
+            shortfall: shortfallValue > 0 ? shortfall : undefined,
+            shortfallReason: shortfallValue > 0 ? reason : undefined,
+            shortfallSource: shortfallValue > 0 ? source : undefined,
             amount: -totalValue
         });
         saveState();
 
-        // 3) Add the same counts straight into the live Tray Balance inputs
-        //    (adds to whatever is already typed there, doesn't overwrite).
-        document.querySelectorAll('#trayTable .d-count').forEach(inp => {
+        // 3) Add the FULL requested counts into the live Cash Added inputs
+        //    (adds to whatever is already typed there, doesn't overwrite) —
+        //    NOT the Tray Balance, which is the shift-end count, not where
+        //    cash pulled from the locker during the shift belongs. The full
+        //    amount is added regardless of shortfall — the cash genuinely
+        //    is in the till either way, only its source differs.
+        document.querySelectorAll('#cashAddedBody .c-count').forEach(inp => {
             let val = inp.getAttribute('data-val');
             let denomCfg = LOCKER_DENOM_CONFIG.find(d => String(d.val) === String(val));
             if (denomCfg && qtys[denomCfg.key]) {
@@ -12196,9 +12433,180 @@
         });
         if (typeof recalcRegister === 'function') recalcRegister();
 
+        // 4) If any of it was from outside the locker, record it on THIS
+        //    shift's own log too (not just the locker's), so it gets saved
+        //    with the committed record and printed on the shift's reports —
+        //    the locker's own transaction log above is a separate audit
+        //    trail for the locker itself.
+        if (shortfallValue > 0) {
+            window.cashAddedExternalLog = window.cashAddedExternalLog || [];
+            let denomSummary = Object.keys(shortfall).map(k => {
+                let d = LOCKER_DENOM_CONFIG.find(x => x.key === k);
+                return `₹${d.label} x ${shortfall[k]}`;
+            }).join(', ');
+            window.cashAddedExternalLog.push({
+                date: (typeof getActiveFormattedDate === 'function') ? getActiveFormattedDate() : new Date().toISOString().split('T')[0],
+                amount: shortfallValue,
+                denomSummary: denomSummary,
+                reason: reason,
+                source: source
+            });
+        }
+
         closePullFromLockerModal();
+        updateCashAddedLockerStockRow();
         renderAllViews();
-        alert(`₹${totalValue.toLocaleString('en-IN')} pulled from the ${(lockerState._branchNames && lockerState._branchNames[branchKey]) || branchKey} locker and added to the Tray Balance.`);
+        let msg = `₹${totalValue.toLocaleString('en-IN')} added to Cash Added`;
+        if (shortfallValue > 0) {
+            msg += ` (₹${(totalValue - shortfallValue).toLocaleString('en-IN')} from the ${(lockerState._branchNames && lockerState._branchNames[branchKey]) || branchKey} locker, ₹${shortfallValue.toLocaleString('en-IN')} recorded as from outside it: "${reason}" / ${source})`;
+        } else {
+            msg += ` from the ${(lockerState._branchNames && lockerState._branchNames[branchKey]) || branchKey} locker.`;
+        }
+        alert(msg);
+    }
+
+    // --- Direct entry into Cash Added: typing straight into a .c-count cell
+    //     still checks this branch's locker stock for the NEW amount typed
+    //     (the delta over what was last committed), deducts what the locker
+    //     actually has, and — same as the popup flow — requires a reason +
+    //     source for any shortfall before it's accepted. No popup click is
+    //     needed just to add cash; the popup is only shown when there's a
+    //     shortfall to justify. ---
+
+    let directCashJustifyPending = null;
+
+    function handleCashAddedDirectEntry(inputEl) {
+        let committed = parseInt(inputEl.getAttribute('data-committed-qty'), 10) || 0;
+        let newQty = parseInt(inputEl.value, 10) || 0;
+        if (newQty < 0) newQty = 0;
+        let delta = newQty - committed;
+
+        if (delta <= 0) {
+            // Reducing or re-entering the same amount is treated as a
+            // correction, not a fresh withdrawal from the locker — it
+            // doesn't touch locker stock.
+            inputEl.setAttribute('data-committed-qty', String(newQty));
+            if (typeof recalcRegister === 'function') recalcRegister();
+            return;
+        }
+
+        let denomVal = inputEl.getAttribute('data-val');
+        let denomCfg = LOCKER_DENOM_CONFIG.find(d => String(d.val) === String(denomVal));
+        if (!denomCfg) { inputEl.setAttribute('data-committed-qty', String(newQty)); return; }
+
+        let branchSel = document.getElementById('branchLocation');
+        let branchName = branchSel ? branchSel.value : '';
+        let branchKey = lockerBranchKeyFromName(branchName);
+        let stock = (lockerState.branches && lockerState.branches[branchKey]) || lockerZeroDenomTemplate();
+        let have = stock[denomCfg.key] || 0;
+        let covered = Math.min(delta, have);
+        let shortfallQty = delta - covered;
+
+        if (shortfallQty <= 0) {
+            // Fully covered by the locker — deduct and commit immediately,
+            // no justification needed.
+            commitDirectCashEntry(inputEl, denomCfg, branchKey, newQty, covered, 0, '', '');
+            return;
+        }
+
+        // Not enough in the locker for the new amount — open the inline
+        // justification modal instead of the Pull-From-Locker popup. The
+        // covered portion (if any) still comes from the locker; only the
+        // shortfall needs a reason + source.
+        openDirectCashJustifyModal(denomCfg, shortfallQty, covered, branchKey, branchName,
+            function (reason, source) {
+                commitDirectCashEntry(inputEl, denomCfg, branchKey, newQty, covered, shortfallQty, reason, source);
+            },
+            function () {
+                // Cancelled — revert the input back to its last committed value.
+                inputEl.value = committed || '';
+                if (typeof recalcRegister === 'function') recalcRegister();
+            }
+        );
+    }
+
+    function commitDirectCashEntry(inputEl, denomCfg, branchKey, newQty, coveredQty, shortfallQty, reason, source) {
+        let shortfallValue = shortfallQty * denomCfg.val;
+
+        if (coveredQty > 0) {
+            let stock = (lockerState.branches && lockerState.branches[branchKey]) || lockerZeroDenomTemplate();
+            stock[denomCfg.key] = Math.max(0, (stock[denomCfg.key] || 0) - coveredQty);
+            lockerState.branches[branchKey] = stock;
+
+            let cashierEl = document.getElementById('cashierName');
+            lockerState.transactions = lockerState.transactions || [];
+            lockerState.transactions.push({
+                refId: 'TRAY-' + Date.now(),
+                date: (typeof getActiveFormattedDate === 'function') ? getActiveFormattedDate() : new Date().toISOString().split('T')[0],
+                branch: (lockerState._branchNames && lockerState._branchNames[branchKey]) || branchKey,
+                category: shortfallValue > 0 ? 'Added to Cash Added (partly outside locker)' : 'Added to Cash Added (float top-up)',
+                handler: (cashierEl && cashierEl.value.trim()) || 'Shift Register',
+                denoms: { [denomCfg.key]: coveredQty + shortfallQty },
+                fromStock: { [denomCfg.key]: coveredQty },
+                shortfall: shortfallQty > 0 ? { [denomCfg.key]: shortfallQty } : undefined,
+                shortfallReason: shortfallQty > 0 ? reason : undefined,
+                shortfallSource: shortfallQty > 0 ? source : undefined,
+                amount: -(coveredQty * denomCfg.val)
+            });
+            saveState();
+        }
+
+        inputEl.setAttribute('data-committed-qty', String(newQty));
+
+        if (shortfallQty > 0) {
+            window.cashAddedExternalLog = window.cashAddedExternalLog || [];
+            window.cashAddedExternalLog.push({
+                date: (typeof getActiveFormattedDate === 'function') ? getActiveFormattedDate() : new Date().toISOString().split('T')[0],
+                amount: shortfallValue,
+                denomSummary: `₹${denomCfg.label} x ${shortfallQty}`,
+                reason: reason,
+                source: source
+            });
+        }
+
+        if (typeof recalcRegister === 'function') recalcRegister();
+        updateCashAddedLockerStockRow();
+        if (document.body.classList.contains('locker-open') && typeof renderAllViews === 'function') renderAllViews();
+    }
+
+    function openDirectCashJustifyModal(denomCfg, shortfallQty, coveredQty, branchKey, branchName, onConfirm, onCancel) {
+        let branchLabel = branchName || (lockerState._branchNames && lockerState._branchNames[branchKey]) || branchKey;
+        let desc = document.getElementById('directCashJustifyDesc');
+        if (desc) {
+            let coveredNote = coveredQty > 0
+                ? `${coveredQty} pc(s) will come from the ${branchLabel} locker. `
+                : '';
+            desc.innerHTML = `${coveredNote}The locker doesn't have enough for <strong>${shortfallQty} more ₹${denomCfg.label} note(s)</strong>. Cash is still added, but you must say why and where it came from.`;
+        }
+        let reasonInp = document.getElementById('directCashJustifyReason');
+        let sourceInp = document.getElementById('directCashJustifySource');
+        if (reasonInp) reasonInp.value = '';
+        if (sourceInp) sourceInp.value = '';
+        directCashJustifyPending = { onConfirm: onConfirm, onCancel: onCancel };
+        document.getElementById('directCashJustifyModal').classList.remove('hidden');
+        if (reasonInp) setTimeout(() => reasonInp.focus(), 50);
+    }
+
+    function confirmDirectCashJustify() {
+        let reasonInp = document.getElementById('directCashJustifyReason');
+        let sourceInp = document.getElementById('directCashJustifySource');
+        let reason = reasonInp ? reasonInp.value.trim() : '';
+        let source = sourceInp ? sourceInp.value.trim() : '';
+        if (!reason || !source) {
+            alert('Please fill in both the Reason and Where did it come from fields.');
+            return;
+        }
+        document.getElementById('directCashJustifyModal').classList.add('hidden');
+        let pending = directCashJustifyPending;
+        directCashJustifyPending = null;
+        if (pending && typeof pending.onConfirm === 'function') pending.onConfirm(reason, source);
+    }
+
+    function cancelDirectCashJustify() {
+        document.getElementById('directCashJustifyModal').classList.add('hidden');
+        let pending = directCashJustifyPending;
+        directCashJustifyPending = null;
+        if (pending && typeof pending.onCancel === 'function') pending.onCancel();
     }
 
 </script>
