@@ -2352,7 +2352,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.2.7';
+    var APP_VERSION = '1.2.8';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
@@ -4948,14 +4948,15 @@
     // and @page ends up sized too short (or, on drivers that ignore @page
     // anyway, doesn't matter — see the long comment in printCashBillReceipt).
     // Falls back to a short timeout if document.fonts isn't available.
-    function printAfterThermalContentSettles(win, paperWidthMm) {
+    function printAfterThermalContentSettles(win, paperWidthMm, useContinuousMode) {
         let fired = false;
         function settleAndPrint() {
             if (fired) return;
             fired = true;
             win.requestAnimationFrame(() => {
                 win.requestAnimationFrame(() => {
-                    applyComputedThermalPageSize(win, paperWidthMm);
+                    if (useContinuousMode) applyThermalPageSizeContinuous(win, paperWidthMm);
+                    else applyComputedThermalPageSize(win, paperWidthMm);
                     win.print();
                 });
             });
@@ -5013,6 +5014,39 @@
         } catch (e) { /* best-effort — printing still works without it */ }
     }
 
+    // FIX (2026-11-03): on at least one real printer (confirmed via printed
+    // photos, not just the on-screen preview), requesting an exact small
+    // computed height like "80mm 41mm" doesn't work the way it does when
+    // printing to PDF — the Windows driver for that printer only exposes a
+    // handful of FIXED page lengths (seen in its Chrome print dialog: 72mm
+    // and 48mm widths, each only at 297mm / 420mm / 3276mm), and a request
+    // for an arbitrary small height that isn't one of those gets silently
+    // replaced with the driver's default (297mm), which is where all the
+    // wasted blank paper came from — the printer feeds a full ~297mm page
+    // every time no matter how short the actual content is.
+    // 3276mm is very likely that driver's stand-in for "continuous roll,
+    // cut after whatever was actually sent" (a common pattern for generic
+    // thermal/receipt printer drivers), rather than a real fixed 3.276m
+    // page the printer would ever print blank paper up to — so requesting
+    // that instead of a tiny computed height should let the hardware cut
+    // right after the real content, the same way "auto-length" receipt
+    // printers normally behave. Also matches the printed WIDTH to what
+    // that driver actually reports (72mm), not the nominal 80mm, so Chrome
+    // doesn't have to silently substitute a width either.
+    // This is applied ONLY to the per-denomination count slip for now
+    // (printDenomSlip, below) while it's being verified on a real
+    // printout — not yet to the Cash Bill or full shift receipt, which
+    // aren't reported as having this problem.
+    function applyThermalPageSizeContinuous(win, paperWidthMm) {
+        paperWidthMm = paperWidthMm || '72mm';
+        try {
+            let styleEl = win.document.createElement('style');
+            styleEl.id = 'computedPageSize';
+            styleEl.textContent = `@page { size: ${paperWidthMm} 3276mm; margin: 0; }`;
+            win.document.head.appendChild(styleEl);
+        } catch (e) { /* best-effort — printing still works without it */ }
+    }
+
     // ===================== PER-DENOMINATION "COUNT SLIP" THERMAL PRINT =====================
     // Small standalone thermal print (NOT the full shift receipt) for one
     // Tray Balance denomination row — a quick slip meant to be attached to a
@@ -5035,7 +5069,16 @@
         }
         let amount = value * qty;
         let is58 = appSettings.thermalPaperWidth === '58mm';
-        let paperWidthMm = is58 ? '58mm' : '80mm';
+        // TEST FIX (2026-11-03): this specific printer's driver doesn't
+        // actually have an 80mm option — only 72mm/48mm widths — so '80mm'
+        // was being silently replaced with a 297mm-long default page,
+        // wasting paper. Using '72mm' (what the driver really reports) plus
+        // the continuous-mode @page size (see applyThermalPageSizeContinuous)
+        // is being tried here first, on just this slip, before touching
+        // the Cash Bill or full shift receipt. If this printer is ever
+        // swapped for one that does list a proper 80mm size, this should
+        // be changed back to '80mm'.
+        let paperWidthMm = is58 ? '58mm' : '72mm';
         let bodyWidthMm = paperWidthMm;
         let businessName = (appSettings.businessName || 'Lalitha Naturals').toUpperCase();
         let now = new Date();
@@ -5079,7 +5122,7 @@
         `);
         printWin.document.close();
         printWin.focus();
-        printAfterThermalContentSettles(printWin, paperWidthMm);
+        printAfterThermalContentSettles(printWin, paperWidthMm, true);
     }
 
     // Shows the full itemized detail of a Cash Bill, looked up by its bill
