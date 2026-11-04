@@ -808,8 +808,15 @@
      all times, so it never disappears or jumps when you switch between the
      Register and the Cash Locker. Replaces the old in-form button (which
      was inside #autoFitStage and vanished once the locker opened) and the
-     locker's own internal "Back to Register" header button. -->
-<button type="button" id="lockerToggleBtn" onclick="toggleCashLocker()" title="Switch between the Denomination Register and the Cash Locker" style="position:fixed; top:10px; right:10px; z-index:10000; background:#065f46; color:#fff; border:none; border-radius:6px; padding:8px 14px; font-weight:700; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">💰 Cash Locker</button>
+     locker's own internal "Back to Register" header button.
+     Pinned to the BOTTOM-LEFT corner on purpose — top-right is where the
+     Register's own header-actions toolbar (Show Records / Cash Bill /
+     theme toggle / ⋯ More) and the Locker's own top bar (Branch switcher,
+     date, logout) both live, and this button (fixed to the raw screen,
+     not scaled with the auto-fit stage) was landing right on top of them
+     at some zoom levels. Bottom-left has nothing else fixed there on any
+     screen, so it never overlaps another control. -->
+<button type="button" id="lockerToggleBtn" onclick="toggleCashLocker()" title="Switch between the Denomination Register and the Cash Locker" style="position:fixed; bottom:14px; left:14px; top:auto; right:auto; z-index:10000; background:#065f46; color:#fff; border:none; border-radius:6px; padding:8px 14px; font-weight:700; font-size:12px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">💰 Cash Locker</button>
 <script>
     // Applied as early as possible (before the rest of the page's script
     // runs) so there's no flash of the light theme when a device has dark
@@ -2402,7 +2409,7 @@
     // Bump this one line for every build/phase; every on-screen display of the
     // version (Settings modal, header label, tab title) reads from it instead
     // of being hardcoded separately. 1.0.0 = everything built through "Phase 1".
-    var APP_VERSION = '1.3.9';
+    var APP_VERSION = '1.3.10';
 
     // ===================== SHARED DATE/TIME DISPLAY FORMATTERS =====================
     // Every date/time shown to the user anywhere in the app (on-screen, print,
