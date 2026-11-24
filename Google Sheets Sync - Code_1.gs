@@ -472,6 +472,76 @@ function sendCashAddedChangeEmail_(b) {
 }
 
 /**
+ * CASH DENOMINATIONS — BALANCE REPORT (PDF)
+ * The "Email PDF Report" button on the Cash Denominations tab posts the
+ * balance pieces/values per store. This builds an A4 PDF from it and
+ * emails it (as an attachment) to CASH_ADDED_NOTIFY_EMAIL.
+ */
+function sendDenominationReport_(b) {
+  try {
+    var branches = Array.isArray(b.branches) ? b.branches : [];
+    var totals = b.totals || { rows: [], totalQty: 0, totalAmount: 0, damaged: 0 };
+    if (!branches.length) return { ok: false, error: 'No store data to report.' };
+    var store = (b.store && b.store.name) || 'Lalitha Naturals';
+    var th = 'style="padding:6px 8px;border:1px solid #cbd5e1;background:#0f172a;color:#fff;font-size:11px;"';
+    var td = 'style="padding:5px 8px;border:1px solid #cbd5e1;font-size:11px;"';
+    var tdr = 'style="padding:5px 8px;border:1px solid #cbd5e1;font-size:11px;text-align:right;"';
+    var tf = 'style="padding:6px 8px;border:1px solid #cbd5e1;font-size:11px;text-align:right;font-weight:bold;background:#ecfdf5;"';
+
+    var head = '<tr><th ' + th + '>Denomination</th>' + branches.map(function (br) {
+      return '<th ' + th + '>' + esc_(br.name) + ' (Qty)</th><th ' + th + '>' + esc_(br.name) + ' (Value)</th>';
+    }).join('') + '<th ' + th + '>Total Qty</th><th ' + th + '>Total Value</th></tr>';
+    var body = (totals.rows || []).map(function (tr, i) {
+      return '<tr><td ' + td + '><b>' + esc_(tr.label) + '</b></td>' + branches.map(function (br) {
+        var r = (br.rows || [])[i] || { qty: 0, amount: 0 };
+        return '<td ' + tdr + '>' + esc_(r.qty) + ' pcs</td><td ' + tdr + '>' + inr_(r.amount) + '</td>';
+      }).join('') + '<td ' + tdr + '><b>' + esc_(tr.qty) + ' pcs</b></td><td ' + tdr + '><b>' + inr_(tr.amount) + '</b></td></tr>';
+    }).join('');
+    var tfl = 'style="padding:6px 8px;border:1px solid #cbd5e1;font-size:11px;text-align:left;font-weight:bold;background:#ecfdf5;"';
+    var foot = '<tr><td ' + tfl + '>TOTAL CASH</td>' + branches.map(function (br) {
+      return '<td ' + tf + '>' + esc_(br.totalQty) + ' pcs</td><td ' + tf + '>' + inr_(br.totalAmount) + '</td>';
+    }).join('') + '<td ' + tf + '>' + esc_(totals.totalQty) + ' pcs</td><td ' + tf + '>' + inr_(totals.totalAmount) + '</td></tr>';
+
+    var summary = branches.map(function (br) {
+      return '<td style="padding:8px 14px;border:1px solid #cbd5e1;"><div style="font-size:11px;color:#475569;">' + esc_(br.name) + '</div>' +
+        '<div style="font-size:18px;font-weight:bold;">' + inr_(br.totalAmount) + '</div>' +
+        '<div style="font-size:10px;color:#b45309;">Damaged held: ' + inr_(br.damaged) + '</div></td>';
+    }).join('') + '<td style="padding:8px 14px;border:1px solid #cbd5e1;background:#ecfdf5;"><div style="font-size:11px;color:#475569;">All stores</div>' +
+      '<div style="font-size:18px;font-weight:bold;color:#065f46;">' + inr_(totals.totalAmount) + '</div>' +
+      '<div style="font-size:10px;color:#b45309;">Damaged held: ' + inr_(totals.damaged) + '</div></td>';
+
+    var html = '<html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;color:#0f172a;margin:24px;">' +
+      '<div style="font-size:20px;font-weight:bold;color:#065f46;">' + esc_(store) + '</div>' +
+      '<div style="font-size:14px;font-weight:bold;margin:2px 0 4px;">Cash Denominations - Balance Report</div>' +
+      '<div style="font-size:11px;color:#475569;margin-bottom:14px;">Generated: ' + esc_(b.generatedAt) + (b.generatedBy ? ' &middot; By: ' + esc_(b.generatedBy) : '') + '</div>' +
+      '<table style="border-collapse:collapse;margin-bottom:16px;"><tr>' + summary + '</tr></table>' +
+      '<table style="border-collapse:collapse;width:100%;">' + head + body + foot + '</table>' +
+      '<div style="font-size:10px;color:#64748b;margin-top:12px;">Usable cash only. Damaged notes held in the vault are shown separately above.</div>' +
+      '</body></html>';
+
+    var datePart = String(b.generatedAt || '').split(' ')[0].replace(/\//g, '-');
+    var fileName = 'Lalitha_Naturals_Denomination_Balance_' + (datePart || 'report') + '.pdf';
+    var pdf = Utilities.newBlob(html, 'text/html', 'report.html').getAs('application/pdf').setName(fileName);
+
+    var text = 'Cash Denominations - Balance Report (' + (b.generatedAt || '') + ')\n\n' +
+      branches.map(function (br) { return br.name + ': ' + inr_(br.totalAmount) + ' (damaged held ' + inr_(br.damaged) + ')'; }).join('\n') +
+      '\nTotal: ' + inr_(totals.totalAmount) + '\n\nThe full denomination breakdown is in the attached PDF.';
+    var htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;"><p><b>Cash Denominations - Balance Report</b><br>' + esc_(b.generatedAt) + '</p>' +
+      '<p>' + branches.map(function (br) { return esc_(br.name) + ': <b>' + inr_(br.totalAmount) + '</b>'; }).join('<br>') +
+      '<br>Total: <b>' + inr_(totals.totalAmount) + '</b></p><p>The full denomination breakdown is in the attached PDF.</p></div>';
+
+    MailApp.sendEmail({
+      to: CASH_ADDED_NOTIFY_EMAIL,
+      subject: 'Cash Denominations Balance Report - ' + (b.generatedAt || '') + ' - ' + inr_(totals.totalAmount),
+      body: text, htmlBody: htmlBody, attachments: [pdf]
+    });
+    return { ok: true, type: 'denomination_report_email', to: CASH_ADDED_NOTIFY_EMAIL };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+/**
  * CASH ADDED — REVERT OTP
  * After Cash Added has been Final Confirmed (emailed), reverting or
  * lowering any denomination needs a one-time 6-digit code emailed to
@@ -735,7 +805,7 @@ function doPost(e) {
     // Health check — lets the app see which features this deployment has.
     if (body && body.type === 'ping') {
       return ContentService.createTextOutput(
-        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email'] })
+        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email', 'denomination_report_email'] })
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -756,6 +826,13 @@ function doPost(e) {
     if (body && body.type === 'cash_added_change_email') {
       return ContentService.createTextOutput(
         JSON.stringify(sendCashAddedChangeEmail_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Cash Denominations — email the balance report as a PDF.
+    if (body && body.type === 'denomination_report_email') {
+      return ContentService.createTextOutput(
+        JSON.stringify(sendDenominationReport_(body))
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
