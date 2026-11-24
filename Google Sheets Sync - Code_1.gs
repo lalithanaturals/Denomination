@@ -390,6 +390,76 @@ function sendCashAddedEmail_(b) {
 }
 
 /**
+ * CASH ADDED — PER-CHANGE EMAIL
+ * Every confirmed Cash Added change (✓ add, lower + ✓, ↺ revert, Clear)
+ * is emailed to CASH_ADDED_NOTIFY_EMAIL with what changed, the running
+ * Cash Added breakdown and the locker balance left. Also logged to a
+ * "CashAddedChanges" sheet tab.
+ */
+function sendCashAddedChangeEmail_(b) {
+  try {
+    var changes = Array.isArray(b.changes) ? b.changes : [];
+    if (!changes.length) return { ok: false, error: 'No changes to send.' };
+    var store = b.store || {};
+    var rows = Array.isArray(b.breakdown) ? b.breakdown : [];
+    var left = Array.isArray(b.lockerLeft) ? b.lockerLeft : [];
+    var action = String(b.action || 'CHANGED').toUpperCase();
+    var colour = action === 'ADDED' ? '#047857' : '#b91c1c';
+    var net = changes.reduce(function (a, c) { return a + (Number(c.amount) || 0); }, 0);
+    var changeTxt = changes.map(function (c) {
+      return c.label + ': ' + c.fromQty + ' -> ' + c.toQty + ' (' + (c.deltaQty > 0 ? '+' : '') + c.deltaQty + ' = ' + (c.amount >= 0 ? '+' : '-') + inr_(Math.abs(c.amount)) + ')';
+    });
+    var subject = 'Cash Added ' + action + (b.otpVerified ? ' (OTP)' : '') + ' - ' + (b.branch || '') + ' - ' +
+      (changes.length === 1 ? changes[0].label + ' x ' + Math.abs(changes[0].deltaQty) : changes.length + ' denominations') +
+      ' (' + (net >= 0 ? '+' : '-') + inr_(Math.abs(net)) + ')';
+
+    var text = 'CASH ADDED - ' + action + (b.otpVerified ? ' (approved with OTP)' : '') + '\n\n' +
+      'Store: ' + (store.name || '') + '\nBranch: ' + (b.branch || '') + '\n' +
+      'Date: ' + (b.date || '') + (b.shift ? ' (' + b.shift + ')' : '') + '\n' +
+      'Cashier: ' + (b.cashier || '') + '\nTime: ' + (b.at || '') + '\n\n' +
+      'CHANGE\n' + changeTxt.join('\n') + '\n\n' +
+      'CASH ADDED NOW: ' + inr_(b.cashAddedTotal) + '\n' +
+      (rows.length ? rows.map(function (r) { return r.label + ' x ' + r.qty + ' = ' + inr_(r.amount); }).join('\n') : '(none)') + '\n\n' +
+      'Locker balance left (' + (b.branch || '') + '): ' + inr_(b.lockerLeftTotal) + '\n' +
+      left.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ') + '\n' +
+      (b.finalPending ? '\nNOTE: Final Confirm has NOT been pressed for these figures yet.\n' : '');
+
+    var td = 'style="padding:6px 10px;border:1px solid #e2e8f0;"';
+    var tdr = 'style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right;"';
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a;">' +
+      '<h2 style="margin:0 0 4px;color:' + colour + ';">Cash Added - ' + esc_(action) + (b.otpVerified ? ' <span style="font-size:13px;color:#475569;">(approved with OTP)</span>' : '') + '</h2>' +
+      '<div style="color:#475569;margin-bottom:12px;">' + esc_(store.name) + ' &middot; <b>' + esc_(b.branch) + '</b> &middot; ' + esc_(b.date) + (b.shift ? ' (' + esc_(b.shift) + ')' : '') +
+        ' &middot; Cashier: ' + esc_(b.cashier) + ' &middot; ' + esc_(b.at) + '</div>' +
+      '<table style="border-collapse:collapse;margin-bottom:14px;">' +
+        '<tr style="background:#0f172a;color:#fff;"><th ' + td + '>Denomination</th><th ' + tdr + '>Before</th><th ' + tdr + '>After</th><th ' + tdr + '>Change</th><th ' + tdr + '>Amount</th></tr>' +
+        changes.map(function (c) {
+          return '<tr><td ' + td + '>' + esc_(c.label) + '</td><td ' + tdr + '>' + esc_(c.fromQty) + '</td><td ' + tdr + '>' + esc_(c.toQty) + '</td><td ' + tdr + ' style="color:' + (c.deltaQty > 0 ? '#047857' : '#b91c1c') + ';text-align:right;padding:6px 10px;border:1px solid #e2e8f0;"><b>' + (c.deltaQty > 0 ? '+' : '') + esc_(c.deltaQty) + '</b></td><td ' + tdr + '>' + (c.amount >= 0 ? '+' : '-') + inr_(Math.abs(c.amount)) + '</td></tr>';
+        }).join('') +
+      '</table>' +
+      '<p style="margin:0 0 4px;"><b>Cash Added now: ' + inr_(b.cashAddedTotal) + '</b></p>' +
+      '<p style="margin:0 0 12px;color:#475569;">' + (rows.length ? esc_(rows.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ')) : '(none)') + '</p>' +
+      '<p style="margin:0;color:#475569;">Locker balance left (' + esc_(b.branch) + '): <b>' + inr_(b.lockerLeftTotal) + '</b><br>' +
+        esc_(left.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ')) + '</p>' +
+      (b.finalPending ? '<p style="margin:12px 0 0;color:#b45309;"><b>Final Confirm has not been pressed for these figures yet.</b></p>' : '') +
+      '</div>';
+
+    MailApp.sendEmail({ to: CASH_ADDED_NOTIFY_EMAIL, subject: subject, body: text, htmlBody: html });
+
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sh = ss.getSheetByName('CashAddedChanges') || ss.insertSheet('CashAddedChanges');
+      if (sh.getLastRow() === 0) sh.appendRow(['Sent At', 'Date', 'Branch', 'Shift', 'Cashier', 'Action', 'OTP', 'Changes', 'Net Amount', 'Cash Added Total']);
+      sh.appendRow([new Date(), b.date || '', b.branch || '', b.shift || '', b.cashier || '', action, b.otpVerified ? 'Yes' : '',
+        changeTxt.join('; '), net, Number(b.cashAddedTotal) || 0]);
+    } catch (logErr) {}
+
+    return { ok: true, type: 'cash_added_change_email', to: CASH_ADDED_NOTIFY_EMAIL };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+/**
  * CASH ADDED — REVERT OTP
  * After Cash Added has been Final Confirmed (emailed), reverting or
  * lowering any denomination needs a one-time 6-digit code emailed to
@@ -653,7 +723,7 @@ function doPost(e) {
     // Health check — lets the app see which features this deployment has.
     if (body && body.type === 'ping') {
       return ContentService.createTextOutput(
-        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp'] })
+        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email'] })
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -666,6 +736,14 @@ function doPost(e) {
     if (body && body.type === 'verify_revert_otp') {
       return ContentService.createTextOutput(
         JSON.stringify(verifyRevertOtp_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Cash Added — one email per confirmed change (added / reduced /
+    // reverted / cleared), sent the moment the change is confirmed.
+    if (body && body.type === 'cash_added_change_email') {
+      return ContentService.createTextOutput(
+        JSON.stringify(sendCashAddedChangeEmail_(body))
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
