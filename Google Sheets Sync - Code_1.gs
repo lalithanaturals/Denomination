@@ -213,6 +213,78 @@ function getDamageRecords_() {
   return rows;
 }
 
+// ---- CASH LOCKER STATE CLOUD SYNC -----------------------------------------
+// The Cash Locker (branch cash/denomination stock, soiled notes, transfers,
+// vendor payments) used to live only in each device's own browser storage,
+// so two devices/people never saw the same numbers. This stores the ENTIRE
+// locker state as one JSON blob in a single row of its own sheet tab, keyed
+// by a fixed id ("main") since there is only one shared locker state for
+// the whole app (it already covers both branches internally). Whichever
+// device last pushed a newer "updatedAt" wins — the app does the
+// last-write-wins comparison on its side before overwriting its local copy,
+// this script just stores/returns whatever it's given/asked for.
+var LOCKER_STATE_SHEET_NAME = 'CashLockerState';
+var LOCKER_STATE_HEADERS = ['id', 'updatedAt', 'state'];
+
+function getOrCreateLockerStateSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(LOCKER_STATE_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(LOCKER_STATE_SHEET_NAME);
+    sheet.appendRow(LOCKER_STATE_HEADERS);
+    sheet.setFrozenRows(1);
+  } else if (sheet.getLastRow() === 0) {
+    sheet.appendRow(LOCKER_STATE_HEADERS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/**
+ * Upserts the single shared locker-state row, keyed on id (always "main").
+ * The full state object is stored as a JSON string in the "state" column.
+ */
+function upsertLockerState_(payload) {
+  var sheet = getOrCreateLockerStateSheet_();
+  var data = sheet.getDataRange().getValues();
+  var id = payload.id || 'main';
+  var rowValues = [
+    id,
+    payload.updatedAt != null ? payload.updatedAt : Date.now(),
+    JSON.stringify(payload.state || {})
+  ];
+  var matchRow = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === id) {
+      matchRow = i + 1;
+      break;
+    }
+  }
+  if (matchRow > -1) {
+    sheet.getRange(matchRow, 1, 1, rowValues.length).setValues([rowValues]);
+  } else {
+    sheet.appendRow(rowValues);
+  }
+}
+
+/**
+ * Returns the shared locker state row (id "main") as { id, updatedAt, state },
+ * with "state" parsed back into an object — or null if nothing has been
+ * pushed yet.
+ */
+function getLockerState_() {
+  var sheet = getOrCreateLockerStateSheet_();
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === 'main') {
+      var parsedState = {};
+      try { parsedState = JSON.parse(data[i][2]); } catch (e) {}
+      return { id: data[i][0], updatedAt: Number(data[i][1]) || 0, state: parsedState };
+    }
+  }
+  return null;
+}
+
 // ---- OWNER PIN CHANGE: EMAIL OTP VERIFICATION -----------------------------
 var PIN_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 var PIN_OTP_MAX_ATTEMPTS = 5;
@@ -222,6 +294,162 @@ function generateOtpCode_() {
   var s = String(n);
   while (s.length < 6) s = '0' + s;
   return s;
+}
+
+/**
+ * CASH ADDED — FINAL CONFIRM EMAIL
+ * The app's "Final Confirm & Email" button (Cash Added section) posts
+ * type: "cash_added_email" with the store, branch, date, shift, cashier,
+ * confirmed denominations, total and the locker balance left. The
+ * recipient is fixed HERE (not taken from the request) so this Web App
+ * can never be used to send mail to anyone else. Each email is also
+ * logged to a "CashAddedLog" sheet tab.
+ */
+var CASH_ADDED_NOTIFY_EMAIL = 'kanthirava.b@gmail.com';
+
+function esc_(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function inr_(n) {
+  return '₹' + Number(n || 0).toLocaleString('en-IN');
+}
+
+function sendCashAddedEmail_(b) {
+  try {
+    var store = b.store || {};
+    var rows = Array.isArray(b.denominations) ? b.denominations : [];
+    var left = Array.isArray(b.lockerLeft) ? b.lockerLeft : [];
+    var outside = Array.isArray(b.outsideLocker) ? b.outsideLocker : [];
+    if (!rows.length) return { ok: false, error: 'No denominations to send.' };
+
+    var subject = 'Cash Added confirmed - ' + (b.branch || '') + ' - ' + (b.date || '') + ' - ' + inr_(b.total);
+
+    var text = 'CASH ADDED - FINAL CONFIRMATION\n\n' +
+      'Store: ' + (store.name || '') + '\n' +
+      (store.address ? 'Address: ' + store.address + '\n' : '') +
+      (store.phone ? 'Phone: ' + store.phone + '\n' : '') +
+      'Branch: ' + (b.branch || '') + '\n' +
+      'Date: ' + (b.date || '') + (b.shift ? ' (' + b.shift + ')' : '') + '\n' +
+      'Cashier: ' + (b.cashier || '') + '\n' +
+      'Confirmed at: ' + (b.confirmedAt || '') + '\n\n' +
+      'DENOMINATIONS\n' +
+      rows.map(function (r) { return r.label + ' x ' + r.qty + ' = ' + inr_(r.amount); }).join('\n') +
+      '\n\nTOTAL CASH ADDED: ' + inr_(b.total) + '\n';
+    if (outside.length) {
+      text += '\nNOT FROM LOCKER\n' + outside.map(function (o) {
+        return o.denomSummary + ' = ' + inr_(o.amount) + ' | Reason: ' + o.reason + ' | From: ' + o.source;
+      }).join('\n') + '\n';
+    }
+    text += '\nLocker balance left (' + (b.branch || '') + '): ' + inr_(b.lockerLeftTotal) + '\n' +
+      left.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ') + '\n';
+
+    var td = 'style="padding:6px 10px;border:1px solid #e2e8f0;"';
+    var tdr = 'style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right;"';
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a;">' +
+      '<h2 style="margin:0 0 4px;color:#065f46;">Cash Added - Final Confirmation</h2>' +
+      '<div style="color:#475569;margin-bottom:12px;">' + esc_(store.name) +
+        (store.address ? ' &middot; ' + esc_(store.address) : '') +
+        (store.phone ? ' &middot; ' + esc_(store.phone) : '') + '</div>' +
+      '<table style="border-collapse:collapse;margin-bottom:14px;">' +
+        '<tr><td ' + td + '><b>Branch</b></td><td ' + td + '>' + esc_(b.branch) + '</td></tr>' +
+        '<tr><td ' + td + '><b>Date</b></td><td ' + td + '>' + esc_(b.date) + (b.shift ? ' (' + esc_(b.shift) + ')' : '') + '</td></tr>' +
+        '<tr><td ' + td + '><b>Cashier</b></td><td ' + td + '>' + esc_(b.cashier) + '</td></tr>' +
+        '<tr><td ' + td + '><b>Confirmed at</b></td><td ' + td + '>' + esc_(b.confirmedAt) + '</td></tr>' +
+      '</table>' +
+      '<table style="border-collapse:collapse;min-width:280px;">' +
+        '<tr style="background:#0f172a;color:#fff;"><th ' + td + '>Denomination</th><th ' + tdr + '>Qty</th><th ' + tdr + '>Amount</th></tr>' +
+        rows.map(function (r) {
+          return '<tr><td ' + td + '>' + esc_(r.label) + '</td><td ' + tdr + '>' + esc_(r.qty) + '</td><td ' + tdr + '>' + inr_(r.amount) + '</td></tr>';
+        }).join('') +
+        '<tr style="background:#ecfdf5;font-weight:bold;"><td ' + td + ' colspan="2">TOTAL CASH ADDED</td><td ' + tdr + '>' + inr_(b.total) + '</td></tr>' +
+      '</table>';
+    if (outside.length) {
+      html += '<p style="margin:14px 0 4px;color:#b45309;"><b>Not from locker:</b></p><ul style="margin:0;">' +
+        outside.map(function (o) {
+          return '<li>' + esc_(o.denomSummary) + ' = ' + inr_(o.amount) + ' &mdash; Reason: ' + esc_(o.reason) + ' &mdash; From: ' + esc_(o.source) + '</li>';
+        }).join('') + '</ul>';
+    }
+    html += '<p style="margin:14px 0 0;color:#475569;">Locker balance left (' + esc_(b.branch) + '): <b>' + inr_(b.lockerLeftTotal) + '</b><br>' +
+      esc_(left.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ')) + '</p></div>';
+
+    MailApp.sendEmail({ to: CASH_ADDED_NOTIFY_EMAIL, subject: subject, body: text, htmlBody: html });
+    var emailedTo = CASH_ADDED_NOTIFY_EMAIL;
+
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sh = ss.getSheetByName('CashAddedLog') || ss.insertSheet('CashAddedLog');
+      if (sh.getLastRow() === 0) sh.appendRow(['Sent At', 'Date', 'Branch', 'Shift', 'Cashier', 'Denominations', 'Total']);
+      sh.appendRow([new Date(), b.date || '', b.branch || '', b.shift || '', b.cashier || '',
+        rows.map(function (r) { return r.label + 'x' + r.qty; }).join(', '), Number(b.total) || 0]);
+    } catch (logErr) {}
+
+    return { ok: true, type: 'cash_added_email', emailed: true, to: emailedTo };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+/**
+ * CASH ADDED — REVERT OTP
+ * After Cash Added has been Final Confirmed (emailed), reverting or
+ * lowering any denomination needs a one-time 6-digit code emailed to
+ * CASH_ADDED_NOTIFY_EMAIL (fixed here, never taken from the request).
+ * Stored separately from the Owner PIN OTP (REVERT_OTP_* properties),
+ * 10-minute expiry, one-time use, max 5 wrong attempts.
+ */
+function sendRevertOtp_(b) {
+  try {
+    var code = generateOtpCode_();
+    PropertiesService.getScriptProperties().setProperties({
+      REVERT_OTP_CODE: code,
+      REVERT_OTP_EXPIRES: String(Date.now() + PIN_OTP_TTL_MS),
+      REVERT_OTP_ATTEMPTS: '0'
+    });
+    var subject = 'OTP ' + code + ' - Cash Added revert - ' + (b.branch || '');
+    var text = 'Your one-time code to approve a Cash Added revert is:\n\n' + code + '\n\n' +
+      'Branch: ' + (b.branch || '') + '\n' +
+      'Date: ' + (b.date || '') + (b.shift ? ' (' + b.shift + ')' : '') + '\n' +
+      'Requested by: ' + (b.cashier || '') + '\n' +
+      'Change requested: ' + (b.action || '') + '\n\n' +
+      'The code expires in 10 minutes and works only once. If you did not expect this, do NOT share the code.';
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a;">' +
+      '<p>Your one-time code to approve a <b>Cash Added revert</b>:</p>' +
+      '<div style="font-size:30px;font-weight:bold;letter-spacing:6px;color:#b91c1c;margin:8px 0 14px;">' + code + '</div>' +
+      '<table style="border-collapse:collapse;">' +
+      '<tr><td style="padding:4px 10px 4px 0;color:#475569;">Branch</td><td><b>' + esc_(b.branch) + '</b></td></tr>' +
+      '<tr><td style="padding:4px 10px 4px 0;color:#475569;">Date</td><td>' + esc_(b.date) + (b.shift ? ' (' + esc_(b.shift) + ')' : '') + '</td></tr>' +
+      '<tr><td style="padding:4px 10px 4px 0;color:#475569;">Requested by</td><td>' + esc_(b.cashier) + '</td></tr>' +
+      '<tr><td style="padding:4px 10px 4px 0;color:#475569;">Change requested</td><td><b>' + esc_(b.action) + '</b></td></tr>' +
+      '</table><p style="color:#64748b;">Expires in 10 minutes, works only once. If you did not expect this, do not share the code.</p></div>';
+    MailApp.sendEmail({ to: CASH_ADDED_NOTIFY_EMAIL, subject: subject, body: text, htmlBody: html });
+    return { ok: true, type: 'send_revert_otp', to: CASH_ADDED_NOTIFY_EMAIL };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+function verifyRevertOtp_(b) {
+  var submitted = b && String(b.code || '').trim();
+  var props = PropertiesService.getScriptProperties();
+  var storedCode = props.getProperty('REVERT_OTP_CODE');
+  var storedExpires = Number(props.getProperty('REVERT_OTP_EXPIRES') || 0);
+  var attempts = Number(props.getProperty('REVERT_OTP_ATTEMPTS') || 0);
+  function clear_() {
+    props.deleteProperty('REVERT_OTP_CODE');
+    props.deleteProperty('REVERT_OTP_EXPIRES');
+    props.deleteProperty('REVERT_OTP_ATTEMPTS');
+  }
+  if (!storedCode || !submitted) return { ok: false, type: 'verify_revert_otp', error: 'invalid_or_expired' };
+  if (Date.now() > storedExpires || attempts >= PIN_OTP_MAX_ATTEMPTS) {
+    clear_();
+    return { ok: false, type: 'verify_revert_otp', error: 'invalid_or_expired' };
+  }
+  if (submitted !== storedCode) {
+    props.setProperty('REVERT_OTP_ATTEMPTS', String(attempts + 1));
+    return { ok: false, type: 'verify_revert_otp', error: 'wrong_code', attemptsLeft: PIN_OTP_MAX_ATTEMPTS - attempts - 1 };
+  }
+  clear_();
+  return { ok: true, type: 'verify_revert_otp' };
 }
 
 /**
@@ -412,6 +640,42 @@ function doPost(e) {
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Cash Locker's entire shared state (branch stock, soiled notes,
+    // transactions, transfers, vendor payments) — pushed as one JSON blob
+    // any time it changes, so another device/person sees the same numbers.
+    if (body && body.type === 'cash_locker') {
+      upsertLockerState_(body);
+      return ContentService.createTextOutput(
+        JSON.stringify({ ok: true, type: 'cash_locker' })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Health check — lets the app see which features this deployment has.
+    if (body && body.type === 'ping') {
+      return ContentService.createTextOutput(
+        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp'] })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Cash Added — revert after Final Confirm: send / verify an email OTP.
+    if (body && body.type === 'send_revert_otp') {
+      return ContentService.createTextOutput(
+        JSON.stringify(sendRevertOtp_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (body && body.type === 'verify_revert_otp') {
+      return ContentService.createTextOutput(
+        JSON.stringify(verifyRevertOtp_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Cash Added — Final Confirm: email the confirmed Cash Added summary.
+    if (body && body.type === 'cash_added_email') {
+      return ContentService.createTextOutput(
+        JSON.stringify(sendCashAddedEmail_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Owner PIN change — step 1: send a 6-digit email OTP.
     if (body && body.type === 'send_pin_otp') {
       return ContentService.createTextOutput(
@@ -423,6 +687,12 @@ function doPost(e) {
     if (body && body.type === 'verify_pin_otp') {
       return ContentService.createTextOutput(
         JSON.stringify(verifyPinOtp_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (body && body.type && body.type !== 'shift') {
+      return ContentService.createTextOutput(
+        JSON.stringify({ ok: false, error: 'Unknown request type: ' + body.type })
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -487,6 +757,17 @@ function doGet(e) {
       var damageRecords = getDamageRecords_();
       return ContentService.createTextOutput(
         JSON.stringify({ ok: true, count: damageRecords.length, records: damageRecords })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // ?type=cash_locker — returns the single shared Cash Locker state blob
+    // (branch stock, soiled notes, transactions, transfers, vendor
+    // payments) so every device/person works off the same numbers.
+    if (type === 'cash_locker') {
+      var lockerRow = getLockerState_();
+      return ContentService.createTextOutput(
+        JSON.stringify(lockerRow ? { ok: true, found: true, updatedAt: lockerRow.updatedAt, state: lockerRow.state }
+                                  : { ok: true, found: false })
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
