@@ -11083,6 +11083,20 @@
       alert("Store Minimum Denominations saved successfully!");
     }
 
+    // "₹500 x 2, ₹20 x 5" from an entry's denominations — used wherever an
+    // entry has no remarks (e.g. older Cash Added entries), so the notes
+    // involved are always visible.
+    function lockerEntryDenomSummary(t) {
+      if (!t || !t.denoms) return '';
+      return LOCKER_DENOM_CONFIG.filter(d => (Number(t.denoms[d.key]) || 0) > 0)
+        .map(d => `₹${d.label} x ${t.denoms[d.key]}`).join(', ');
+    }
+    function lockerEntryRemarks(t) {
+      if (t && t.remarks) return t.remarks;
+      let sum = lockerEntryDenomSummary(t);
+      return sum ? sum : '';
+    }
+
     function renderAllEntriesTab() {
       const tbody = document.getElementById('all-entries-body');
       const eraseBtn = document.getElementById('eraseAllDataBtn');
@@ -11135,7 +11149,7 @@
           <td class="p-3 capitalize font-semibold text-slate-700 font-sans">${t.branch}</td>
           <td class="p-3 text-slate-700 font-sans">
             <div class="font-bold">${t.category}</div>
-            <div class="text-[10px] text-slate-400 font-normal">${t.remarks || 'No remarks'}</div>
+            <div class="text-[10px] text-slate-500 font-normal">${lockerEntryRemarks(t) || 'No remarks'}</div>
           </td>
           <td class="p-3 text-right font-black font-mono ${isPlus ? 'text-emerald-700' : 'text-slate-900'}">
             ${isPlus ? '+' : ''}₹${Math.abs(t.amount).toLocaleString('en-IN')}
@@ -11289,7 +11303,7 @@
             <div class="flex justify-between"><span>Category:</span> <strong>${txn.category}</strong></div>
             <div class="flex justify-between"><span>Employee:</span> <strong>${txn.handler}</strong></div>
             <div class="flex justify-between"><span>Amount:</span> <strong class="text-emerald-700">₹${Math.abs(txn.amount).toLocaleString('en-IN')}</strong></div>
-            <div class="flex justify-between"><span>Remarks:</span> <strong>${txn.remarks || 'None'}</strong></div>
+            <div class="flex justify-between"><span>Remarks:</span> <strong>${lockerEntryRemarks(txn) || 'None'}</strong></div>
           </div>
           <div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div class="font-bold text-slate-700 font-sans border-b pb-1 mb-1">Denomination Breakdown</div>
@@ -12465,7 +12479,7 @@
 
     function exportCSV() {
       let csv = "Reference ID,Date,Type,Store,Category,Amount,Employee,Remarks\n";
-      lockerState.transactions.forEach(t => { csv += `"${t.refId}","${t.date}","${t.type}","${t.branch}","${t.category}","${t.amount}","${t.handler}","${t.remarks || ''}"\n`; });
+      lockerState.transactions.forEach(t => { csv += `"${t.refId}","${t.date}","${t.type}","${t.branch}","${t.category}","${t.amount}","${t.handler}","${lockerEntryRemarks(t)}"\n`; });
       const blob = new Blob([csv], { type: 'text/csv' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       a.download = `Lalitha_Naturals_Cash_Ledger_${new Date().toISOString().slice(0,10)}.csv`; a.click();
@@ -12787,6 +12801,8 @@
             shortfall: shortfallValue > 0 ? shortfall : undefined,
             shortfallReason: shortfallValue > 0 ? reason : undefined,
             shortfallSource: shortfallValue > 0 ? source : undefined,
+            remarks: LOCKER_DENOM_CONFIG.filter(d => fromStock[d.key]).map(d => `₹${d.label} x ${fromStock[d.key]}`).join(', ') + ' taken from locker' +
+                (shortfallValue > 0 ? ` · ${Object.keys(shortfall).map(k => '₹' + LOCKER_DENOM_CONFIG.find(d => d.key === k).label + ' x ' + shortfall[k]).join(', ')} from outside (${reason} / ${source})` : ''),
             amount: -totalValue
         });
         saveState();
@@ -13383,6 +13399,8 @@
                 shortfall: shortfallQty > 0 ? { [denomCfg.key]: shortfallQty } : undefined,
                 shortfallReason: shortfallQty > 0 ? reason : undefined,
                 shortfallSource: shortfallQty > 0 ? source : undefined,
+                remarks: `₹${denomCfg.label} x ${coveredQty} taken from locker` +
+                    (shortfallQty > 0 ? ` · ₹${denomCfg.label} x ${shortfallQty} from outside (${reason} / ${source})` : ''),
                 amount: -(coveredQty * denomCfg.val)
             });
             saveState();
