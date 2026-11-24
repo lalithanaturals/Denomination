@@ -320,11 +320,16 @@ function sendCashAddedEmail_(b) {
     var rows = Array.isArray(b.denominations) ? b.denominations : [];
     var left = Array.isArray(b.lockerLeft) ? b.lockerLeft : [];
     var outside = Array.isArray(b.outsideLocker) ? b.outsideLocker : [];
-    if (!rows.length) return { ok: false, error: 'No denominations to send.' };
+    if (!rows.length && !(Array.isArray(b.changesSinceLast) && b.changesSinceLast.length)) return { ok: false, error: 'No denominations to send.' };
 
-    var subject = 'Cash Added confirmed - ' + (b.branch || '') + ' - ' + (b.date || '') + ' - ' + inr_(b.total);
+    var changes = Array.isArray(b.changesSinceLast) ? b.changesSinceLast : [];
+    var subject = 'Cash Added confirmed' + (b.isResend ? ' (UPDATED)' : '') + ' - ' + (b.branch || '') + ' - ' + (b.date || '') + ' - ' + inr_(b.total);
+    var changeLine_ = function (c) {
+      return (c.at ? c.at + ' ' : '') + (c.action || '') + (c.otp ? ' (OTP)' : '') + ': ' + c.label + ' ' + c.fromQty + ' -> ' + c.toQty +
+        ' (' + (c.amount >= 0 ? '+' : '-') + inr_(Math.abs(c.amount)) + ')';
+    };
 
-    var text = 'CASH ADDED - FINAL CONFIRMATION\n\n' +
+    var text = 'CASH ADDED - FINAL CONFIRMATION' + (b.isResend ? ' (UPDATED)' : '') + '\n\n' +
       'Store: ' + (store.name || '') + '\n' +
       (store.address ? 'Address: ' + store.address + '\n' : '') +
       (store.phone ? 'Phone: ' + store.phone + '\n' : '') +
@@ -340,13 +345,16 @@ function sendCashAddedEmail_(b) {
         return o.denomSummary + ' = ' + inr_(o.amount) + ' | Reason: ' + o.reason + ' | From: ' + o.source;
       }).join('\n') + '\n';
     }
+    if (changes.length) {
+      text += '\nCHANGES SINCE PREVIOUS FINAL CONFIRM\n' + changes.map(changeLine_).join('\n') + '\n';
+    }
     text += '\nLocker balance left (' + (b.branch || '') + '): ' + inr_(b.lockerLeftTotal) + '\n' +
       left.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ') + '\n';
 
     var td = 'style="padding:6px 10px;border:1px solid #e2e8f0;"';
     var tdr = 'style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right;"';
     var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a;">' +
-      '<h2 style="margin:0 0 4px;color:#065f46;">Cash Added - Final Confirmation</h2>' +
+      '<h2 style="margin:0 0 4px;color:#065f46;">Cash Added - Final Confirmation' + (b.isResend ? ' (UPDATED)' : '') + '</h2>' +
       '<div style="color:#475569;margin-bottom:12px;">' + esc_(store.name) +
         (store.address ? ' &middot; ' + esc_(store.address) : '') +
         (store.phone ? ' &middot; ' + esc_(store.phone) : '') + '</div>' +
@@ -368,6 +376,10 @@ function sendCashAddedEmail_(b) {
         outside.map(function (o) {
           return '<li>' + esc_(o.denomSummary) + ' = ' + inr_(o.amount) + ' &mdash; Reason: ' + esc_(o.reason) + ' &mdash; From: ' + esc_(o.source) + '</li>';
         }).join('') + '</ul>';
+    }
+    if (changes.length) {
+      html += '<p style="margin:14px 0 4px;color:#b91c1c;"><b>Changes since previous Final Confirm:</b></p><ul style="margin:0;">' +
+        changes.map(function (c) { return '<li>' + esc_(changeLine_(c)) + '</li>'; }).join('') + '</ul>';
     }
     html += '<p style="margin:14px 0 0;color:#475569;">Locker balance left (' + esc_(b.branch) + '): <b>' + inr_(b.lockerLeftTotal) + '</b><br>' +
       esc_(left.map(function (r) { return r.label + ' x ' + r.qty; }).join(', ')) + '</p></div>';
