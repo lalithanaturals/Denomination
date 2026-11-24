@@ -796,3 +796,16 @@ function doGet(e) {
     ).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+
+/**
+ * ONE-TIME SETUP: select "testEmailSetup" in the function dropdown above and
+ * click Run. Google asks you to allow "Send email as you" — click Allow.
+ * Sends a test email to CASH_ADDED_NOTIFY_EMAIL so you can see it works.
+ */
+function testEmailSetup() {
+  MailApp.sendEmail(CASH_ADDED_NOTIFY_EMAIL,
+    'Lalitha Naturals - email test',
+    'Email sending from the Shift Register is working. Cash Added confirmations and revert OTP codes will arrive at this address.');
+  Logger.log('Test email sent to ' + CASH_ADDED_NOTIFY_EMAIL + '. Emails left today: ' + MailApp.getRemainingDailyQuota());
+}
