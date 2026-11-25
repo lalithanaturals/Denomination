@@ -11748,7 +11748,7 @@
                 <button onclick="revertAndDeleteEntry('${t.refId}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded border border-rose-200 text-[10px]">
                   <i class="fa-solid fa-rotate-left mr-1"></i> Revert
                 </button>
-                <button onclick="deleteEntryOnly('${t.refId}')" title="Remove this entry and its records. Locker stock is NOT changed." class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-2 py-1 rounded border border-slate-900 text-[10px]">
+                <button onclick="deleteEntryOnly('${t.refId}')" title="Delete this entry, its records and its locker denominations." class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-2 py-1 rounded border border-slate-900 text-[10px]">
                   <i class="fa-solid fa-trash mr-1"></i> Delete
                 </button>
               </div>
@@ -11776,34 +11776,23 @@
       return lockerState.branches[key] ? key : null;
     }
 
-    // Admin: remove an entry (and its linked transfer / vendor / damaged-note
-    // record) WITHOUT changing locker stock — for entries whose cash effect
-    // was already undone elsewhere (e.g. Cash Added rows reverted in the
-    // shift register) or that were recorded by mistake. A copy is kept in
-    // lockerState.deletedEntries as an audit trail.
+    // Admin: Delete an entry together with its linked transfer / vendor /
+    // damaged-note record AND its effect on the locker denominations (the
+    // same stock checks as Revert). A copy is kept in lockerState.deletedEntries.
     function deleteEntryOnly(refId) {
       if (!isLockerAdmin()) return alert("Access Denied: Admin Mode Only.");
       const txn = (lockerState.transactions || []).find(t => t.refId === refId);
       if (!txn) return alert('Entry ' + refId + ' was not found.');
       const baseRefId = refId.replace(/-(OUT|IN)$/, '');
-      const isTransferLeg = txn.type === 'TRANSFER' && baseRefId !== refId;
-      const ids = isTransferLeg ? [baseRefId + '-OUT', baseRefId + '-IN'] : [refId];
-      const amt = Math.abs(Number(txn.amount) || 0).toLocaleString('en-IN');
-      const msg = 'Delete entry ' + (isTransferLeg ? baseRefId + ' (both OUT and IN lines)' : refId) + '?\n\n' +
-        (txn.category || txn.type || '') + ' — ' + (txn.branch || '') + ' — ₹' + amt + '\n\n' +
-        'Locker stock will NOT be changed. Use this only when the cash was already put back (or never really moved). ' +
-        'To also undo the cash, press Cancel and use Revert instead.';
-      if (!confirm(msg)) return;
-      const removed = (lockerState.transactions || []).filter(t => ids.indexOf(t.refId) !== -1);
-      if (!Array.isArray(lockerState.deletedEntries)) lockerState.deletedEntries = [];
-      lockerState.deletedEntries.push({ deletedAt: Date.now(), refIds: ids, entries: removed });
-      lockerState.transactions = (lockerState.transactions || []).filter(t => ids.indexOf(t.refId) === -1);
-      if (isTransferLeg) lockerState.transfers = (lockerState.transfers || []).filter(t => t.refId !== baseRefId);
-      lockerState.vendorPayments = (lockerState.vendorPayments || []).filter(v => v.refId !== refId);
-      lockerState.soiledNotes = (lockerState.soiledNotes || []).filter(x => x.id !== refId);
-      saveState();
-      renderAllViews();
-      if (typeof showAppToast === 'function') showAppToast('🗑️ Entry ' + refId + ' deleted (stock unchanged).');
+      const ids = (txn.type === 'TRANSFER' && baseRefId !== refId) ? [baseRefId + '-OUT', baseRefId + '-IN'] : [refId];
+      const copy = JSON.parse(JSON.stringify((lockerState.transactions || []).filter(t => ids.indexOf(t.refId) !== -1)));
+      revertAndDeleteEntry(refId);
+      const S = lockerState;
+      if (!(S.transactions || []).some(t => ids.indexOf(t.refId) !== -1)) {
+        if (!Array.isArray(S.deletedEntries)) S.deletedEntries = [];
+        S.deletedEntries.push({ deletedAt: Date.now(), refIds: ids, entries: copy, stockAdjusted: true });
+        saveState();
+      }
     }
 
     function revertAndDeleteEntry(refId) {
