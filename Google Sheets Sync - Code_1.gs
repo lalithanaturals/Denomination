@@ -682,6 +682,59 @@ var HEADERS = [
   'Notes', 'Synced At', 'Full Record (JSON)'
 ];
 
+/**
+ * ONE-TIME SHEET REPAIR — run from the editor: choose "repairShiftSheet" in
+ * the function list and click Run.
+ * Rows written since 31 Oct 2026 have 17 values (Extra Change Given, Change
+ * Left by Customer and Staff Bills Total were added) but the sheet's header
+ * row still had the older 14 headings, so those rows sat 3 columns to the
+ * right of their headings. This:
+ *   1. makes a backup copy of the sheet ("ShiftRegister_backup_<date time>"),
+ *   2. rebuilds every row from its own full JSON record in the correct
+ *      17-column layout (keeping each row's original Synced At time),
+ *   3. drops rows that are not shift records (e.g. a Cash Added email request
+ *      an older script version stored as a row by mistake),
+ *   4. writes the correct header row.
+ * Nothing is lost: every row is rebuilt from its complete saved record, and
+ * the backup sheet keeps the original rows exactly as they were.
+ */
+function repairShiftSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) { Logger.log('No ' + SHEET_NAME + ' sheet found.'); return; }
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Kolkata', 'yyyyMMdd_HHmm');
+  sheet.copyTo(ss).setName(SHEET_NAME + '_backup_' + stamp);
+
+  var data = sheet.getDataRange().getValues();
+  var out = [], dropped = [], noRecord = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i], rec = null, synced = '';
+    for (var c = 0; c < row.length; c++) {
+      var v = row[c];
+      if (v instanceof Date) { if (!synced && c >= 11) synced = v.toISOString(); continue; }
+      v = String(v == null ? '' : v).trim();
+      if (!rec && v.charAt(0) === '{') {
+        try { var o = JSON.parse(v); if (o && typeof o === 'object') rec = o; } catch (e) {}
+      } else if (!synced && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) {
+        synced = v;
+      }
+    }
+    if (!rec) { noRecord.push(i + 1); out.push(row.slice(0, HEADERS.length).concat(new Array(Math.max(0, HEADERS.length - row.length)).fill(''))); continue; }
+    if (!rec.date || !rec.branch || rec.type === 'cash_added_email' || (rec.grandTotal === undefined && !Array.isArray(rec.denoms))) { dropped.push((rec.date || '?') + ' ' + (rec.branch || '?')); continue; }
+    var nr = recordToRow_(rec);
+    nr[15] = synced || rec.syncedAt || '';
+    out.push(nr);
+  }
+  sheet.clearContents();
+  sheet.getRange(1, 1, Math.max(sheet.getMaxRows(), out.length + 1), 1).setNumberFormat('@');
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  if (out.length) sheet.getRange(2, 1, out.length, HEADERS.length).setValues(out);
+  sheet.setFrozenRows(1);
+  Logger.log('Repaired ' + out.length + ' rows. Backup: ' + SHEET_NAME + '_backup_' + stamp +
+    '. Dropped non-shift rows: ' + (dropped.join(', ') || 'none') +
+    '. Rows kept as-is (no record found): ' + (noRecord.join(', ') || 'none'));
+}
+
 function getOrCreateSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
