@@ -11748,9 +11748,6 @@
                 <button onclick="revertAndDeleteEntry('${t.refId}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded border border-rose-200 text-[10px]">
                   <i class="fa-solid fa-rotate-left mr-1"></i> Revert
                 </button>
-                <button onclick="deleteEntryOnly('${t.refId}')" title="Delete this entry, its records and its locker denominations." class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-2 py-1 rounded border border-slate-900 text-[10px]">
-                  <i class="fa-solid fa-trash mr-1"></i> Delete
-                </button>
               </div>
             ` : `
               <span class="text-[10px] text-slate-400">Admin Only</span>
@@ -11774,25 +11771,6 @@
       if (lockerState.branches[branch]) return branch;
       const key = lockerBranchKeyFromName(branch);
       return lockerState.branches[key] ? key : null;
-    }
-
-    // Admin: Delete an entry together with its linked transfer / vendor /
-    // damaged-note record AND its effect on the locker denominations (the
-    // same stock checks as Revert). A copy is kept in lockerState.deletedEntries.
-    function deleteEntryOnly(refId) {
-      if (!isLockerAdmin()) return alert("Access Denied: Admin Mode Only.");
-      const txn = (lockerState.transactions || []).find(t => t.refId === refId);
-      if (!txn) return alert('Entry ' + refId + ' was not found.');
-      const baseRefId = refId.replace(/-(OUT|IN)$/, '');
-      const ids = (txn.type === 'TRANSFER' && baseRefId !== refId) ? [baseRefId + '-OUT', baseRefId + '-IN'] : [refId];
-      const copy = JSON.parse(JSON.stringify((lockerState.transactions || []).filter(t => ids.indexOf(t.refId) !== -1)));
-      revertAndDeleteEntry(refId);
-      const S = lockerState;
-      if (!(S.transactions || []).some(t => ids.indexOf(t.refId) !== -1)) {
-        if (!Array.isArray(S.deletedEntries)) S.deletedEntries = [];
-        S.deletedEntries.push({ deletedAt: Date.now(), refIds: ids, entries: copy, stockAdjusted: true });
-        saveState();
-      }
     }
 
     function revertAndDeleteEntry(refId) {
