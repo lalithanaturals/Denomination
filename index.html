@@ -13829,6 +13829,40 @@
 
     // Puts notes back into this branch's Locker when a confirmed Cash Added
     // qty is reduced (including to 0) and logs it in the Locker ledger.
+    // When Cash Added notes are returned (↺ revert or lowered qty), the
+    // matching "added outside Locker" notes for that denomination must go
+    // too — otherwise a stale ⚠ note stays on the day's report even though
+    // those notes are no longer in Cash Added.
+    function dropCashAddedExternalLog(denomCfg, qty) {
+        let left = Number(qty) || 0;
+        if (left <= 0 || !Array.isArray(window.cashAddedExternalLog) || !window.cashAddedExternalLog.length) return;
+        const label = '₹' + denomCfg.label;
+        const out = [];
+        // newest first, so the most recent outside-locker notes are removed first
+        window.cashAddedExternalLog.slice().reverse().forEach(e => {
+            const parts = String(e.denomSummary || '').split(',').map(x => x.trim()).filter(Boolean).map(x => {
+                const m = x.match(/^(₹\d+)\s*x\s*(\d+)$/);
+                return m ? { label: m[1], qty: parseInt(m[2], 10) } : { raw: x };
+            });
+            parts.forEach(pt => {
+                if (left > 0 && pt.label === label) { const take = Math.min(left, pt.qty); pt.qty -= take; left -= take; }
+            });
+            const kept = parts.filter(pt => pt.raw || pt.qty > 0);
+            if (!kept.length) return;
+            const amount = kept.reduce((a, pt) => {
+                if (pt.raw) return a;
+                const d = LOCKER_DENOM_CONFIG.find(x => '₹' + x.label === pt.label);
+                return a + (d ? d.val * pt.qty : 0);
+            }, 0);
+            out.push(Object.assign({}, e, {
+                denomSummary: kept.map(pt => pt.raw || (pt.label + ' x ' + pt.qty)).join(', '),
+                amount: kept.some(pt => pt.raw) ? e.amount : amount
+            }));
+        });
+        window.cashAddedExternalLog = out.reverse();
+        try { if (typeof saveDraft === 'function') saveDraft(); } catch (e) {}
+    }
+
     function returnCashAddedToLocker(inputEl, denomCfg, branchKey, newQty, returnQty) {
         if (!lockerState.branches) lockerState.branches = {};
         let stock = lockerState.branches[branchKey] || lockerZeroDenomTemplate();
@@ -13853,6 +13887,7 @@
         updateCashAddedLockerStockRow();
         updateCashAddedConfirmState(inputEl);
         notifyCashAddedChange(denomCfg, newQty + returnQty, newQty, branchKey);
+        dropCashAddedExternalLog(denomCfg, returnQty);
         if (document.body.classList.contains('locker-open') && typeof renderAllViews === 'function') renderAllViews();
     }
 
