@@ -10031,6 +10031,15 @@
           <label class="block text-xs font-bold text-slate-700 mb-1">Remarks / Note</label>
           <input type="text" id="editRemarks" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
         </div>
+        <div id="editDenomSection">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Denominations (pieces)</label>
+          <div id="editDenomNote" class="text-[10px] text-slate-500 mb-1"></div>
+          <div id="editDenomGrid" class="grid grid-cols-3 gap-2 font-mono"></div>
+          <div class="mt-2 text-xs font-bold flex justify-between bg-slate-50 p-2 rounded-lg border border-slate-200">
+            <span>Amount after edit:</span><span id="editDenomTotal">₹0</span>
+          </div>
+          <div id="editDenomEffect" class="text-[10px] text-slate-600 mt-1"></div>
+        </div>
         <div class="flex justify-end space-x-2 pt-2 border-t">
           <button type="button" onclick="closeModal('editEntryModal')" class="bg-slate-100 text-slate-700 font-bold px-4 py-2 rounded-lg text-xs">Cancel</button>
           <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">Save Entry Changes</button>
@@ -11387,7 +11396,8 @@
             <div class="flex justify-between"><span>Category:</span> <strong>${txn.category}</strong></div>
             <div class="flex justify-between"><span>Employee:</span> <strong>${txn.handler}</strong></div>
             <div class="flex justify-between"><span>Amount:</span> <strong class="text-emerald-700">₹${Math.abs(txn.amount).toLocaleString('en-IN')}</strong></div>
-            <div class="flex justify-between"><span>Remarks:</span> <strong>${lockerEntryRemarks(txn) || 'None'}</strong></div>
+            <div class="flex justify-between"><span>Remarks:</span> <strong>$lockerEntryRemarks(txn) || 'None'</strong></div>
+            ${(txn.editLog || []).map(l => `<div class="text-[10px] text-amber-700">✎ Edited ${l.at}: ${l.changes.join('; ')}</div>`).join('')}
           </div>
           <div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100 space-y-1">
             <div class="font-bold text-slate-700 font-sans border-b pb-1 mb-1">Denomination Breakdown</div>
@@ -11958,6 +11968,60 @@
       printableArea.classList.add('hidden');
     }
 
+    // ---- ADMIN EDIT (incl. denominations) -------------------------------
+    // Cash In / Cash Out / Vendor Change / Cash Added (TRAY) entries can have
+    // their notes edited. Saving takes the entry's old effect off the locker
+    // and applies the new one, so stock always matches the ledger. Moving an
+    // entry to the other store moves its cash too. Transfers, damaged notes
+    // and bank deposits involve two places (both stores / the vault), so
+    // their notes stay locked — revert and re-enter those instead.
+    function editEntryInfo(txn) {
+      if (txn.type === 'TRANSFER') return { editable: false, reason: 'Transfer entries move cash between both stores — use Revert and send a new transfer to change the notes.' };
+      if ((txn.category || '').indexOf('Damaged Bank Deposit') === 0) return { editable: false, reason: 'Bank deposits come from the damaged-notes vault — use Revert and re-enter to change the notes.' };
+      if (txn.type === 'SOILED_LOG') return { editable: false, reason: 'Damaged-note entries also change the vault — use Revert and re-enter to change the notes.' };
+      if (!txn.denoms) return { editable: false, reason: 'This entry has no denomination breakdown.' };
+      return { editable: true, sign: txn.amount > 0 ? 1 : -1, isTray: !!txn.fromStock };
+    }
+    function editDenomValue(map) {
+      return LOCKER_DENOM_CONFIG.reduce((a, d) => a + (Number((map || {})[d.key]) || 0) * d.val, 0);
+    }
+    function editReadGrid() {
+      const out = {};
+      LOCKER_DENOM_CONFIG.forEach(d => {
+        const el = document.getElementById('edit-d-' + d.key);
+        const q = Math.max(0, parseInt(el && el.value, 10) || 0);
+        if (q > 0) out[d.key] = q;
+      });
+      return out;
+    }
+    function editUpdatePreview() {
+      const refId = document.getElementById('editTxnRef').value;
+      const txn = lockerState.transactions.find(t => t.refId === refId);
+      if (!txn) return;
+      const info = editEntryInfo(txn);
+      const fmt = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+      if (!info.editable) {
+        document.getElementById('editDenomTotal').innerText = fmt(Math.abs(txn.amount));
+        document.getElementById('editDenomEffect').innerText = '';
+        return;
+      }
+      const oldMap = info.isTray ? txn.fromStock : txn.denoms;
+      const newMap = editReadGrid();
+      const extra = info.isTray ? editDenomValue(txn.shortfall) : 0;
+      document.getElementById('editDenomTotal').innerText = fmt(editDenomValue(newMap) + (Math.abs(txn.amount) > editDenomValue(oldMap) ? extra : 0));
+      const branchName = document.getElementById('editBranch').selectedOptions[0].textContent;
+      const lines = [];
+      LOCKER_DENOM_CONFIG.forEach(d => {
+        const diff = (Number(newMap[d.key]) || 0) - (Number((oldMap || {})[d.key]) || 0);
+        if (diff) lines.push('₹' + d.label + ' ' + (info.sign * diff > 0 ? '+' : '') + (info.sign * diff));
+      });
+      const origKey = lockerResolveBranchKey(txn.branch);
+      const moving = origKey && origKey !== document.getElementById('editBranch').value;
+      document.getElementById('editDenomEffect').innerText = moving
+        ? ('Moves this entry (and its notes) from the ' + origKey.charAt(0).toUpperCase() + origKey.slice(1) + ' locker to the ' + branchName + ' locker.')
+        : (lines.length ? ('Locker change (' + branchName + '): ' + lines.join(', ')) : 'No change to notes.');
+    }
+
     function openEditEntryModal(refId) {
       if (!isLockerAdmin()) return alert("Admin access required.");
 
@@ -11965,11 +12029,29 @@
       if (!txn) return;
 
       document.getElementById('editTxnRef').value = txn.refId;
-      document.getElementById('editBranch').value = txn.branch.toLowerCase().includes('kurmannapalem') ? 'kurmannapalem' : 'gajuwaka';
+      document.getElementById('editBranch').value = String(txn.branch || '').toLowerCase().includes('kurmannapalem') ? 'kurmannapalem' : 'gajuwaka';
       document.getElementById('editCategory').value = txn.category;
       document.getElementById('editHandler').value = txn.handler;
       document.getElementById('editRemarks').value = txn.remarks || '';
+      document.getElementById('editRemarks').dataset.original = txn.remarks || '';
 
+      const info = editEntryInfo(txn);
+      const map = info.editable ? ((info.isTray ? txn.fromStock : txn.denoms) || {}) : (txn.denoms || {});
+      document.getElementById('editDenomGrid').innerHTML = LOCKER_DENOM_CONFIG.map(d => `
+        <div>
+          <label class="text-[10px] font-semibold text-slate-600 font-sans">₹${d.label}</label>
+          <input type="number" id="edit-d-${d.key}" min="0" value="${Number(map[d.key]) || 0}" ${info.editable ? '' : 'disabled'}
+            oninput="editUpdatePreview()" class="w-full border rounded p-1.5 text-xs text-center font-bold ${info.editable ? '' : 'bg-slate-100 text-slate-400'}">
+        </div>`).join('');
+      let note = info.editable
+        ? (info.isTray ? 'Notes taken from the locker for this Cash Added entry.' : 'Changing a quantity updates this store\'s locker by the difference.')
+        : '🔒 ' + info.reason;
+      if (info.editable && info.isTray && txn.shortfall && editDenomValue(txn.shortfall) > 0) {
+        note += ' (The part added from outside the locker is not changed here.)';
+      }
+      document.getElementById('editDenomNote').innerText = note;
+      document.getElementById('editBranch').onchange = editUpdatePreview;
+      editUpdatePreview();
       document.getElementById('editEntryModal').classList.remove('hidden');
     }
 
@@ -11981,15 +12063,79 @@
       const txn = lockerState.transactions.find(t => t.refId === refId);
       if (!txn) return;
 
-      txn.branch = document.getElementById('editBranch').value;
+      const info = editEntryInfo(txn);
+      const oldB = lockerResolveBranchKey(txn.branch);
+      const newB = document.getElementById('editBranch').value;
+      if (!oldB) return alert('Cannot edit: the store "' + txn.branch + '" of this entry was not found.');
+      if (!info.editable && newB !== oldB) return alert('The store of this entry cannot be changed here. ' + info.reason);
+
+      const oldMap = info.editable ? Object.assign({}, (info.isTray ? txn.fromStock : txn.denoms) || {}) : null;
+      const newMap = info.editable ? editReadGrid() : null;
+
+      if (info.editable) {
+        // remove the old effect from the old store, apply the new one to the new store
+        const delta = {};
+        const add = (b, k, q) => { delta[b] = delta[b] || {}; delta[b][k] = (delta[b][k] || 0) + q; };
+        LOCKER_DENOM_CONFIG.forEach(d => {
+          if (oldMap[d.key]) add(oldB, d.key, -info.sign * oldMap[d.key]);
+          if (newMap[d.key]) add(newB, d.key, info.sign * newMap[d.key]);
+        });
+        for (const b in delta) for (const k in delta[b]) {
+          const have = (lockerState.branches[b] || {})[k] || 0;
+          if (have + delta[b][k] < 0) {
+            const lbl = (LOCKER_DENOM_CONFIG.find(d => d.key === k) || {}).label || k;
+            return alert(`Cannot save: the ${b.charAt(0).toUpperCase() + b.slice(1)} locker only has ${have} pcs of ₹${lbl}, and this change needs ${-delta[b][k]} more.`);
+          }
+        }
+        if (!editDenomValue(newMap) && !confirm('All quantities are 0 — the entry will be kept with ₹0. To remove it completely, use Revert instead. Continue?')) return;
+        for (const b in delta) for (const k in delta[b]) {
+          lockerState.branches[b] = lockerState.branches[b] || {};
+          lockerState.branches[b][k] = (lockerState.branches[b][k] || 0) + delta[b][k];
+        }
+        const oldValue = editDenomValue(oldMap);
+        const shortValue = info.isTray ? editDenomValue(txn.shortfall) : 0;
+        if (info.isTray) {
+          const includesShort = shortValue > 0 && Math.abs(txn.amount) > oldValue;
+          txn.fromStock = newMap;
+          const all = Object.assign({}, newMap);
+          for (const k in (txn.shortfall || {})) all[k] = (all[k] || 0) + txn.shortfall[k];
+          txn.denoms = all;
+          txn.amount = -(editDenomValue(newMap) + (includesShort ? shortValue : 0));
+        } else {
+          txn.denoms = newMap;
+          txn.amount = info.sign * editDenomValue(newMap);
+        }
+        const ven = (lockerState.vendorPayments || []).find(v => v.refId === refId);
+        if (ven) { ven.denoms = newMap; ven.cashValueReceived = editDenomValue(newMap); ven.branch = newB; }
+      }
+
+      const remarksEl = document.getElementById('editRemarks');
+      let remarks = remarksEl.value;
+      if (info.editable && remarks === (remarksEl.dataset.original || '') && /taken from locker|returned to locker/.test(remarks)) {
+        const sum = LOCKER_DENOM_CONFIG.filter(d => newMap[d.key]).map(d => `₹${d.label} x ${newMap[d.key]}`).join(', ');
+        remarks = sum + (/returned/.test(remarks) ? ' returned to locker' : ' taken from locker');
+      }
+
+      const changes = [];
+      if (oldB !== newB) changes.push('store ' + oldB + ' → ' + newB);
+      if (info.editable && JSON.stringify(oldMap) !== JSON.stringify(newMap)) {
+        const fmtMap = m => LOCKER_DENOM_CONFIG.filter(d => m[d.key]).map(d => `₹${d.label}x${m[d.key]}`).join(', ') || 'none';
+        changes.push('notes ' + fmtMap(oldMap) + ' → ' + fmtMap(newMap));
+      }
+
+      txn.branch = newB;
       txn.category = document.getElementById('editCategory').value;
       txn.handler = document.getElementById('editHandler').value;
-      txn.remarks = document.getElementById('editRemarks').value;
+      txn.remarks = remarks;
+      if (changes.length) {
+        txn.editLog = (txn.editLog || []).concat([{ at: (typeof formatEntryDateTime === 'function') ? formatEntryDateTime(Date.now()) : new Date().toLocaleString(), changes: changes }]);
+      }
 
       saveState();
       renderAllViews();
+      if (typeof updateCashAddedLockerStockRow === 'function') updateCashAddedLockerStockRow();
       closeModal('editEntryModal');
-      alert("Entry updated successfully!");
+      alert("Entry updated successfully!" + (changes.length ? '\n\n' + changes.join('\n') : ''));
     }
 
     function promptConfirmCashSubmit(e) {
