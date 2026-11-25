@@ -10803,7 +10803,9 @@
                     lockerState.updatedAt = Number(data.updatedAt) || Date.now();
                     if (!lockerState.storeMinRequirements) lockerState.storeMinRequirements = LOCKER_DEFAULT_DATA.storeMinRequirements;
                     if (!lockerState.systemDate) lockerState.systemDate = new Date().toISOString().split('T')[0];
+                    const migrated = migrateEntryTimestamps(lockerState);
                     try { localStorage.setItem('lalitha_cash_app_data_v1.3', JSON.stringify(lockerState)); } catch (e) {}
+                    if (migrated) saveState();
                     renderAllViews();
                     if (typeof updateCashAddedLockerStockRow === 'function') updateCashAddedLockerStockRow();
                 }
@@ -10824,6 +10826,7 @@
     }
 
     function saveState() {
+      stampNewEntries(lockerState);
       lockerState.updatedAt = Date.now();
       localStorage.setItem('lalitha_cash_app_data_v1.3', JSON.stringify(lockerState));
       pushLockerStateToCloud();
@@ -10836,6 +10839,7 @@
           lockerState = JSON.parse(saved);
           if (!lockerState.storeMinRequirements) lockerState.storeMinRequirements = LOCKER_DEFAULT_DATA.storeMinRequirements;
           if (!lockerState.systemDate) lockerState.systemDate = new Date().toISOString().split('T')[0];
+          if (migrateEntryTimestamps(lockerState)) { try { localStorage.setItem('lalitha_cash_app_data_v1.3', JSON.stringify(lockerState)); } catch (e2) {} }
         } catch(e) { console.error("Error loading state", e); }
       }
       // Never start a page load already logged in as Admin — the PIN must be
@@ -10846,7 +10850,18 @@
 
     function initDateControl() {
       const picker = document.getElementById('systemDatePicker');
-      if (picker) picker.value = lockerState.systemDate;
+      lockerState.systemDate = localTodayISO();
+      if (picker) {
+        picker.value = lockerState.systemDate;
+        picker.readOnly = true;
+        picker.disabled = true;
+        picker.title = 'Today — every entry records the actual date and time it is saved';
+      }
+      // keep the header showing today even if the app stays open past midnight
+      setInterval(() => {
+        const t = localTodayISO();
+        if (lockerState.systemDate !== t) { lockerState.systemDate = t; if (picker) picker.value = t; }
+      }, 60000);
     }
 
     function handleDateChange(newDate) {
@@ -10856,10 +10871,51 @@
       renderAllViews();
     }
 
+    // Every entry records the REAL date and time it was saved (from this
+    // device's clock), e.g. "Wed, 25 Nov 2026, 11:42 am". The header date
+    // box only shows today — it can no longer get stuck on an old date.
+    function formatEntryDateTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+        d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    function localTodayISO() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
     function getActiveFormattedDate() {
-      if (!lockerState.systemDate) return new Date().toLocaleString();
-      const d = new Date(lockerState.systemDate + 'T12:00:00');
-      return d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      return formatEntryDateTime(Date.now());
+    }
+
+    // Gives every entry a timestamp ("ts"). Older entries whose reference
+    // number contains the moment they were made (TRAY-…, TRAY-RET-…) get
+    // their real date + time back; others keep their saved date and are
+    // marked "time not recorded". Brand-new entries are stamped in
+    // saveState(). Returns true if anything changed.
+    function migrateEntryTimestamps(state) {
+      let changed = false;
+      const now = Date.now();
+      const lists = [state.transactions, state.transfers, state.vendorPayments, state.soiledNotes];
+      lists.forEach(list => (list || []).forEach(e => {
+        if (!e || e.ts || e.tsUnknown) return;
+        const m = String(e.refId || e.id || '').match(/(\d{13})/);
+        const ts = m ? Number(m[1]) : 0;
+        if (ts > 1600000000000 && ts < now + 86400000) {
+          e.ts = ts;
+          e.date = formatEntryDateTime(ts);
+        } else {
+          e.tsUnknown = true;
+          if (e.date && !/time not recorded/.test(e.date)) e.date = e.date + ' (time not recorded)';
+        }
+        changed = true;
+      }));
+      return changed;
+    }
+    function stampNewEntries(state) {
+      const now = Date.now();
+      [state.transactions, state.transfers, state.vendorPayments, state.soiledNotes].forEach(list => (list || []).forEach(e => {
+        if (e && !e.ts && !e.tsUnknown) e.ts = now;
+      }));
     }
 
     function handleRoleChange(selectedRole) {
