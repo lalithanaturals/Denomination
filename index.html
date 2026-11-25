@@ -11502,6 +11502,10 @@
       document.getElementById('dash-kurmannapalem-large').innerText = `₹${calcGroup('kurmannapalem', ['n100','n200','n500']).toLocaleString('en-IN')}`;
     }
 
+    // ₹500 / ₹200 / ₹100 have no minimum stock: not shown on the Minimum
+    // Denominations page and never alerted (in the app or by email).
+    const MIN_EXCLUDED_DENOMS = ['n500', 'n200', 'n100'];
+    function minTracked(key) { return MIN_EXCLUDED_DENOMS.indexOf(key) === -1; }
     function renderMinRequirementsTab() {
       const tbody = document.getElementById('min-req-tbody');
       const badge = document.getElementById('minReqAdminBadge');
@@ -11520,6 +11524,7 @@
 
       tbody.innerHTML = '';
       LOCKER_DENOM_CONFIG.forEach(d => {
+        if (!minTracked(d.key)) return;
         const gQty = lockerState.branches.gajuwaka[d.key] || 0;
         const gVal = gQty * d.val;
         const kQty = lockerState.branches.kurmannapalem[d.key] || 0;
@@ -11573,6 +11578,7 @@
         const gInp = document.getElementById(`min-gajuwaka-${d.key}`);
         const kInp = document.getElementById(`min-kurmannapalem-${d.key}`);
 
+        if (!minTracked(d.key)) { lockerState.storeMinRequirements.gajuwaka[d.key] = 0; lockerState.storeMinRequirements.kurmannapalem[d.key] = 0; return; }
         if (gInp) lockerState.storeMinRequirements.gajuwaka[d.key] = parseInt(gInp.value) || 0;
         if (kInp) lockerState.storeMinRequirements.kurmannapalem[d.key] = parseInt(kInp.value) || 0;
       });
@@ -12171,7 +12177,7 @@
     function lowStoreRows(bKey) {
       const stock = (lockerState.branches || {})[bKey] || {};
       const mins = (lockerState.storeMinRequirements || {})[bKey] || {};
-      return LOCKER_DENOM_CONFIG.map(d => {
+      return LOCKER_DENOM_CONFIG.filter(d => minTracked(d.key)).map(d => {
         const qty = Number(stock[d.key]) || 0, min = Number(mins[d.key]) || 0;
         return { key: d.key, label: '₹' + d.label, qty, min, short: Math.max(0, min - qty), low: min > 0 && qty <= min, amount: qty * d.val };
       });
@@ -12240,7 +12246,7 @@
         LOCKER_DENOM_CONFIG.forEach(d => {
           const qty = lockerState.branches[b][d.key] || 0;
           const minReq = lockerState.storeMinRequirements?.[b]?.[d.key] || 0;
-          if (minReq > 0 && qty <= minReq) {
+          if (minTracked(d.key) && minReq > 0 && qty <= minReq) {
             warnings.push({ branch: b, denom: d.label, qty, min: minReq });
           }
         });
