@@ -529,6 +529,70 @@ function sendCashAddedChangeEmail_(b) {
 }
 
 /**
+ * LOW CHANGE ALERT (PDF per store)
+ * Sent by the Cash Locker / ChangeDeno when a store's count of any
+ * denomination falls to or below its Minimum Denominations setting.
+ * One email to CASH_ADDED_NOTIFY_EMAIL, subject "Low change in <store>"
+ * (or "<store> & <store>"), with a separate PDF attached for each store.
+ */
+function sendLowChangeEmail_(b) {
+  try {
+    var stores = Array.isArray(b.stores) ? b.stores.filter(function (s) { return s && Array.isArray(s.rows) && s.rows.some(function (r) { return r.low; }); }) : [];
+    if (!stores.length) return { ok: false, error: 'No low stores to report.' };
+    var brand = (b.store && b.store.name) || 'Lalitha Naturals';
+    var names = stores.map(function (s) { return s.name; });
+    var subject = 'Low change in ' + names.join(' & ');
+    var datePart = String(b.generatedAt || '').split(' ')[0].replace(/\//g, '-') || 'today';
+    var th = 'style="padding:6px 8px;border:1px solid #cbd5e1;background:#0f172a;color:#fff;font-size:11px;"';
+    var td = 'style="padding:5px 8px;border:1px solid #cbd5e1;font-size:11px;"';
+    var tdr = 'style="padding:5px 8px;border:1px solid #cbd5e1;font-size:11px;text-align:right;"';
+    var attachments = stores.map(function (s) {
+      var lowRows = s.rows.filter(function (r) { return r.low; });
+      var body = s.rows.map(function (r) {
+        var bg = r.low ? 'background:#fef2f2;color:#991b1b;font-weight:bold;' : '';
+        var c = function (x, right) { return '<td style="padding:5px 8px;border:1px solid #cbd5e1;font-size:11px;' + (right ? 'text-align:right;' : '') + bg + '">' + x + '</td>'; };
+        return '<tr>' + c(esc_(r.label)) + c(esc_(r.qty) + ' pcs', true) + c(esc_(r.min) + ' pcs', true) +
+          c(r.low ? (r.short > 0 ? 'Short ' + esc_(r.short) + ' pcs' : 'At minimum') : 'OK', true) + c(inr_(r.amount), true) + '</tr>';
+      }).join('');
+      var html = '<html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;color:#0f172a;margin:24px;">' +
+        '<div style="font-size:20px;font-weight:bold;color:#065f46;">' + esc_(brand) + '</div>' +
+        '<div style="font-size:15px;font-weight:bold;color:#b91c1c;margin:4px 0;">Low Change Alert - ' + esc_(s.name) + '</div>' +
+        '<div style="font-size:11px;color:#475569;margin-bottom:14px;">Generated: ' + esc_(b.generatedAt) + '</div>' +
+        '<div style="font-size:12px;margin-bottom:10px;"><b>' + lowRows.length + '</b> denomination(s) at or below minimum: ' +
+          esc_(lowRows.map(function (r) { return r.label + ' (' + r.qty + '/' + r.min + ')'; }).join(', ')) + '</div>' +
+        '<table style="border-collapse:collapse;width:100%;"><tr><th ' + th + '>Denomination</th><th ' + th + '>In Locker</th><th ' + th + '>Minimum</th><th ' + th + '>Status</th><th ' + th + '>Value</th></tr>' +
+        body + '<tr><td ' + td + '><b>TOTAL</b></td><td ' + tdr + '><b>' + esc_(s.totalQty) + ' pcs</b></td><td ' + td + '></td><td ' + td + '></td><td ' + tdr + '><b>' + inr_(s.totalAmount) + '</b></td></tr></table>' +
+        '</body></html>';
+      return Utilities.newBlob(html, 'text/html', 'low.html').getAs('application/pdf')
+        .setName('Low_Change_' + String(s.name).replace(/[^A-Za-z0-9]+/g, '_') + '_' + datePart + '.pdf');
+    });
+    var text = subject + ' (' + (b.generatedAt || '') + ')\n\n' + stores.map(function (s) {
+      return s.name + ':\n' + s.rows.filter(function (r) { return r.low; }).map(function (r) {
+        return '  ' + r.label + ' - ' + r.qty + ' pcs (minimum ' + r.min + ')';
+      }).join('\n');
+    }).join('\n\n') + '\n\nA separate PDF for each store is attached.';
+    var htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;"><p style="color:#b91c1c;"><b>' + esc_(subject) + '</b><br><span style="color:#475569;">' + esc_(b.generatedAt) + '</span></p>' +
+      stores.map(function (s) {
+        return '<p><b>' + esc_(s.name) + '</b><br>' + s.rows.filter(function (r) { return r.low; }).map(function (r) {
+          return esc_(r.label) + ' &mdash; ' + esc_(r.qty) + ' pcs (minimum ' + esc_(r.min) + ')';
+        }).join('<br>') + '</p>';
+      }).join('') + '<p>A separate PDF for each store is attached.</p></div>';
+    MailApp.sendEmail({ to: CASH_ADDED_NOTIFY_EMAIL, subject: subject, body: text, htmlBody: htmlBody, attachments: attachments });
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sh = ss.getSheetByName('LowChangeLog') || ss.insertSheet('LowChangeLog');
+      if (sh.getLastRow() === 0) sh.appendRow(['Sent At', 'Stores', 'Low Denominations']);
+      sh.appendRow([new Date(), names.join(' & '), stores.map(function (s) {
+        return s.name + ': ' + s.rows.filter(function (r) { return r.low; }).map(function (r) { return r.label + ' ' + r.qty + '/' + r.min; }).join(', ');
+      }).join(' | ')]);
+    } catch (logErr) {}
+    return { ok: true, type: 'low_change_email', to: CASH_ADDED_NOTIFY_EMAIL, subject: subject, pdfs: attachments.length };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+/**
  * CASH DENOMINATIONS — BALANCE REPORT (PDF)
  * The "Email PDF Report" button on the Cash Denominations tab posts the
  * balance pieces/values per store. This builds an A4 PDF from it and
@@ -915,7 +979,7 @@ function doPost(e) {
     // Health check — lets the app see which features this deployment has.
     if (body && body.type === 'ping') {
       return ContentService.createTextOutput(
-        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email', 'denomination_report_email', 'soiled_notes_email'] })
+        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email', 'denomination_report_email', 'soiled_notes_email', 'low_change_email'] })
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -943,6 +1007,13 @@ function doPost(e) {
     if (body && body.type === 'denomination_report_email') {
       return ContentService.createTextOutput(
         JSON.stringify(sendDenominationReport_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Cash Locker / ChangeDeno — low change alert (PDF per store).
+    if (body && body.type === 'low_change_email') {
+      return ContentService.createTextOutput(
+        JSON.stringify(sendLowChangeEmail_(body))
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
