@@ -297,6 +297,63 @@ function generateOtpCode_() {
 }
 
 /**
+ * Shift Register — Soiled Notes: after the daily shift is final-submitted with
+ * soiled (damaged) notes, the app sends type: "soiled_notes_email" with the
+ * branch, date, shift, cashier, reason and the per-denomination counts. It is
+ * emailed to CASH_ADDED_NOTIFY_EMAIL and logged to a "SoiledNotesLog" sheet.
+ */
+function sendSoiledNotesEmail_(b) {
+  try {
+    var store = b.store || {};
+    var rows = Array.isArray(b.denominations) ? b.denominations.filter(function (r) { return Number(r.qty) > 0; }) : [];
+    if (!rows.length) return { ok: false, error: 'No soiled notes to send.' };
+    var subject = 'Soiled notes entry - ' + (b.branch || '') + ' - ' + (b.date || '') + ' - ' + inr_(b.total);
+    var text = 'SOILED NOTES ENTRY - DAILY SHIFT REGISTER\n\n' +
+      'Store: ' + (store.name || '') + '\n' +
+      'Branch: ' + (b.branch || '') + '\n' +
+      'Date: ' + (b.date || '') + (b.shift ? ' (' + b.shift + ')' : '') + '\n' +
+      'Cashier: ' + (b.cashier || '') + '\n' +
+      'Reason / Source: ' + (b.reason || '') + '\n' +
+      'Reference: ' + (b.refId || '') + '\n' +
+      'Confirmed at: ' + (b.confirmedAt || '') + '\n\n' +
+      'DENOMINATIONS\n' +
+      rows.map(function (r) { return r.label + ' x ' + r.qty + ' = ' + inr_(r.amount); }).join('\n') +
+      '\n\nTOTAL SOILED VALUE: ' + inr_(b.total) + ' (' + (b.totalQty || 0) + ' pcs)\n';
+    var td = 'style="padding:6px 10px;border:1px solid #e2e8f0;"';
+    var tdr = 'style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right;"';
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#0f172a;">' +
+      '<h2 style="margin:0 0 4px;color:#b45309;">Soiled Notes Entry - Daily Shift Register</h2>' +
+      '<div style="color:#475569;margin-bottom:12px;">' + esc_(store.name) + '</div>' +
+      '<table style="border-collapse:collapse;margin-bottom:14px;">' +
+        '<tr><td ' + td + '><b>Branch</b></td><td ' + td + '>' + esc_(b.branch) + '</td></tr>' +
+        '<tr><td ' + td + '><b>Date</b></td><td ' + td + '>' + esc_(b.date) + (b.shift ? ' (' + esc_(b.shift) + ')' : '') + '</td></tr>' +
+        '<tr><td ' + td + '><b>Cashier</b></td><td ' + td + '>' + esc_(b.cashier) + '</td></tr>' +
+        '<tr><td ' + td + '><b>Reason / Source</b></td><td ' + td + '>' + esc_(b.reason) + '</td></tr>' +
+        '<tr><td ' + td + '><b>Reference</b></td><td ' + td + '>' + esc_(b.refId) + '</td></tr>' +
+        '<tr><td ' + td + '><b>Confirmed at</b></td><td ' + td + '>' + esc_(b.confirmedAt) + '</td></tr>' +
+      '</table>' +
+      '<table style="border-collapse:collapse;min-width:280px;">' +
+        '<tr style="background:#0f172a;color:#fff;"><th ' + td + '>Denomination</th><th ' + tdr + '>Qty</th><th ' + tdr + '>Amount</th></tr>' +
+        rows.map(function (r) {
+          return '<tr><td ' + td + '>' + esc_(r.label) + '</td><td ' + tdr + '>' + esc_(r.qty) + '</td><td ' + tdr + '>' + inr_(r.amount) + '</td></tr>';
+        }).join('') +
+        '<tr style="background:#fffbeb;font-weight:bold;"><td ' + td + '>TOTAL SOILED</td><td ' + tdr + '>' + esc_(b.totalQty || 0) + '</td><td ' + tdr + '>' + inr_(b.total) + '</td></tr>' +
+      '</table></div>';
+    MailApp.sendEmail({ to: CASH_ADDED_NOTIFY_EMAIL, subject: subject, body: text, htmlBody: html });
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sh = ss.getSheetByName('SoiledNotesLog') || ss.insertSheet('SoiledNotesLog');
+      if (sh.getLastRow() === 0) sh.appendRow(['Sent At', 'Date', 'Branch', 'Shift', 'Cashier', 'Reference', 'Reason', 'Denominations', 'Total']);
+      sh.appendRow([new Date(), b.date || '', b.branch || '', b.shift || '', b.cashier || '', b.refId || '', b.reason || '',
+        rows.map(function (r) { return r.label + 'x' + r.qty; }).join(', '), Number(b.total) || 0]);
+    } catch (logErr) {}
+    return { ok: true, type: 'soiled_notes_email', emailed: true, to: CASH_ADDED_NOTIFY_EMAIL };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+/**
  * CASH ADDED — FINAL CONFIRM EMAIL
  * The app's "Final Confirm & Email" button (Cash Added section) posts
  * type: "cash_added_email" with the store, branch, date, shift, cashier,
@@ -858,7 +915,7 @@ function doPost(e) {
     // Health check — lets the app see which features this deployment has.
     if (body && body.type === 'ping') {
       return ContentService.createTextOutput(
-        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email', 'denomination_report_email'] })
+        JSON.stringify({ ok: true, type: 'ping', features: ['cash_added_email', 'revert_otp', 'cash_added_change_email', 'denomination_report_email', 'soiled_notes_email'] })
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -886,6 +943,13 @@ function doPost(e) {
     if (body && body.type === 'denomination_report_email') {
       return ContentService.createTextOutput(
         JSON.stringify(sendDenominationReport_(body))
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Shift Register — Soiled notes recorded at final submit.
+    if (body && body.type === 'soiled_notes_email') {
+      return ContentService.createTextOutput(
+        JSON.stringify(sendSoiledNotesEmail_(body))
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
