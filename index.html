@@ -1136,6 +1136,9 @@
                 </div>
             </div>
             <div id="balanceCheckIndicator" style="font-size:10.5px; padding:4px 12px 8px; color:var(--muted); flex-shrink:0;"></div>
+            <div id="soiledDeductRow" style="display:none; background:#fffbeb; padding:5px 10px; font-weight:700; font-size:11.5px; justify-content:space-between; border-top:1px solid #fcd34d; color:#b45309; flex-shrink:0;">
+                <span>Soiled Notes (−):</span><span id="lblSoiledDeduct" style="font-family:'JetBrains Mono';">-₹0</span>
+            </div>
             <div style="background:var(--header-bg); padding:8px 10px; font-weight:700; font-size:12px; display:flex; justify-content:space-between; border-top:1px solid var(--border); flex-shrink:0;">
                 <span>Grand Total:</span><span id="lblTotalDenom" style="color:var(--accent); font-family:'JetBrains Mono';">₹0</span>
             </div>
@@ -2435,6 +2438,7 @@
                 <!-- Closing Balance row — shown here, inside the Tray
                      Balance column, matching the reference design. -->
                 <div class="a4-closing-row"><span>Closing Bal (₹200-₹1)</span><span class="val" id="a4ClosingBalDisplay">₹0</span></div>
+                <div class="a4-closing-row" id="a4SoiledTrayRow" style="display:none; color:#b45309;"><span>Soiled Notes (−)</span><span class="val" id="a4SoiledTray">-₹0</span></div>
                 <div class="sheet-section-total"><span>Grand Total:</span><span id="a4LblTotalDenom">₹0</span></div>
             </div>
         </div>
@@ -2464,6 +2468,7 @@
         <div class="a4-col">
             <div class="sheet-section a4-summary-card">
                 <div class="a4-summary-title">Total Summary</div>
+                <div class="summary-row" id="a4SoiledSumRow" style="display:none; color:#b45309;"><span>Soiled Notes (−) :</span><span id="a4SoiledSum">-₹0</span></div>
                 <div class="summary-row"><span>Grand Total:</span><span id="a4SumGrand">₹0</span></div>
                 <div class="summary-row"><span>Expn Total (+) :</span><span id="a4SumExp">₹0</span></div>
                 <div class="summary-row"><span>Owner Bills (+) :</span><span id="a4SumOwner">₹0</span></div>
@@ -6766,6 +6771,8 @@
     }
 
     function resetRegisterForm() {
+        try { localStorage.removeItem('lalitha_reg_soiled_draft'); } catch (e) {}
+        if (typeof updateRegSoiledBadge === 'function') updateRegSoiledBadge();
         // "CLEAR PAGE" clears only the CURRENTLY SELECTED date's draft — see
         // clearDraft()'s per-date behavior — never any other date's
         // in-progress entry.
@@ -7004,6 +7011,14 @@
             extraChangeGiven: extraChangeGiven,
             changeLeftByCustomer: changeLeftByCustomer
         });
+        // Soiled notes entered for this shift are taken off the Grand Total.
+        let soiledDeduct = (typeof regSoiledActiveTotal === 'function') ? regSoiledActiveTotal() : 0;
+        grandTotal -= soiledDeduct;
+        let soiledRowEl = document.getElementById('soiledDeductRow');
+        if (soiledRowEl) {
+            soiledRowEl.style.display = soiledDeduct ? 'flex' : 'none';
+            document.getElementById('lblSoiledDeduct').innerText = '-₹' + soiledDeduct;
+        }
         document.getElementById('lblTotalDenom').innerText = '₹' + grandTotal;
 
         let expTotal = 0; document.querySelectorAll('.exp-amt').forEach(i => expTotal += parseFloat(i.value) || 0);
@@ -7226,6 +7241,17 @@
         });
         return { total, qty, rows };
     }
+    function regSoiledActiveTotal() { return regSoiledTotals(getRegSoiledDraft()).total; }
+    function regSoiledSig(denoms) { return REG_SOILED_DENOMS.map(x => Number((denoms || {})[x.key]) || 0).join(','); }
+    function regSoiledSigFromRows(rows) { const d = {}; (rows || []).forEach(r => { if (r.key) d[r.key] = r.qty; }); return regSoiledSig(d); }
+    function setA4Soiled(total, rows) {
+        const txt = '-₹' + (Number(total) || 0) + (rows && rows.length ? ' (' + rows.map(r => r.label + '×' + r.qty).join(', ') + ')' : '');
+        [['a4SoiledTrayRow', 'a4SoiledTray', '-₹' + (Number(total) || 0)], ['a4SoiledSumRow', 'a4SoiledSum', txt]].forEach(([rowId, valId, t]) => {
+            const row = document.getElementById(rowId), val = document.getElementById(valId);
+            if (row) row.style.display = total ? 'flex' : 'none';
+            if (val) val.innerText = t;
+        });
+    }
     function updateRegSoiledBadge() {
         const b = document.getElementById('regSoiledBadge');
         if (!b) return;
@@ -7278,12 +7304,14 @@
             try { localStorage.removeItem(REG_SOILED_KEY); } catch (e) {}
             document.getElementById('regSoiledModal').style.display = 'none';
             updateRegSoiledBadge();
+            if (typeof recalcRegister === 'function') recalcRegister();
             return;
         }
         const c = regSoiledCtx();
         try { localStorage.setItem(REG_SOILED_KEY, JSON.stringify({ branch: c.branch, date: c.date, shift: c.shift, denoms, reason, savedAt: Date.now() })); } catch (e) {}
         document.getElementById('regSoiledModal').style.display = 'none';
         updateRegSoiledBadge();
+        if (typeof recalcRegister === 'function') recalcRegister();
         if (regSoiledInFlow) { regSoiledInFlow = false; showRegVerifyModal(); }
         else if (typeof showAppToast === 'function') showAppToast('🟠 Soiled notes saved: ₹' + t.total.toLocaleString('en-IN') + ' — logged on final submit.');
     }
@@ -7305,19 +7333,30 @@
         if (yes) { openRegSoiledModal(true); return; }
         try { localStorage.removeItem(REG_SOILED_KEY); } catch (e) {}
         updateRegSoiledBadge();
+        if (typeof recalcRegister === 'function') recalcRegister();
         showRegVerifyModal();
     }
     function showRegVerifyModal() {
+        if (typeof recalcRegister === 'function') recalcRegister();
+        document.getElementById('verifyTray').innerText = document.getElementById('lblTotalDenom').innerText;
+        document.getElementById('verifySale').innerText = document.getElementById('sumTotalSale').innerText;
+        document.getElementById('verifyVar').innerText = document.getElementById('sumVariance').innerText;
         const t = regSoiledTotals(getRegSoiledDraft());
         const v = document.getElementById('verifySoiled');
         if (v) v.textContent = t.total ? '₹' + t.total.toLocaleString('en-IN') + ' (' + t.qty + ' pcs)' : 'None';
         document.getElementById('secondaryVerifyModal').style.display = 'flex';
     }
     // Called right after the shift record is committed.
-    function commitRegSoiled(record) {
+    function commitRegSoiled(record, prevRecord) {
         const d = getRegSoiledDraft();
         const t = regSoiledTotals(d);
         if (!t.total) return;
+        const sig = regSoiledSig(d.denoms);
+        // Same shift re-saved (unlocked & replaced) with the same soiled notes:
+        // already in the vault and emailed — don't log or email it twice.
+        const prevRef = (d.committedRefId && d.committedSig === sig) ? d.committedRefId
+            : (prevRecord && prevRecord.soiledRefId && regSoiledSigFromRows(prevRecord.soiledDenoms) === sig ? prevRecord.soiledRefId : null);
+        if (prevRef) { regSoiledMarkCommitted(d, record, prevRef, sig); return; }
         const refId = 'SLD-REG-' + Date.now().toString().slice(-6);
         const dateDMY = typeof formatDateDMY === 'function' ? formatDateDMY(record.date) : record.date;
         const cashier = record.cashier || (document.getElementById('cashierName') || {}).value || '';
@@ -7340,8 +7379,7 @@
                 if (typeof renderAllViews === 'function') { try { renderAllViews(); } catch (e) {} }
             }
         } catch (e) { console.error('Soiled notes → vault failed', e); }
-        try { localStorage.removeItem(REG_SOILED_KEY); } catch (e) {}
-        updateRegSoiledBadge();
+        regSoiledMarkCommitted(d, record, refId, sig);
 
         if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) {
             if (typeof showAppToast === 'function') showAppToast('⚠️ Soiled notes logged, but email not sent (Cloud Sync not set up).');
@@ -7359,15 +7397,34 @@
             else { showAppToast('⚠️ Soiled notes email failed.'); console.error('Soiled email', res); alert('Soiled notes were logged, but the email could not be sent:\n' + ((res && res.error) || 'Apps Script needs the latest update.')); }
         }).catch(err => { showAppToast('⚠️ Soiled notes email failed (offline?).'); console.error(err); });
     }
-    document.addEventListener('DOMContentLoaded', () => {
+    // The draft is kept (marked committed) until the page is cleared, so the
+    // export / JPEG right after saving still shows the soiled deduction.
+    function regSoiledMarkCommitted(d, record, refId, sig) {
+        try { d.committedRefId = refId; d.committedSig = sig; localStorage.setItem(REG_SOILED_KEY, JSON.stringify(d)); } catch (e) {}
+        try {
+            const store = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]');
+            const r = store.find(x => x.date === record.date && x.branch === record.branch && (x.shift || 'Full Day') === (record.shift || 'Full Day'));
+            if (r && r.soiledRefId !== refId) { r.soiledRefId = refId; localStorage.setItem('lalitha_audit_register', JSON.stringify(store)); }
+            record.soiledRefId = refId;
+        } catch (e) {}
         updateRegSoiledBadge();
-        ['branchLocation', 'regDate', 'shiftLabel'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', updateRegSoiledBadge); });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        try { const d0 = JSON.parse(localStorage.getItem(REG_SOILED_KEY) || 'null'); if (d0 && d0.committedRefId) localStorage.removeItem(REG_SOILED_KEY); } catch (e) {}
+        updateRegSoiledBadge();
+        if (typeof recalcRegister === 'function') { try { recalcRegister(); } catch (e) {} }
+        ['branchLocation', 'regDate', 'shiftLabel'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { updateRegSoiledBadge(); try { recalcRegister(); } catch (e) {} }); });
     });
 
     function proceedAfterVerification() {
         document.getElementById('secondaryVerifyModal').style.display = 'none';
+        let prevSoiledRecord = null;
+        try {
+            let c0 = regSoiledCtx();
+            prevSoiledRecord = JSON.parse(localStorage.getItem('lalitha_audit_register') || '[]').find(r => r.date === c0.date && r.branch === c0.branch && (r.shift || 'Full Day') === c0.shift) || null;
+        } catch (e) {}
         let committedRecord = commitRegisterEntryToStorage();
-        if (committedRecord && typeof commitRegSoiled === 'function') commitRegSoiled(committedRecord);
+        if (committedRecord && typeof commitRegSoiled === 'function') commitRegSoiled(committedRecord, prevSoiledRecord);
         let todayStr = new Date().toISOString().split('T')[0];
         if (committedRecord && committedRecord.date && committedRecord.date !== todayStr) {
             // A backdated (or, in principle, future-dated) entry was just
@@ -7617,6 +7674,10 @@
             variance: Number(document.getElementById('sumVariance').innerText.replace('₹','').replace('+','')) || 0,
             finalTotal: Number(document.getElementById('finalGrandDisplay').innerText.replace('₹','')) || 0,
             notes: document.getElementById('registerNotes').value || '',
+            // Soiled notes taken off the Grand Total for this shift.
+            soiledTotal: (typeof regSoiledActiveTotal === 'function') ? regSoiledActiveTotal() : 0,
+            soiledDenoms: (typeof regSoiledTotals === 'function') ? regSoiledTotals(getRegSoiledDraft()).rows : [],
+            soiledReason: ((typeof getRegSoiledDraft === 'function' && getRegSoiledDraft()) || {}).reason || '',
             locked: true,
             syncedAt: null,
             lastSyncAttemptAt: null,
@@ -7826,6 +7887,7 @@
         document.getElementById('a4UnbTable').innerHTML = unbHtml || '<tr><td colspan="2" style="color:#94a3b8; text-align:center;">None</td></tr>';
 
         document.getElementById('a4SumGrand').innerText = document.getElementById('sumGrand').innerText;
+        setA4Soiled(typeof regSoiledActiveTotal === 'function' ? regSoiledActiveTotal() : 0, typeof regSoiledTotals === 'function' ? regSoiledTotals(getRegSoiledDraft()).rows : []);
         document.getElementById('a4SumExp').innerText = document.getElementById('sumExp').innerText;
         document.getElementById('a4SumOwner').innerText = document.getElementById('sumOwner').innerText;
         document.getElementById('a4SumVend').innerText = document.getElementById('sumVend').innerText;
@@ -7931,6 +7993,7 @@
         document.getElementById('a4UnbTable').innerHTML = unbH || '<tr><td colspan="2">None</td></tr>';
 
         document.getElementById('a4SumGrand').innerText = '₹' + (rec.grandTotal || 0);
+        setA4Soiled(Number(rec.soiledTotal) || 0, rec.soiledDenoms || []);
         document.getElementById('a4SumExp').innerText = '₹' + totalExp;
         let totOwn = 0; if(rec.owners) rec.owners.forEach(o => totOwn += o.amt);
         document.getElementById('a4SumOwner').innerText = '₹' + totOwn;
