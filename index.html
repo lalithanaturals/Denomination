@@ -9438,16 +9438,16 @@
       </div>
 
       <div class="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-between sm:justify-end">
-        <!-- Branch Switcher -->
-        <div class="flex items-center space-x-1.5 bg-emerald-900/80 px-2.5 py-1 sm:py-1.5 rounded-lg border border-emerald-700/50 text-xs">
-          <i class="fa-solid fa-store text-emerald-400 text-xs"></i>
-          <span class="text-xs text-emerald-300 font-medium">Branch:</span>
-          <select id="roleSelect" onchange="handleRoleChange(this.value)" class="bg-emerald-950 text-white text-xs font-semibold focus:outline-none cursor-pointer max-w-[150px] sm:max-w-none truncate">
-            <option value="gajuwaka">Employee - Gajuwaka</option>
-            <option value="kurmannapalem">Employee - Kurmannapalem</option>
-            <option value="owner">Store Owner / Admin</option>
-          </select>
-        </div>
+        <!-- Admin login (branch switcher hidden; locker branch follows the shift form's Branch field) -->
+        <select id="roleSelect" class="hidden" style="display:none" aria-hidden="true" tabindex="-1">
+          <option value="gajuwaka">Gajuwaka</option>
+          <option value="kurmannapalem">Kurmannapalem</option>
+          <option value="owner">Admin</option>
+        </select>
+        <button id="adminToggleBtn" type="button" onclick="toggleAdminLogin()" class="flex items-center space-x-1.5 bg-emerald-900/80 hover:bg-emerald-800 px-2.5 py-1 sm:py-1.5 rounded-lg border border-emerald-700/50 text-xs text-white font-semibold">
+          <i class="fa-solid fa-lock text-emerald-400 text-xs" id="adminToggleIcon"></i>
+          <span id="adminToggleLabel">Admin</span>
+        </button>
 
         <!-- Editable Date Control -->
         <div class="flex items-center text-[11px] sm:text-xs text-emerald-200 bg-emerald-900/50 px-2 py-1 rounded-lg font-mono border border-emerald-700/50">
@@ -9484,10 +9484,6 @@
             <span class="truncate">Minimum Denominations</span>
           </button>
 
-          <button onclick="switchTab('branches')" id="nav-branches" class="w-full flex items-center justify-start space-x-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors border-l-4 border-transparent text-left">
-            <i class="fa-solid fa-store w-5 text-left shrink-0"></i>
-            <span class="truncate">Store Comparison</span>
-          </button>
         </div>
 
         <hr class="border-slate-100">
@@ -9795,7 +9791,6 @@
             </div>
           </div>
           <div class="ae-summary" id="aeSummary"></div>
-        </div>
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -10801,7 +10796,7 @@
       { key: 'c1',   label: '1',   val: 1   }
     ];
 
-    const LOCKER_ADMIN_PIN = "1234";
+    const LOCKER_ADMIN_PIN = "1995";
 
     const LOCKER_DEFAULT_DATA = {
       role: 'gajuwaka',
@@ -11051,6 +11046,26 @@
       }));
     }
 
+    function updateAdminToggleBtn() {
+      const on = isLockerAdmin();
+      const lbl = document.getElementById('adminToggleLabel');
+      const ic = document.getElementById('adminToggleIcon');
+      if (lbl) lbl.textContent = on ? 'Admin · Logout' : 'Admin';
+      if (ic) ic.className = 'fa-solid ' + (on ? 'fa-lock-open' : 'fa-lock') + ' text-emerald-400 text-xs';
+    }
+
+    function toggleAdminLogin() {
+      if (isLockerAdmin()) {
+        lockerState.isAdminAuthenticated = false;
+        lockerState.role = '';
+        let b = document.getElementById('branchLocation');
+        handleRoleChange(lockerBranchKeyFromName(b ? b.value : '') || 'gajuwaka');
+      } else {
+        handleRoleChange('owner');
+      }
+      updateAdminToggleBtn();
+    }
+
     function handleRoleChange(selectedRole) {
       if (selectedRole === 'owner') {
         if (!lockerState.isAdminAuthenticated) {
@@ -11158,6 +11173,7 @@
     }
 
     function renderAllViews() {
+      if (typeof updateAdminToggleBtn === 'function') updateAdminToggleBtn();
       renderKPIs();
       renderAllEntriesTab();
       renderDenominationMatrix();
