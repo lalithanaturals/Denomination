@@ -10817,12 +10817,36 @@
         return lockerPullInFlight;
     }
 
+    // Keep every open copy of the locker in step:
+    //  - another tab of this site (Denomination or ChangeDeno) saved → reload now
+    //  - this tab comes back into view → fetch the latest from the cloud
+    // so a screen left open never shows (or saves over) old numbers.
+    window.addEventListener('storage', (ev) => {
+        if (ev.key !== 'lalitha_cash_app_data_v1.3' || !ev.newValue) return;
+        try {
+            const incoming = JSON.parse(ev.newValue);
+            if ((Number(incoming.updatedAt) || 0) < (Number(lockerState.updatedAt) || 0)) return;
+            const keepRole = lockerState.role, keepAuth = lockerState.isAdminAuthenticated;
+            lockerState = incoming;
+            lockerState.role = keepRole;
+            lockerState.isAdminAuthenticated = keepAuth;
+            if (!lockerState.storeMinRequirements) lockerState.storeMinRequirements = LOCKER_DEFAULT_DATA.storeMinRequirements;
+            if (typeof migrateEntryTimestamps === 'function') migrateEntryTimestamps(lockerState);
+            renderAllViews();
+            if (typeof updateCashAddedLockerStockRow === 'function') updateCashAddedLockerStockRow();
+        } catch (e) { console.error('Locker storage sync error', e); }
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') pullLockerStateFromCloud();
+    });
+    window.addEventListener('focus', () => pullLockerStateFromCloud());
+
     function startLockerAutoPull() {
         if (lockerAutoPullStarted) return;
         lockerAutoPullStarted = true;
         if (!appSettings.cloudSyncEnabled || !appSettings.cloudSyncUrl) return;
         pullLockerStateFromCloud();
-        setInterval(pullLockerStateFromCloud, 5 * 60 * 1000);
+        setInterval(pullLockerStateFromCloud, 60 * 1000);
     }
 
     function saveState() {
