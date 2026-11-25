@@ -956,7 +956,7 @@
             <div id="registerMetaInputs" class="header-fields">
                 <div class="field-group"><label for="regDate">Date</label><input type="date" id="regDate" onchange="onDateFieldChange()" onkeydown="handleEnter(event)"></div>
                 <div class="field-group"><label for="branchLocation">Branch</label>
-                    <select id="branchLocation" onchange="onDateOrBranchChange()" onkeydown="handleEnter(event)">
+                    <select id="branchLocation" autocomplete="off" onchange="onDateOrBranchChange()" onkeydown="handleEnter(event)">
                         <option value="Gajuwaka" selected>Gajuwaka</option>
                         <option value="Kurmannapalem">Kurmannapalem</option>
                     </select>
@@ -6348,6 +6348,20 @@
         document.getElementById('closingBalInput').dataset.manual = 'false';
         recalcRegister();
     }
+
+    // The Cash Added "In Locker" figures must always be for the branch shown
+    // in the Branch box. Chrome can restore that box on reload / Back without
+    // firing a change event, which left the previous branch's locker on
+    // screen — so re-check after load/pageshow and whenever they disagree.
+    function ensureCashAddedBranchInSync() {
+        const sel = document.getElementById('branchLocation');
+        const lbl = document.getElementById('cashAddedLockerBranchName');
+        if (!sel || !lbl || !sel.value) return;
+        if (lbl.textContent.trim() !== sel.value) onDateOrBranchChange();
+    }
+    window.addEventListener('pageshow', () => setTimeout(ensureCashAddedBranchInSync, 300));
+    window.addEventListener('load', () => setTimeout(ensureCashAddedBranchInSync, 800));
+    setInterval(ensureCashAddedBranchInSync, 1500);
 
     function onDateOrBranchChange() {
         loadOpeningBalance();
